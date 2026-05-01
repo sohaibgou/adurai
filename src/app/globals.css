@@ -1,26 +1,245 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f8fc;
+  --foreground: #0a0a0f;
+  --purple: #6c5ce7;
+  --teal: #00cec9;
+  --card-bg: #ffffff;
+  --card-border: #f0f0f5;
+  --muted: #6b7280;
+  --green: #00b894;
+  --red: #e17055;
+  --yellow: #fdcb6e;
+  --surface: #fafafa;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-purple: var(--purple);
+  --color-teal: var(--teal);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-muted: var(--muted);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-yellow: var(--yellow);
+  --color-surface: var(--surface);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-syne);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
+}
+
+h1 {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 700;
+  font-size: clamp(36px, 5vw, 64px);
+  letter-spacing: -0.02em;
+  color: #0a0a0f;
+}
+
+h2 {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 48px);
+  letter-spacing: -0.02em;
+  color: #0a0a0f;
+}
+
+h3 {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: #0a0a0f;
+}
+
+p {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+label, .label {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ───── Custom scrollbar ───── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ───── Card system ───── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
+}
+
+/* ───── Section label ───── */
+.section-label {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+/* ───── Metric value (Syne bold) ───── */
+.metric-value {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* ───── Skeleton pulse ───── */
+.skeleton {
+  background: linear-gradient(90deg, #eeecf8 25%, #f5f4fc 50%, #eeecf8 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ───── Recharts tooltip ───── */
+.recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+}
+
+/* ───── Gradient text ───── */
+.text-gradient {
+  background: linear-gradient(135deg, var(--purple), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ───── Floating orbs ───── */
+@keyframes float-orb-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-30px, 20px) scale(1.03); }
+  50% { transform: translate(15px, -15px) scale(0.97); }
+  75% { transform: translate(-15px, -30px) scale(1.01); }
+}
+@keyframes float-orb-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -30px) scale(0.97); }
+  50% { transform: translate(-20px, 15px) scale(1.03); }
+  75% { transform: translate(30px, 20px) scale(0.99); }
+}
+.orb-purple { animation: float-orb-1 25s ease-in-out infinite; }
+.orb-teal { animation: float-orb-2 30s ease-in-out infinite; }
+
+/* ───── Dot grid ───── */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ───── Pulsing dot ───── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ───── Glass upload ───── */
+.glass-upload {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 24px rgba(108, 92, 231, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-upload:hover {
+  border-color: var(--purple);
+  box-shadow: 0 8px 40px rgba(108, 92, 231, 0.12), 0 4px 16px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
+}
+
+/* ───── Gradient connecting line ───── */
+.gradient-line {
+  background: linear-gradient(180deg, var(--purple), var(--teal));
+}
+
+/* ───── Gauge animation ───── */
+@keyframes gauge-fill {
+  from { stroke-dashoffset: 283; }
+}
+
+/* ───── Stagger children ───── */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-up 0.5s ease forwards;
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+
+/* ───── Badge styles ───── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* ───── Stat card accent top bar ───── */
+.stat-card-accent::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-color, var(--purple));
+  border-radius: 16px 16px 0 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.stat-card-accent:hover::before {
+  opacity: 1;
+}
+
+/* ───── Table sticky header ───── */
+.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fafafa;
 }
