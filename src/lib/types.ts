@@ -37,6 +37,13 @@ export interface CampaignSummary {
   costPerResult: number;
 }
 
+export interface BattlePlanDay {
+  day: number;
+  title: string;
+  action: string;
+  effort: "Quick Win" | "Strategic" | "Monitor";
+}
+
 export interface AnalysisResult {
   summaries: CampaignSummary[];
   summary: string;
@@ -44,6 +51,7 @@ export interface AnalysisResult {
   winners: string[];
   killers: string[];
   recommendations: string[];
+  battlePlan: BattlePlanDay[];
   insights: string[];
   totalSpend: number;
   totalRevenue: number;

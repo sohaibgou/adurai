@@ -12,6 +12,7 @@ interface StatsBarProps {
   convAvgCPR: number;
   convBestRoas: number;
   analysisMode?: "roas" | "traffic";
+  currentRoas?: number;
 }
 
 function TooltipIcon({ tooltip }: { tooltip: string }) {
@@ -124,6 +125,7 @@ export default function StatsBar({
   convAvgCPR,
   convBestRoas,
   analysisMode = "roas",
+  currentRoas,
 }: StatsBarProps) {
   const cprColor =
     convAvgCPR > 0 && convAvgCPR <= 20
@@ -131,8 +133,9 @@ export default function StatsBar({
       : convAvgCPR <= 50
       ? "#fdcb6e"
       : "#e17055";
+  const effectiveRoas = convBestRoas > 0 ? convBestRoas : (currentRoas ?? 0);
   const roasColor =
-    convBestRoas >= 3 ? "#00b894" : convBestRoas >= 2 ? "#fdcb6e" : "#e17055";
+    effectiveRoas >= 3 ? "#00b894" : effectiveRoas >= 2 ? "#fdcb6e" : "#e17055";
 
   return (
     <div>
@@ -174,12 +177,27 @@ export default function StatsBar({
           icon={TrendingUp}
           accentColor={roasColor}
           delay={0.21}
-          tooltip={CONV_TOOLTIP}
+          tooltip={
+            convBestRoas > 0
+              ? CONV_TOOLTIP
+              : currentRoas && currentRoas > 0
+              ? "Based on the ROAS you reported during setup — add purchase revenue to your CSV for campaign-level data"
+              : "No purchase revenue found in CSV — add a 'Purchase ROAS' or 'Revenue' column for ROAS tracking"
+          }
         >
           {convBestRoas > 0 ? (
             <AnimatedCounter value={convBestRoas} suffix="x" decimals={2} />
+          ) : currentRoas && currentRoas > 0 ? (
+            <div className="flex flex-col gap-1">
+              <AnimatedCounter value={currentRoas} suffix="x" decimals={2} />
+              <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-inter)", fontWeight: 400, letterSpacing: "0.02em" }}>
+                reported avg
+              </span>
+            </div>
           ) : (
-            <span style={{ fontSize: 20, color: "var(--muted)" }}>—</span>
+            <span style={{ fontSize: 14, color: "var(--muted)", fontFamily: "var(--font-inter)", fontWeight: 500, lineHeight: 1.4 }}>
+              Add revenue data
+            </span>
           )}
         </StatCard>
       </div>

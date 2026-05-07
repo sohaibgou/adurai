@@ -99,13 +99,35 @@ ${DIAGNOSTIC_RULES}
 
 ${OBJECTIVE_RULES}`;
 
+const BATTLE_PLAN_SCHEMA = `
+battlePlan: array of EXACTLY 7 objects, one per day, each with:
+  - day: integer 1 through 7
+  - title: string — 4-8 word action title, specific not generic (e.g. "Pause Summer Sale Campaign" not "Pause underperforming campaign")
+  - action: string — 2-3 sentences referencing exact campaign names, actual dollar amounts, and specific steps. No vague advice.
+  - effort: exactly one of "Quick Win", "Strategic", or "Monitor"
+
+Strict day groupings (follow this or the output breaks):
+  Day 1: Pause the single worst-performing campaign. effort = "Quick Win"
+  Day 2: Scale the single best-performing campaign — specific budget amount. effort = "Quick Win"
+  Day 3: Launch a creative test on a mid-tier campaign. effort = "Strategic"
+  Day 4: Audience or bid strategy optimization on a specific campaign. effort = "Strategic"
+  Day 5: Review results of Day 1-2 changes, adjust. effort = "Monitor"
+  Day 6: Creative or copy refresh on a fatiguing campaign. effort = "Strategic"
+  Day 7: Full account review — specific metrics to check, next week decision framework. effort = "Strategic"`;
+
 const JSON_FORMAT_INSTRUCTION = `
 
 CRITICAL: Respond with ONLY a valid JSON object. No markdown, no code blocks, no explanation text before or after. Start your response with { and end with }.`;
 
 const ROAS_SYSTEM_PROMPT = `${BASE_SYSTEM_PROMPT}
 
-Format your response as JSON with these fields: summary (2-3 sentence overview), score (overall account health 1-10), winners (array of campaigns to scale with reasons — NEVER include Traffic campaigns here), killers (array of campaigns to cut with reasons), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).${JSON_FORMAT_INSTRUCTION}`;
+Format your response as JSON with these exact fields:
+- summary: 2-3 sentence account overview
+- score: integer 1-10 for overall account health
+- winners: array of strings — campaigns to scale with specific reasons (NEVER include Traffic campaigns)
+- killers: array of strings — campaigns to cut with specific reasons
+- ${BATTLE_PLAN_SCHEMA}
+- insights: array of 3 strings — deeper observations with specific numbers${JSON_FORMAT_INSTRUCTION}`;
 
 const TRAFFIC_SYSTEM_PROMPT = `${BASE_SYSTEM_PROMPT}
 
@@ -116,7 +138,13 @@ IMPORTANT: This account has NO purchase revenue data. Do NOT judge campaigns by 
 - Conversion Volume (higher is better — total results/leads generated)
 - Impressions and Reach efficiency
 
-Format your response as JSON with these fields: summary (2-3 sentence overview focusing on cost efficiency and conversion volume), score (overall account health 1-10), winners (array of campaigns to scale — NEVER include Traffic campaigns, only Conversions/Leads campaigns with good metrics), killers (array of campaigns to cut — judge by high Cost/Result and low CTR), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).${JSON_FORMAT_INSTRUCTION}`;
+Format your response as JSON with these exact fields:
+- summary: 2-3 sentence account overview focusing on cost efficiency and conversion volume
+- score: integer 1-10 for overall account health
+- winners: array of strings — campaigns to scale (NEVER Traffic campaigns, only Conversions/Leads with good metrics)
+- killers: array of strings — campaigns to cut (high Cost/Result and low CTR)
+- ${BATTLE_PLAN_SCHEMA}
+- insights: array of 3 strings — deeper observations with specific numbers${JSON_FORMAT_INSTRUCTION}`;
 
 interface OnboardingData {
   product: string;
@@ -297,7 +325,7 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       score?: number;
       winners?: unknown[];
       killers?: unknown[];
-      actions?: unknown[];
+      battlePlan?: unknown[];
       insights?: unknown[];
     };
     try {
@@ -322,16 +350,23 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       );
     }
 
-    const normalizedActions: string[] = (parsed.actions || []).map((a: unknown) => {
-      if (typeof a === "string") return a;
-      if (typeof a === "object" && a !== null) {
-        const obj = a as Record<string, string>;
-        if (obj.action && obj.impact) return `${obj.action} (Expected impact: ${obj.impact})`;
-        if (obj.action) return obj.action;
-        return JSON.stringify(a);
-      }
-      return String(a);
-    });
+    const VALID_EFFORTS = new Set(["Quick Win", "Strategic", "Monitor"]);
+
+    const normalizedBattlePlan = (parsed.battlePlan || [])
+      .map((item: unknown, idx: number) => {
+        if (typeof item !== "object" || item === null) return null;
+        const obj = item as Record<string, unknown>;
+        return {
+          day: typeof obj.day === "number" ? obj.day : idx + 1,
+          title: typeof obj.title === "string" ? obj.title : `Day ${idx + 1} Action`,
+          action: typeof obj.action === "string" ? obj.action : "",
+          effort: VALID_EFFORTS.has(obj.effort as string)
+            ? (obj.effort as "Quick Win" | "Strategic" | "Monitor")
+            : "Strategic",
+        };
+      })
+      .filter((d): d is NonNullable<typeof d> => d !== null)
+      .sort((a, b) => a.day - b.day);
 
     const normalizeItems = (items: unknown[]): string[] =>
       (items || []).map((item: unknown) => {
@@ -358,7 +393,8 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       score: parsed.score || 0,
       winners: normalizeItems(parsed.winners || []),
       killers: normalizeItems(parsed.killers || []),
-      recommendations: normalizedActions,
+      recommendations: [],
+      battlePlan: normalizedBattlePlan,
       insights: normalizeItems(parsed.insights || []),
       totalSpend,
       totalRevenue,

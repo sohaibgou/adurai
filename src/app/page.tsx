@@ -18,6 +18,7 @@ import SpendRoasChart from "@/components/spend-roas-chart";
 import Recommendations from "@/components/recommendations";
 import CreativeStudio from "@/components/creative-studio";
 import SkeletonDashboard from "@/components/skeleton-dashboard";
+import ProfitLeakBanner from "@/components/profit-leak-banner";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
 import type { CampaignSummary, AnalysisResult, OnboardingData } from "@/lib/types";
 
@@ -74,6 +75,7 @@ export default function Home() {
         winners: (data.winners as string[]) || [],
         killers: (data.killers as string[]) || [],
         recommendations: (data.recommendations as string[]) || [],
+        battlePlan: (data.battlePlan as import("@/lib/types").BattlePlanDay[]) || [],
         insights: (data.insights as string[]) || [],
         totalSpend: data.totalSpend as number,
         totalRevenue: data.totalRevenue as number,
@@ -170,8 +172,9 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Mode badge */}
-                  {analysis.analysisMode === "traffic" && (
+                  {/* Mode badge — only show if there are zero Conversions/Leads campaigns */}
+                  {analysis.analysisMode === "traffic" &&
+                   !analysis.summaries.some(s => s.objective === "CONVERSIONS" || s.objective === "LEADS") && (
                     <div
                       className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
                       style={{ background: "#fff8e6", border: "1px solid #fde9a0" }}
@@ -193,8 +196,16 @@ export default function Home() {
                     convAvgCPR={analysis.convAvgCPR}
                     convBestRoas={analysis.convBestRoas}
                     analysisMode={analysis.analysisMode}
+                    currentRoas={onboarding?.currentRoas}
                   />
                 </section>
+
+                {/* ── Profit Leak ── */}
+                {onboarding && (
+                  <section>
+                    <ProfitLeakBanner summaries={analysis.summaries} onboarding={onboarding} />
+                  </section>
+                )}
 
                 {/* ── Chart ── */}
                 <section>
@@ -223,7 +234,9 @@ export default function Home() {
                     winners={analysis.winners}
                     killers={analysis.killers}
                     recommendations={analysis.recommendations}
+                    battlePlan={analysis.battlePlan}
                     insights={analysis.insights}
+                    summaries={analysis.summaries}
                   />
                 </section>
 
