@@ -4,42 +4,64 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STATUS_MESSAGES = [
-  "Parsing your campaign data...",
-  "Running AI analysis...",
-  "Identifying profit leaks...",
+  "Analyzing campaign performance...",
+  "Calculating your profit leaks...",
+  "Identifying winning campaigns...",
   "Building your 7-day plan...",
-  "Finalizing recommendations...",
+  "Generating ad copy recommendations...",
+  "Finalizing your complete audit...",
 ];
 
 export default function SkeletonDashboard() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showTip, setShowTip] = useState(false);
 
-  /* Rotate status messages every 2s */
+  // Rotate status messages every 3 seconds, cycling back to start
   useEffect(() => {
     const interval = setInterval(() => {
-      setMessageIndex((prev) =>
-        prev < STATUS_MESSAGES.length - 1 ? prev + 1 : prev
-      );
-    }, 2000);
+      setMessageIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  /* Animate progress bar smoothly from 0→92% over ~10s, last 8% saved for completion */
+  // Show tip after 10 seconds
+  useEffect(() => {
+    const tipTimer = setTimeout(() => setShowTip(true), 10_000);
+    return () => clearTimeout(tipTimer);
+  }, []);
+
+  // Two-phase progress:
+  // Phase 1 — ease-out from 0→92% over 10s (fast initial momentum)
+  // Phase 2 — creep from 92→99% over 20s (always moving, never stalls)
   useEffect(() => {
     const start = Date.now();
-    const duration = 10000;
-    const maxProgress = 92;
+    const phase1Duration = 10_000;
+    const phase2Duration = 20_000;
+    let raf: number;
 
     function tick() {
       const elapsed = Date.now() - start;
-      const t = Math.min(elapsed / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - t, 3);
-      setProgress(eased * maxProgress);
-      if (t < 1) requestAnimationFrame(tick);
+
+      let p: number;
+      if (elapsed < phase1Duration) {
+        const t = elapsed / phase1Duration;
+        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        p = eased * 92;
+      } else {
+        const t = Math.min((elapsed - phase1Duration) / phase2Duration, 1);
+        const eased = 1 - Math.pow(1 - t, 2); // ease-out quadratic (slower creep)
+        p = 92 + eased * 7; // 92→99
+      }
+
+      setProgress(p);
+
+      // Keep ticking until 99 — 100% only fires when real response arrives
+      if (p < 99) raf = requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   return (
@@ -59,7 +81,6 @@ export default function SkeletonDashboard() {
               transform: "translate(-50%, -50%)",
             }}
           />
-          {/* Logo */}
           <div className="relative flex items-center gap-3">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg"
@@ -90,7 +111,7 @@ export default function SkeletonDashboard() {
                 backgroundPosition: ["0% 0%", "100% 0%", "0% 0%"],
               }}
               transition={{
-                width: { duration: 0.3, ease: "easeOut" },
+                width: { duration: 0.4, ease: "easeOut" },
                 backgroundPosition: { duration: 2, repeat: Infinity, ease: "linear" },
               }}
             />
@@ -119,9 +140,26 @@ export default function SkeletonDashboard() {
           </AnimatePresence>
         </div>
 
-        {/* Subtle bottom tagline */}
-        <p className="mt-10 text-xs" style={{ color: "#cbd5e1" }}>
-          Powered by GPT-4o · Analyzing your campaigns
+        {/* Tip — fades in after 10s */}
+        <div className="mt-8 h-10 flex items-center justify-center">
+          <AnimatePresence>
+            {showTip && (
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="text-xs text-center leading-relaxed max-w-xs"
+                style={{ color: "#94a3b8" }}
+              >
+                <span style={{ color: "#6c5ce7", fontWeight: 500 }}>Tip:</span> Claude is analyzing every campaign against your break-even ROAS. This takes 20–30 seconds for a thorough analysis.
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom tagline */}
+        <p className="mt-6 text-xs" style={{ color: "#cbd5e1" }}>
+          Powered by Claude · Analyzing your campaigns
         </p>
       </div>
     </div>

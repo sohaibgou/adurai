@@ -35,6 +35,9 @@ export default function Home() {
     setSummaries(null);
     setAnalysis(null);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90_000);
+
     try {
       const rows = await parseCSV(file);
       const campaignSummaries = aggregateByCampaign(rows);
@@ -44,32 +47,51 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ summaries: campaignSummaries, onboarding }),
+        signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Analysis failed");
+      console.log("Response status:", response.status);
+
+      // Safely extract body — .json() can itself throw on malformed responses
+      let data: Record<string, unknown>;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(`Server returned non-JSON response (status ${response.status})`);
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        const msg = typeof data.error === "string" ? data.error : `Analysis failed (${response.status})`;
+        throw new Error(msg);
+      }
+
+      console.log("Analysis complete, result keys:", Object.keys(data));
+
       setAnalysis({
         summaries: campaignSummaries,
-        summary: result.summary || "",
-        score: result.score || 0,
-        winners: result.winners || [],
-        killers: result.killers || [],
-        recommendations: result.recommendations || [],
-        insights: result.insights || [],
-        totalSpend: result.totalSpend,
-        totalRevenue: result.totalRevenue,
-        convResults: result.convResults || 0,
-        convAvgCPR: result.convAvgCPR || 0,
-        convBestRoas: result.convBestRoas || 0,
-        analysisMode: result.analysisMode || "roas",
+        summary: (data.summary as string) || "",
+        score: (data.score as number) || 0,
+        winners: (data.winners as string[]) || [],
+        killers: (data.killers as string[]) || [],
+        recommendations: (data.recommendations as string[]) || [],
+        insights: (data.insights as string[]) || [],
+        totalSpend: data.totalSpend as number,
+        totalRevenue: data.totalRevenue as number,
+        convResults: (data.convResults as number) || 0,
+        convAvgCPR: (data.convAvgCPR as number) || 0,
+        convBestRoas: (data.convBestRoas as number) || 0,
+        analysisMode: (data.analysisMode as "roas" | "traffic") || "roas",
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error
+        ? (err.name === "AbortError" ? "Analysis timed out after 90 seconds — please try again" : err.message)
+        : "Something went wrong";
+      console.log("Analysis failed:", msg);
+      // Clear summaries so the landing page (which has the error display) becomes visible
+      setSummaries(null);
+      setError(msg);
     } finally {
+      clearTimeout(timeout);
       setIsLoading(false);
     }
   }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import type { CampaignSummary } from "@/lib/types";
+
+// Allow up to 120 seconds for the Claude API call
+export const maxDuration = 120;
 
 const INDUSTRY_BENCHMARKS = `
 META ADS INDUSTRY BENCHMARKS — use these as hard reference points. Compare EVERY campaign metric against these benchmarks and cite them explicitly in your recommendations. Never guess without context.
@@ -88,17 +91,23 @@ CRITICAL CAMPAIGN OBJECTIVE RULES — you MUST follow these strictly:
 
 Always include the campaign objective in your analysis. Reference it explicitly when making recommendations.`;
 
-const ROAS_SYSTEM_PROMPT = `You are a world-class performance marketing expert and media buyer with 10+ years experience scaling e-commerce brands on Meta Ads. You have managed over $50M in ad spend. You analyze campaign data with brutal honesty — you don't sugarcoat. Your job is to look at this Meta Ads data and give the brand owner exactly what they need to hear: what's working, what's bleeding money, and exactly what to do in the next 7 days. Be specific with numbers. Reference actual campaign names from the data. Give prioritized action items ranked by impact. Think like a $10,000/month agency but speak plainly. Never be vague. Always give a specific next action for every insight.
+const BASE_SYSTEM_PROMPT = `You are an elite performance marketing strategist with 15 years experience managing over $100M in Meta Ads spend for e-commerce brands. You think in first principles. You are brutally honest. You never give generic advice. Every insight you give must reference specific campaign names, specific numbers, and specific actions. You understand unit economics deeply — you always calculate profit and loss at campaign level. You know that a campaign with good CTR but no sales has a funnel problem not an ad problem. You know that scaling too fast kills ROAS. You know the difference between a learning phase campaign and a dead campaign. You think like a CFO and a creative director at the same time.
 
 ${INDUSTRY_BENCHMARKS}
 
 ${DIAGNOSTIC_RULES}
 
-${OBJECTIVE_RULES}
+${OBJECTIVE_RULES}`;
 
-Format your response as JSON with these fields: summary (2-3 sentence overview), score (overall account health 1-10), winners (array of campaigns to scale with reasons — NEVER include Traffic campaigns here), killers (array of campaigns to cut with reasons), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).`;
+const JSON_FORMAT_INSTRUCTION = `
 
-const TRAFFIC_SYSTEM_PROMPT = `You are a world-class performance marketing expert and media buyer with 10+ years experience running lead generation, traffic, and awareness campaigns on Meta Ads. You have managed over $50M in ad spend.
+CRITICAL: Respond with ONLY a valid JSON object. No markdown, no code blocks, no explanation text before or after. Start your response with { and end with }.`;
+
+const ROAS_SYSTEM_PROMPT = `${BASE_SYSTEM_PROMPT}
+
+Format your response as JSON with these fields: summary (2-3 sentence overview), score (overall account health 1-10), winners (array of campaigns to scale with reasons — NEVER include Traffic campaigns here), killers (array of campaigns to cut with reasons), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).${JSON_FORMAT_INSTRUCTION}`;
+
+const TRAFFIC_SYSTEM_PROMPT = `${BASE_SYSTEM_PROMPT}
 
 IMPORTANT: This account has NO purchase revenue data. Do NOT judge campaigns by ROAS or revenue — those metrics are zero/unavailable. Instead, analyze performance using these metrics ONLY:
 - Cost Per Result (lower is better — this is the primary efficiency metric)
@@ -107,17 +116,7 @@ IMPORTANT: This account has NO purchase revenue data. Do NOT judge campaigns by 
 - Conversion Volume (higher is better — total results/leads generated)
 - Impressions and Reach efficiency
 
-${INDUSTRY_BENCHMARKS}
-
-${DIAGNOSTIC_RULES}
-
-${OBJECTIVE_RULES}
-
-Your job: identify which campaigns deliver the most results at the lowest cost, which campaigns are burning budget with poor CTR or high Cost Per Result, and exactly what to do in the next 7 days to improve cost efficiency and volume.
-
-Be specific with numbers. Reference actual campaign names from the data. Give prioritized action items ranked by impact. Think like a $10,000/month agency but speak plainly. Never be vague. Always give a specific next action for every insight.
-
-Format your response as JSON with these fields: summary (2-3 sentence overview focusing on cost efficiency and conversion volume), score (overall account health 1-10), winners (array of campaigns to scale — NEVER include Traffic campaigns, only Conversions/Leads campaigns with good metrics), killers (array of campaigns to cut — judge by high Cost/Result and low CTR), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).`;
+Format your response as JSON with these fields: summary (2-3 sentence overview focusing on cost efficiency and conversion volume), score (overall account health 1-10), winners (array of campaigns to scale — NEVER include Traffic campaigns, only Conversions/Leads campaigns with good metrics), killers (array of campaigns to cut — judge by high Cost/Result and low CTR), actions (array of 5 specific actions ranked by priority with expected impact), and insights (3 deeper observations about the account).${JSON_FORMAT_INSTRUCTION}`;
 
 interface OnboardingData {
   product: string;
@@ -148,24 +147,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "OpenAI API key is not configured. Set OPENAI_API_KEY in your .env.local file." },
+        { error: "Anthropic API key is not configured. Set ANTHROPIC_API_KEY in your .env.local file." },
         { status: 500 },
       );
     }
 
-    const openai = new OpenAI({ apiKey });
+    const anthropic = new Anthropic({ apiKey, timeout: 120_000 });
 
     const totalSpend = summaries.reduce((s, c) => s + c.spend, 0);
     const totalRevenue = summaries.reduce((s, c) => s + c.revenue, 0);
 
-    // Filter to Conversion/Leads objective campaigns ONLY — exclude Traffic, Engagement, Unknown
     const convCampaigns = summaries.filter((c) => c.objective === "CONVERSIONS" || c.objective === "LEADS");
     const convResults = convCampaigns.reduce((s, c) => s + c.conversions, 0);
     const convSpend = convCampaigns.reduce((s, c) => s + c.spend, 0);
-    // Use Meta's Cost Per Result directly — weighted average by conversions
     const convWithCPR = convCampaigns.filter((c) => c.costPerResult > 0);
     const convAvgCPR = convWithCPR.length > 0
       ? Number((convWithCPR.reduce((s, c) => s + c.costPerResult * (c.conversions || 1), 0) / convWithCPR.reduce((s, c) => s + (c.conversions || 1), 0)).toFixed(2))
@@ -174,7 +171,6 @@ export async function POST(request: NextRequest) {
       ? Math.max(...convCampaigns.map((c) => c.roas))
       : 0;
 
-    // Detect analysis mode: if total revenue is 0 or every campaign has 0 revenue, use traffic mode
     const hasRevenue = totalRevenue > 0 && summaries.some((c) => c.revenue > 0);
     const analysisMode = hasRevenue ? "roas" : "traffic";
     const systemPrompt = hasRevenue ? ROAS_SYSTEM_PROMPT : TRAFFIC_SYSTEM_PROMPT;
@@ -196,69 +192,105 @@ export async function POST(request: NextRequest) {
         .join("\n");
     }
 
-    // Build onboarding context block for the AI
-    let onboardingBlock = "";
+    // Build business context block with profit/loss calculations
+    let businessContext = "";
     if (onboarding) {
-      onboardingBlock = `
-BUSINESS CONTEXT (from the advertiser — reference these numbers in EVERY recommendation):
+      const grossMarginPerOrder = onboarding.aov - onboarding.cogs;
+      const marginPct = onboarding.aov > 0 ? ((grossMarginPerOrder / onboarding.aov) * 100).toFixed(1) : "N/A";
+
+      businessContext = `
+BUSINESS CONTEXT (reference these numbers in EVERY recommendation — never use generic benchmarks when these specifics are available):
 - Product: ${onboarding.product}
 - Target Market: ${onboarding.market}
 - Monthly Ad Budget: ${onboarding.monthlyBudget}
 - Meta Ads Experience: ${onboarding.adExperience}
 - Average Order Value (AOV): $${onboarding.aov}
 - Product Cost (COGS): $${onboarding.cogs}
-- Break-even ROAS: ${onboarding.breakEvenRoas}x (any campaign below this is LOSING money after product costs)
-${onboarding.targetCpa ? `- Target CPA: $${onboarding.targetCpa}` : "- Target CPA: Not specified"}
-${onboarding.currentRoas ? `- Current Average ROAS: ${onboarding.currentRoas}x` : ""}
+- Gross Margin Per Order: $${grossMarginPerOrder.toFixed(2)} (${marginPct}% margin)
+- Break-Even ROAS: ${onboarding.breakEvenRoas}x — ANY campaign below this ROAS is losing money after product costs
+${onboarding.targetCpa ? `- Target CPA: $${onboarding.targetCpa} — flag EVERY campaign exceeding this CPA` : "- Target CPA: Not specified"}
+${onboarding.currentRoas ? `- Advertiser's Reported ROAS: ${onboarding.currentRoas}x` : ""}
 - Main Goal: ${onboarding.mainGoal}
 - Biggest Challenge: ${onboarding.biggestChallenge}
-${onboarding.focusCampaigns ? `- Campaigns to Focus On: ${onboarding.focusCampaigns}` : ""}
+${onboarding.focusCampaigns ? `- Priority Campaigns: ${onboarding.focusCampaigns}` : ""}
 
-CRITICAL: Use the break-even ROAS of ${onboarding.breakEvenRoas}x as the TRUE profitability threshold — not the generic 2x benchmark. Any campaign with ROAS below ${onboarding.breakEvenRoas}x is unprofitable for this business. Reference their AOV of $${onboarding.aov} and COGS of $${onboarding.cogs} when discussing profitability. Prioritize recommendations around their goal: "${onboarding.mainGoal}". Address their challenge: "${onboarding.biggestChallenge}". Never give generic advice — every insight must reference their specific numbers.
+PROFIT/LOSS CALCULATION RULES (apply to every Conversions campaign):
+1. For each Conversions campaign: Profit = (Revenue) - (Spend) - (COGS × Conversions)
+2. Profit leak in dollars = Spend on campaigns with ROAS < ${onboarding.breakEvenRoas}x
+3. Any campaign with ROAS below ${onboarding.breakEvenRoas}x is unprofitable — state the dollar loss explicitly
+4. If target CPA is set ($${onboarding.targetCpa}), calculate % over/under target for each campaign
+5. Best-case profit if budget shifted from unprofitable → profitable campaigns
+
+MARKET-SPECIFIC REQUIREMENTS:
+- Tailor ALL recommendations for the ${onboarding.market} market
+- Pricing sensitivity, buying behavior, and seasonal patterns differ by market — factor this in
+- If recommending audience changes, specify market-appropriate targeting
+
+ANALYSIS INSTRUCTIONS:
+- Address the stated goal directly: "${onboarding.mainGoal}"
+- Solve the stated challenge: "${onboarding.biggestChallenge}"
+- Every recommendation must reference their AOV ($${onboarding.aov}), COGS ($${onboarding.cogs}), and break-even ROAS (${onboarding.breakEvenRoas}x)
+- The 7-day battle plan must be specific to their product and market — no generic advice
+- If a campaign is above target CPA ($${onboarding.targetCpa}), state exactly how much over and what to do
 `;
     }
 
     let userPrompt: string;
     if (hasRevenue) {
-      userPrompt = `Analyze this Meta Ads campaign data:
-${onboardingBlock}
+      userPrompt = `Analyze this Meta Ads account and provide a complete performance audit.
+${businessContext}
 CAMPAIGN DATA:
 ${dataTable}
 
 PORTFOLIO TOTALS:
-- Total Spend (all campaigns): $${totalSpend.toFixed(2)}
+- Total Spend: $${totalSpend.toFixed(2)}
 - Total Revenue: $${totalRevenue.toFixed(2)}
-- Total Results (Conversion campaigns only): ${convResults}
-- Avg Cost Per Result (Conversion campaigns only): $${convAvgCPR}
+- Total Results (Conversion/Leads campaigns only): ${convResults}
+- Avg Cost Per Result (Conversion/Leads campaigns only): $${convAvgCPR}
 - Best ROAS (Conversion campaigns only): ${convBestRoas}x
+
+ANALYSIS INSTRUCTIONS:
+1. Calculate profit/loss for each Conversions campaign using the business context above
+2. Flag every campaign exceeding the target CPA with exact dollar overage
+3. State total profit leak in dollars from campaigns below break-even ROAS
+4. Provide a specific 7-day battle plan referencing exact campaign names and dollar amounts
+5. All winners must have ROAS above the break-even ROAS of ${onboarding?.breakEvenRoas ?? 2}x
 
 Return ONLY a valid JSON object — no markdown, no code fences, no explanation.`;
     } else {
-      userPrompt = `Analyze this Meta Ads campaign data. NOTE: There is NO revenue data — do NOT mention ROAS or revenue in your analysis. Judge purely on cost efficiency, CTR, and conversion volume.
-${onboardingBlock}
+      userPrompt = `Analyze this Meta Ads account. NOTE: No revenue data available — judge purely on cost efficiency, CTR, and result volume.
+${businessContext}
 CAMPAIGN DATA:
 ${dataTable}
 
 PORTFOLIO TOTALS:
-- Total Spend (all campaigns): $${totalSpend.toFixed(2)}
-- Total Results (Conversion campaigns only): ${convResults}
-- Avg Cost Per Result (Conversion campaigns only): $${convAvgCPR > 0 ? convAvgCPR : "N/A"}
+- Total Spend: $${totalSpend.toFixed(2)}
+- Total Results (Conversion/Leads campaigns only): ${convResults}
+- Avg Cost Per Result (Conversion/Leads campaigns only): $${convAvgCPR > 0 ? convAvgCPR : "N/A"}
+
+ANALYSIS INSTRUCTIONS:
+1. Identify which campaigns deliver the most results at the lowest cost
+2. Flag campaigns with high Cost Per Result relative to industry benchmarks
+3. If target CPA is set, compare Cost Per Result against it and flag overages
+4. Provide a specific 7-day battle plan referencing exact campaign names
+5. Do NOT mention ROAS or revenue — those metrics are unavailable
 
 Return ONLY a valid JSON object — no markdown, no code fences, no explanation.`;
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    console.log("[analyze] Sending request to Claude...");
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 4000,
+      system: systemPrompt,
       messages: [
-        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
     });
+    console.log("[analyze] Got response from Claude, stop_reason:", message.stop_reason);
 
-    const content = completion.choices[0]?.message?.content?.trim() || "{}";
+    const rawText = message.content[0]?.type === "text" ? message.content[0].text : "";
+    console.log("[analyze] Raw Claude response:", rawText.substring(0, 1000));
 
     let parsed: {
       summary?: string;
@@ -269,19 +301,25 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       insights?: unknown[];
     };
     try {
-      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      parsed = JSON.parse(cleaned);
+      // Strip markdown code fences
+      const stripped = rawText
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+
+      // Extract the outermost JSON object in case there's preamble/postamble text
+      const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON object found in response");
+
+      parsed = JSON.parse(jsonMatch[0]);
+      console.log("[analyze] Parsed successfully — keys:", Object.keys(parsed));
     } catch (parseErr) {
-      console.error("JSON parse error:", parseErr, "\nRaw content:", content.substring(0, 500));
-      parsed = {
-        summary: "Unable to parse AI response.",
-        score: 0,
-        actions: [
-          hasRevenue
-            ? "Review the raw campaign data in the table above and consider pausing campaigns with ROAS below 1.0x."
-            : "Review the raw campaign data in the table above and consider pausing campaigns with high Cost Per Result.",
-        ],
-      };
+      console.error("[analyze] JSON parse error:", parseErr);
+      console.error("[analyze] Raw response (first 500 chars):", rawText.substring(0, 500));
+      return NextResponse.json(
+        { error: "Parse failed", raw: rawText.substring(0, 500) },
+        { status: 500 },
+      );
     }
 
     const normalizedActions: string[] = (parsed.actions || []).map((a: unknown) => {
@@ -302,28 +340,38 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
           const obj = item as Record<string, string>;
           if (obj.campaign && obj.reason) return `${obj.campaign}: ${obj.reason}`;
           if (obj.campaign) return obj.campaign;
-          return JSON.stringify(item);
+          return (
+            obj.observation ??
+            obj.text ??
+            obj.description ??
+            obj.insight ??
+            obj.recommendation ??
+            obj.action ??
+            JSON.stringify(item)
+          );
         }
         return String(item);
       });
 
-    return NextResponse.json({
+    const responsePayload = {
       summary: parsed.summary || "",
       score: parsed.score || 0,
       winners: normalizeItems(parsed.winners || []),
       killers: normalizeItems(parsed.killers || []),
       recommendations: normalizedActions,
-      insights: parsed.insights || [],
+      insights: normalizeItems(parsed.insights || []),
       totalSpend,
       totalRevenue,
       convResults,
       convAvgCPR,
       convBestRoas,
       analysisMode,
-    });
+    };
+    console.log("[analyze] Analysis complete, sending response");
+    return NextResponse.json(responsePayload);
   } catch (error) {
-    console.error("Analysis error:", error);
     const message = error instanceof Error ? error.message : "Analysis failed";
+    console.log("[analyze] Analysis failed:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

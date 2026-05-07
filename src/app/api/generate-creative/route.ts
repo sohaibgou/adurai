@@ -55,7 +55,7 @@ For EACH concept return:
 - headlineOverlay: headline text to overlay on the image (max 6 words)
 - subtextOverlay: supporting text line (max 12 words)
 - whyItWorks: ONE sentence explaining why this concept will convert, referencing the campaign data if available
-- dallePrompt: a refined, DALL-E 3 optimized prompt (100+ words) that will generate this exact image. Include: photographic style, composition details, lighting setup, color palette, mood, product positioning, background elements. Do NOT include any text/words in the prompt — DALL-E should generate the image without text overlays. Specify "1024x1024" for Feed or "1024x1792" for Story/Reel.
+- imagePrompt: a refined prompt (100+ words) optimized for gpt-image-1 to generate a scroll-stopping Meta Ads static creative. Always specify: clean product photography style, pure white or subtle gradient background, professional advertising quality, high contrast with vivid but tasteful colors, product sharply lit from front-left with soft shadows, composition leaves clear empty space at the bottom 25% of the frame for text overlay, visually striking enough to stop mid-scroll. Do NOT include any text, words, letters, or numbers in the prompt — the image must be text-free. Size is always 1024x1024.
 
 Return ONLY valid JSON:
 {
@@ -67,7 +67,7 @@ Return ONLY valid JSON:
       "headlineOverlay": "...",
       "subtextOverlay": "...",
       "whyItWorks": "...",
-      "dallePrompt": "..."
+      "imagePrompt": "..."
     }
   ]
 }`,

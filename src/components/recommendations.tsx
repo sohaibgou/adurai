@@ -7,11 +7,30 @@ import HealthGauge from "@/components/health-gauge";
 interface RecommendationsProps {
   summary: string;
   score: number;
-  winners: string[];
-  killers: string[];
-  recommendations: string[];
-  insights: string[];
+  winners: unknown[];
+  killers: unknown[];
+  recommendations: unknown[];
+  insights: unknown[];
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const safeText = (item: any): string => {
+  if (typeof item === "string") return item;
+  if (typeof item === "object" && item !== null) {
+    return (
+      item.observation ??
+      item.text ??
+      item.description ??
+      item.action ??
+      item.recommendation ??
+      item.insight ??
+      item.campaign ??
+      (Object.values(item)[0] as string) ??
+      ""
+    );
+  }
+  return String(item ?? "");
+};
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -127,7 +146,7 @@ export default function Recommendations({
                         style={{ color: "#00b894" }}
                       />
                       <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.65 }}>
-                        {w}
+                        {safeText(w)}
                       </p>
                     </div>
                   </motion.div>
@@ -179,7 +198,7 @@ export default function Recommendations({
                     }}
                   >
                     <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.65 }}>
-                      {k}
+                      {safeText(k)}
                     </p>
                   </motion.div>
                 ))}
@@ -242,7 +261,7 @@ export default function Recommendations({
                 >
                   {i + 1}
                 </span>
-                <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.7 }}>{rec}</p>
+                <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.7 }}>{safeText(rec)}</p>
               </motion.div>
             ))}
           </div>
@@ -281,7 +300,7 @@ export default function Recommendations({
                 style={{ background: "#f0fffe", border: "1px solid #b2f0ee" }}
               >
                 <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#00cec9" }} />
-                <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.7 }}>{ins}</p>
+                <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.7 }}>{safeText(ins)}</p>
               </motion.div>
             ))}
           </div>
