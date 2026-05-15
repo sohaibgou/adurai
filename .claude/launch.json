@@ -3,12 +3,10 @@
   "configurations": [
     {
       "name": "adurai-dev",
-      "runtimeExecutable": "/usr/local/bin/node",
-      "runtimeArgs": ["node_modules/.bin/next", "start"],
-      "autoPort": true,
-      "env": {
-        "PATH": "/usr/local/bin:/usr/bin:/bin"
-      }
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3001,
+      "autoPort": true
     }
   ]
 }

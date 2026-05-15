@@ -151,7 +151,7 @@ export default function SkeletonDashboard() {
                 className="text-xs text-center leading-relaxed max-w-xs"
                 style={{ color: "#94a3b8" }}
               >
-                <span style={{ color: "#6c5ce7", fontWeight: 500 }}>Tip:</span> Claude is analyzing every campaign against your break-even ROAS. This takes 20–30 seconds for a thorough analysis.
+                <span style={{ color: "#6c5ce7", fontWeight: 500 }}>Tip:</span> Adur is analyzing every campaign against your break-even ROAS. This takes 20–30 seconds for a thorough analysis.
               </motion.p>
             )}
           </AnimatePresence>
@@ -159,7 +159,7 @@ export default function SkeletonDashboard() {
 
         {/* Bottom tagline */}
         <p className="mt-6 text-xs" style={{ color: "#cbd5e1" }}>
-          Powered by Claude · Analyzing your campaigns
+          Adur is analyzing your campaigns
         </p>
       </div>
     </div>

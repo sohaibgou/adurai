@@ -24,7 +24,226 @@ import type { OnboardingData } from "@/lib/types";
 
 /* ── Constants ─────────────────────────────────────────── */
 
-const MARKETS = ["Algeria", "Morocco", "UAE", "Saudi Arabia", "Egypt", "Global", "Other"];
+const MARKET_GROUPS: { label: string; options: string[] }[] = [
+  {
+    label: "── Popular ──",
+    options: [
+      "United States",
+      "United Kingdom",
+      "Canada",
+      "Australia",
+      "UAE",
+      "Saudi Arabia",
+      "Morocco",
+      "Algeria",
+      "Egypt",
+      "France",
+      "Germany",
+      "Spain",
+      "Italy",
+      "Netherlands",
+    ],
+  },
+  {
+    label: "── All Countries (A–Z) ──",
+    options: [
+      "Afghanistan",
+      "Albania",
+      "Algeria",
+      "Andorra",
+      "Angola",
+      "Antigua and Barbuda",
+      "Argentina",
+      "Armenia",
+      "Australia",
+      "Austria",
+      "Azerbaijan",
+      "Bahamas",
+      "Bahrain",
+      "Bangladesh",
+      "Barbados",
+      "Belarus",
+      "Belgium",
+      "Belize",
+      "Benin",
+      "Bhutan",
+      "Bolivia",
+      "Bosnia and Herzegovina",
+      "Botswana",
+      "Brazil",
+      "Brunei",
+      "Bulgaria",
+      "Burkina Faso",
+      "Burundi",
+      "Cabo Verde",
+      "Cambodia",
+      "Cameroon",
+      "Canada",
+      "Central African Republic",
+      "Chad",
+      "Chile",
+      "China",
+      "Colombia",
+      "Comoros",
+      "Costa Rica",
+      "Croatia",
+      "Cuba",
+      "Cyprus",
+      "Czech Republic",
+      "Denmark",
+      "Djibouti",
+      "Dominica",
+      "Dominican Republic",
+      "DR Congo",
+      "Ecuador",
+      "Egypt",
+      "El Salvador",
+      "Equatorial Guinea",
+      "Eritrea",
+      "Estonia",
+      "Eswatini",
+      "Ethiopia",
+      "Fiji",
+      "Finland",
+      "France",
+      "Gabon",
+      "Gambia",
+      "Georgia",
+      "Germany",
+      "Ghana",
+      "Greece",
+      "Grenada",
+      "Guatemala",
+      "Guinea",
+      "Guinea-Bissau",
+      "Guyana",
+      "Haiti",
+      "Honduras",
+      "Hungary",
+      "Iceland",
+      "India",
+      "Indonesia",
+      "Iran",
+      "Iraq",
+      "Ireland",
+      "Israel",
+      "Italy",
+      "Jamaica",
+      "Japan",
+      "Jordan",
+      "Kazakhstan",
+      "Kenya",
+      "Kiribati",
+      "Kuwait",
+      "Kyrgyzstan",
+      "Laos",
+      "Latvia",
+      "Lebanon",
+      "Lesotho",
+      "Liberia",
+      "Libya",
+      "Liechtenstein",
+      "Lithuania",
+      "Luxembourg",
+      "Madagascar",
+      "Malawi",
+      "Malaysia",
+      "Maldives",
+      "Mali",
+      "Malta",
+      "Marshall Islands",
+      "Mauritania",
+      "Mauritius",
+      "Mexico",
+      "Micronesia",
+      "Moldova",
+      "Monaco",
+      "Mongolia",
+      "Montenegro",
+      "Morocco",
+      "Mozambique",
+      "Myanmar",
+      "Namibia",
+      "Nauru",
+      "Nepal",
+      "Netherlands",
+      "New Zealand",
+      "Nicaragua",
+      "Niger",
+      "Nigeria",
+      "North Korea",
+      "North Macedonia",
+      "Norway",
+      "Oman",
+      "Pakistan",
+      "Palau",
+      "Palestine",
+      "Panama",
+      "Papua New Guinea",
+      "Paraguay",
+      "Peru",
+      "Philippines",
+      "Poland",
+      "Portugal",
+      "Qatar",
+      "Romania",
+      "Russia",
+      "Rwanda",
+      "Saint Kitts and Nevis",
+      "Saint Lucia",
+      "Saint Vincent and the Grenadines",
+      "Samoa",
+      "San Marino",
+      "Sao Tome and Principe",
+      "Saudi Arabia",
+      "Senegal",
+      "Serbia",
+      "Seychelles",
+      "Sierra Leone",
+      "Singapore",
+      "Slovakia",
+      "Slovenia",
+      "Solomon Islands",
+      "Somalia",
+      "South Africa",
+      "South Korea",
+      "South Sudan",
+      "Spain",
+      "Sri Lanka",
+      "Sudan",
+      "Suriname",
+      "Sweden",
+      "Switzerland",
+      "Syria",
+      "Taiwan",
+      "Tajikistan",
+      "Tanzania",
+      "Thailand",
+      "Timor-Leste",
+      "Togo",
+      "Tonga",
+      "Trinidad and Tobago",
+      "Tunisia",
+      "Turkey",
+      "Turkmenistan",
+      "Tuvalu",
+      "UAE",
+      "Uganda",
+      "Ukraine",
+      "United Kingdom",
+      "United States",
+      "Uruguay",
+      "Uzbekistan",
+      "Vanuatu",
+      "Vatican City",
+      "Venezuela",
+      "Vietnam",
+      "Yemen",
+      "Zambia",
+      "Zimbabwe",
+    ],
+  },
+];
 const BUDGETS = ["Under $1K", "$1K-$5K", "$5K-$20K", "$20K+"];
 const EXPERIENCE = ["Less than 3 months", "3-12 months", "1-3 years", "3+ years"];
 
@@ -80,6 +299,42 @@ function Select({
     >
       <option value="" disabled>{placeholder}</option>
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+}
+
+/* ── Grouped select (with <optgroup>) ─────────────────── */
+
+function GroupedSelect({
+  value,
+  onChange,
+  groups,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  groups: { label: string; options: string[] }[];
+  placeholder: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all appearance-none cursor-pointer"
+      style={{
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 14px center",
+      }}
+    >
+      <option value="" disabled>{placeholder}</option>
+      {groups.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.options.map((o) => (
+            <option key={`${group.label}-${o}`} value={o}>{o}</option>
+          ))}
+        </optgroup>
+      ))}
     </select>
   );
 }
@@ -307,7 +562,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
                     <Globe className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5 text-muted" />
                     Target market
                   </label>
-                  <Select value={market} onChange={setMarket} options={MARKETS} placeholder="Select your market" />
+                  <GroupedSelect value={market} onChange={setMarket} groups={MARKET_GROUPS} placeholder="Select your market" />
                 </div>
 
                 <div>

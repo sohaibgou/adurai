@@ -1,879 +1,855 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
+  Download,
+  RefreshCw,
+  ImageIcon,
+  Loader2,
+  Upload,
+  X,
   Copy,
   Check,
-  PenTool,
-  Image as ImageIcon,
-  Wand2,
-  Loader2,
-  Monitor,
-  Smartphone,
-  Clapperboard,
-  AlertCircle,
-  Download,
-  Upload,
+  Image,
+  FileText,
 } from "lucide-react";
 import type { CampaignSummary } from "@/lib/types";
 
-/* ── Types ─────────────────────────────────────────────── */
+/* ── Props ───────────────────────────────────────────────── */
 
 interface CreativeStudioProps {
   summaries: CampaignSummary[];
-  winners?: string[];
+  winners?:  string[];
 }
 
-interface CopyVariant {
-  hookType: string;
-  hookNumber: number;
+interface ReferenceImage {
+  file:       File;
+  previewUrl: string;
+}
+
+interface AdCopyVariant {
+  hookType:    string;
   primaryText: string;
-  headline: string;
+  headline:    string;
   description: string;
+  cta:         string;
 }
 
-interface CreativeConcept {
-  name: string;
-  format: string;
-  visualDescription: string;
-  headlineOverlay: string;
-  subtextOverlay: string;
-  whyItWorks: string;
-  imagePrompt: string;
+interface CreativeImage {
+  url:        string;
+  angle?:     string;
+  headline?:  string;
+  rationale?: string;
 }
 
-type Tab = "copy" | "creatives";
+interface CreativeBrief {
+  angle:     string;
+  prompt:    string;
+  headline:  string;
+  rationale: string;
+}
 
-/* ── Hook badge colors ─────────────────────────────────── */
+/* ── Colour maps ─────────────────────────────────────────── */
 
 const HOOK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Pain Point":        { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" },
-  "Curiosity Gap":     { bg: "#f5f3ff", text: "#7c3aed", border: "#ddd6fe" },
-  "Social Proof":      { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" },
-  "Direct Offer":      { bg: "#ecfdf5", text: "#059669", border: "#a7f3d0" },
-  "Pattern Interrupt":  { bg: "#fffbeb", text: "#d97706", border: "#fde68a" },
+  "Pain Point":        { bg: "#fff1f2", text: "#e11d48", border: "#fecdd3" },
+  "Curiosity Gap":     { bg: "#fefce8", text: "#ca8a04", border: "#fde68a" },
+  "Social Proof":      { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" },
+  "Direct Offer":      { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" },
+  "Pattern Interrupt": { bg: "#faf5ff", text: "#7c3aed", border: "#ddd6fe" },
 };
 
-const HOOK_ICONS: Record<string, string> = {
-  "Pain Point": "😤",
-  "Curiosity Gap": "🤔",
-  "Social Proof": "⭐",
-  "Direct Offer": "💰",
-  "Pattern Interrupt": "⚡",
-};
-
-/* ── Format badge config ───────────────────────────────── */
-
-const FORMAT_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  "Feed 1080x1080":        { icon: Monitor, color: "#6c5ce7", bg: "#f5f3ff" },
-  "Story 1080x1920":       { icon: Smartphone, color: "#00cec9", bg: "#ecfeff" },
-  "Reel Cover 1080x1920":  { icon: Clapperboard, color: "#e17055", bg: "#fff7ed" },
-};
-
-/* ── Copy button ───────────────────────────────────────── */
-
-function CopyButton({ text, label }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [text]);
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer hover:shadow-sm"
-      style={{
-        backgroundColor: copied ? "#ecfdf5" : "#f8fafc",
-        color: copied ? "#059669" : "#64748b",
-        border: `1px solid ${copied ? "#a7f3d0" : "#e2e8f0"}`,
-      }}
-    >
-      {copied ? <><Check className="w-3 h-3" />Copied</> : <><Copy className="w-3 h-3" />{label || "Copy"}</>}
-    </button>
-  );
+function hookColor(hookType: string) {
+  return HOOK_COLORS[hookType] ?? { bg: "#f8f8fc", text: "#6b7280", border: "#e5e7eb" };
 }
 
-/* ── Toast notification ────────────────────────────────── */
+const ANGLE_COLORS = [
+  { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" }, // blue   — Hero Product Shot
+  { bg: "#fdf4ff", text: "#9333ea", border: "#f3e8ff" }, // purple — Lifestyle/Emotion
+  { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" }, // green  — Social Proof
+  { bg: "#fff7ed", text: "#ea580c", border: "#fed7aa" }, // orange — Pattern Interrupt
+];
 
-function Toast({ type, message }: { type: "success" | "error"; message: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -12, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -12, scale: 0.97 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-medium pointer-events-none"
-      style={{
-        background: type === "success" ? "#ecfdf5" : "#fef2f2",
-        border: `1px solid ${type === "success" ? "#a7f3d0" : "#fecaca"}`,
-        color: type === "success" ? "#059669" : "#dc2626",
-        maxWidth: 340,
-      }}
-    >
-      {type === "success"
-        ? <Check className="w-4 h-4 flex-shrink-0" />
-        : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
-      <span className="leading-snug">{message}</span>
-    </motion.div>
-  );
-}
+const LANGUAGES = ["English", "French", "Arabic"];
 
-/* ── Canvas composite download ──────────────────────────── */
+/* ── Main component ──────────────────────────────────────── */
 
-async function downloadComposite(
-  backgroundUrl: string,
-  productPreview: string | undefined,
-  filename: string,
-) {
-  const SIZE = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
-  const ctx = canvas.getContext("2d")!;
+export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeStudioProps) {
+  /* ── Tab ─────────────────────────────────────────── */
+  const [activeTab, setActiveTab] = useState<"creative" | "adcopy">("creative");
 
-  // Draw background
-  await new Promise<void>((resolve, reject) => {
-    const bg = new Image();
-    bg.onload = () => { ctx.drawImage(bg, 0, 0, SIZE, SIZE); resolve(); };
-    bg.onerror = reject;
-    bg.src = backgroundUrl;
-  });
+  /* ════════════════════════════════════════════════════════
+     CREATIVE TAB STATE
+  ════════════════════════════════════════════════════════ */
+  const [prompt,    setPrompt]    = useState("");
+  const [refImage,  setRefImage]  = useState<ReferenceImage | null>(null);
+  const imageInputRef             = useRef<HTMLInputElement>(null);
 
-  // Draw product centered in the middle third
-  if (productPreview) {
-    await new Promise<void>((resolve) => {
-      const prod = new Image();
-      prod.onload = () => {
-        const prodSize = Math.round(SIZE * 0.52);
-        const x = Math.round((SIZE - prodSize) / 2);
-        const y = Math.round((SIZE - prodSize) / 2);
-        ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.18)";
-        ctx.shadowBlur = 32;
-        ctx.shadowOffsetY = 8;
-        ctx.drawImage(prod, x, y, prodSize, prodSize);
-        ctx.restore();
-        resolve();
-      };
-      prod.onerror = () => resolve(); // skip product if it fails
-      prod.src = productPreview;
+  const [loading,    setLoading]    = useState(false);
+  const [progress,   setProgress]   = useState(0);
+  const [images,     setImages]     = useState<CreativeImage[]>([]);
+  const [briefs,     setBriefs]     = useState<CreativeBrief[]>([]);
+  const [error,      setError]      = useState<string | null>(null);
+  const [promptUsed, setPromptUsed] = useState("");
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [regenMap,   setRegenMap]   = useState<Record<number, boolean>>({});
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ── Progress bar (60 s window for 4 parallel images) ── */
+  useEffect(() => {
+    if (!loading) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    setProgress(0);
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      setProgress(Math.min(88, ((Date.now() - start) / 60_000) * 100));
+    }, 150);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loading]);
+
+  /* ── Image upload helpers ────────────────────────── */
+  function readImageFile(file: File) {
+    if (file.size > 10 * 1024 * 1024) { alert("Image must be under 10 MB."); return; }
+    setRefImage({ file, previewUrl: URL.createObjectURL(file) });
+  }
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (f) readImageFile(f); e.target.value = "";
+  }
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f && f.type.startsWith("image/")) readImageFile(f);
+  }
+  function clearImage() {
+    if (refImage) URL.revokeObjectURL(refImage.previewUrl);
+    setRefImage(null);
+  }
+
+  /* ── API call ────────────────────────────────────── */
+  async function callGenerateApi(
+    p: string,
+  ): Promise<{ images: CreativeImage[]; briefs: CreativeBrief[] }> {
+    if (refImage) {
+      const fd = new FormData();
+      fd.append("image",  refImage.file, refImage.file.name || "product.jpg");
+      fd.append("prompt", p.trim());
+      const res  = await fetch("/api/generate-creative-with-image", { method: "POST", body: fd });
+      const data = await res.json() as { images?: CreativeImage[]; briefs?: CreativeBrief[]; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+      return { images: data.images ?? [], briefs: data.briefs ?? [] };
+    }
+
+    const res  = await fetch("/api/generate-creative", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ prompt: p.trim() }),
     });
+    const data = await res.json() as {
+      images?: CreativeImage[];
+      briefs?: CreativeBrief[];
+      error?:  string;
+    };
+    if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+    return { images: data.images ?? [], briefs: data.briefs ?? [] };
   }
 
-  const url = canvas.toDataURL("image/png");
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-}
-
-/* ── Single concept card ───────────────────────────────── */
-
-function ConceptCard({
-  concept,
-  index,
-  productImagePreview,
-  productDescription,
-}: {
-  concept: CreativeConcept;
-  index: number;
-  productImagePreview?: string;
-  productDescription?: string;
-}) {
-  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [downloading, setDownloading] = useState(false);
-
-  const formatKey = concept.format || "Feed 1080x1080";
-  const fmtCfg = FORMAT_CONFIG[formatKey] || FORMAT_CONFIG["Feed 1080x1080"];
-  const FormatIcon = fmtCfg.icon;
-  const filename = `${concept.name.replace(/\s+/g, "-").toLowerCase()}.png`;
-
-  function showToast(type: "success" | "error", message: string) {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), type === "success" ? 3000 : 5000);
-  }
-
-  async function generateImage() {
-    setImageLoading(true);
-    setImageError(null);
-    setBackgroundUrl(null);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
-
+  async function generate() {
+    if (!prompt.trim() || loading) return;
+    setLoading(true); setError(null); setImages([]); setBriefs([]); setRegenMap({});
     try {
-      console.log("[ConceptCard] Sending generation request...");
-      const res = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          headlineOverlay: concept.headlineOverlay,
-          subtextOverlay: concept.subtextOverlay,
-          productDescription,
-        }),
-        signal: controller.signal,
-      });
-
-      const data = await res.json();
-      console.log("[ConceptCard] Got response:", res.status, Object.keys(data));
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
-      if (!data.backgroundUrl) {
-        throw new Error("Server returned no image data");
-      }
-
-      setBackgroundUrl(data.backgroundUrl);
-      showToast("success", "Creative generated!");
-    } catch (err) {
-      const msg = err instanceof Error
-        ? (err.name === "AbortError" ? "Request timed out after 60s — try again" : err.message)
-        : "Something went wrong";
-      console.error("[ConceptCard] Error:", msg);
-      setImageError(msg);
-      showToast("error", `Generation failed: ${msg}`);
+      const { images: newImages, briefs: newBriefs } = await callGenerateApi(prompt);
+      setImages(newImages);
+      setBriefs(newBriefs);
+      setPromptUsed(prompt.trim());
+      setProgress(100);
+    } catch {
+      setError("Generation failed. Please try again.");
     } finally {
-      clearTimeout(timeout);
-      setImageLoading(false);
+      setLoading(false);
     }
   }
 
-  async function handleDownload() {
-    if (!backgroundUrl) return;
-    setDownloading(true);
+  async function regenerateOne(index: number) {
+    setRegenMap((p) => ({ ...p, [index]: true }));
     try {
-      await downloadComposite(backgroundUrl, productImagePreview, filename);
-    } finally {
-      setDownloading(false);
+      const briefPrompt = briefs[index]?.prompt || promptUsed || prompt;
+      const res  = await fetch("/api/generate-creative-one", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ prompt: briefPrompt }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (data.url) {
+        setImages((prev) => {
+          const next = [...prev];
+          next[index] = { ...next[index], url: data.url! };
+          return next;
+        });
+      }
+    } catch { /* silent */ } finally {
+      setRegenMap((p) => ({ ...p, [index]: false }));
     }
   }
 
-  return (
-    <>
-      <AnimatePresence>{toast && <Toast type={toast.type} message={toast.message} />}</AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.12, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-xl border border-card-border overflow-hidden hover:shadow-lg transition-all"
-      >
-        {/* Dark header */}
-        <div className="px-6 py-4 bg-gray-900 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-white/40 text-xs font-bold tracking-widest uppercase">
-              Concept {index + 1}
-            </span>
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-              style={{ backgroundColor: fmtCfg.bg, color: fmtCfg.color }}
-            >
-              <FormatIcon className="w-3 h-3" />
-              {formatKey}
-            </div>
-          </div>
-          <CopyButton text={concept.visualDescription} label="Copy Brief" />
-        </div>
-
-        {/* White body */}
-        <div className="bg-white px-6 py-5 space-y-5">
-          <h4 className="text-lg font-bold text-foreground">{concept.name}</h4>
-
-          <div>
-            <p className="text-[11px] font-semibold text-muted uppercase tracking-widest mb-2">Visual Description</p>
-            <div className="px-4 py-3 rounded-lg bg-surface border border-card-border">
-              <p className="text-foreground text-sm leading-relaxed select-all">{concept.visualDescription}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <p className="text-[11px] font-semibold text-muted uppercase tracking-widest mb-2">Headline Overlay</p>
-              <div className="px-4 py-3 rounded-lg bg-surface border border-card-border flex items-center justify-between">
-                <p className="text-foreground font-bold select-all">{concept.headlineOverlay}</p>
-                <CopyButton text={concept.headlineOverlay} />
-              </div>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-muted uppercase tracking-widest mb-2">Subtext</p>
-              <div className="px-4 py-3 rounded-lg bg-surface border border-card-border flex items-center justify-between">
-                <p className="text-foreground text-sm select-all">{concept.subtextOverlay}</p>
-                <CopyButton text={concept.subtextOverlay} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-purple/5 border border-purple/10">
-            <Sparkles className="w-4 h-4 text-purple flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-foreground leading-relaxed">
-              <span className="font-semibold">Why it works:</span> {concept.whyItWorks}
-            </p>
-          </div>
-
-          {/* Generate button */}
-          {!backgroundUrl && !imageLoading && (
-            <button
-              onClick={generateImage}
-              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer
-                bg-gradient-to-r from-purple to-teal text-white
-                hover:shadow-lg hover:shadow-purple/20 hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Wand2 className="w-4 h-4" />
-              {imageError ? "Try Again" : "Generate with AI"}
-            </button>
-          )}
-
-          {/* Loading state */}
-          {imageLoading && (
-            <div className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-xl bg-surface border border-card-border">
-              <Loader2 className="w-8 h-8 text-purple animate-spin" />
-              <p className="text-sm text-muted font-medium">Generating ad layout…</p>
-              <p className="text-xs text-muted/60">gpt-image-1 · up to 60 seconds</p>
-            </div>
-          )}
-
-          {/* Error state */}
-          {imageError && !imageLoading && !backgroundUrl && (
-            <div className="w-full rounded-xl border border-red-200 bg-red-50 p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm text-red-700 font-medium">Generation failed</p>
-                  <p className="text-xs text-red-600 mt-0.5 leading-relaxed">{imageError}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Composite preview ── */}
-          {backgroundUrl && (
-            <div className="rounded-xl overflow-hidden border border-card-border">
-              {/* CSS composite: background + product overlay */}
-              <div className="relative w-full" style={{ aspectRatio: "1/1" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={backgroundUrl}
-                  alt="Ad background"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                {productImagePreview && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={productImagePreview}
-                    alt="Product"
-                    className="absolute object-contain"
-                    style={{
-                      width: "52%",
-                      height: "52%",
-                      left: "50%",
-                      top: "50%",
-                      transform: "translate(-50%, -50%)",
-                      filter: "drop-shadow(0 8px 28px rgba(0,0,0,0.22))",
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Toolbar */}
-              <div className="flex items-center justify-between px-4 py-3 bg-surface border-t border-card-border">
-                <p className="text-xs text-muted">
-                  {productImagePreview ? "AI background + your product" : "AI background — upload product to composite"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple/10 text-purple text-xs font-medium hover:bg-purple/20 transition-colors disabled:opacity-60 cursor-pointer"
-                  >
-                    {downloading
-                      ? <Loader2 className="w-3 h-3 animate-spin" />
-                      : <Download className="w-3 h-3" />}
-                    Download
-                  </button>
-                  <button
-                    onClick={() => { setBackgroundUrl(null); setImageError(null); generateImage(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer hover:shadow-sm"
-                    style={{ backgroundColor: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0" }}
-                  >
-                    <Wand2 className="w-3 h-3" />
-                    Regenerate
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </>
-  );
-}
-
-/* ── Product image upload zone ─────────────────────────── */
-
-function ProductImageUpload({
-  preview,
-  onImage,
-}: {
-  preview: string | null;
-  onImage: (base64: string, mimeType: string, name: string) => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [name, setName] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const processFile = useCallback(
-    (file: File) => {
-      if (!file.type.startsWith("image/")) return;
-      setName(file.name);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        // Strip the data URL prefix to get raw base64
-        const base64 = dataUrl.split(",")[1];
-        onImage(base64, file.type, file.name);
-      };
-      reader.readAsDataURL(file);
-    },
-    [onImage],
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) processFile(file);
-    },
-    [processFile],
-  );
-
-  return (
-    <div
-      className="rounded-xl border transition-all duration-300"
-      style={{
-        borderColor: isDragging ? "#6c5ce7" : preview ? "#a3e6d0" : "#f0f0f5",
-        boxShadow: isDragging ? "0 0 0 3px rgba(108,92,231,0.15)" : "none",
-        background: "#ffffff",
-      }}
-    >
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Your Product Image</p>
-            <p className="text-xs text-muted mt-0.5">Upload your product photo to generate real ad creatives</p>
-          </div>
-          {preview && (
-            <div className="flex items-center gap-2">
-              <div
-                className="w-12 h-12 rounded-lg overflow-hidden border flex-shrink-0"
-                style={{ borderColor: "#a3e6d0" }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview} alt="Product preview" className="w-full h-full object-cover" />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-4 rounded-full bg-green/15 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-2.5 h-2.5 text-green" strokeWidth={3} />
-                  </div>
-                  <span className="text-xs font-medium text-green">Ready to generate</span>
-                </div>
-                <p className="text-xs text-muted truncate max-w-[120px]">{name}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <label
-          htmlFor="creative-product-image"
-          onDrop={handleDrop}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 border border-dashed"
-          style={{
-            borderColor: isDragging ? "#6c5ce7" : "#e2e8f0",
-            background: isDragging ? "rgba(108,92,231,0.04)" : "#fafafa",
-          }}
-          onMouseEnter={(e) => {
-            if (!isDragging) (e.currentTarget as HTMLLabelElement).style.borderColor = "#c4bef0";
-          }}
-          onMouseLeave={(e) => {
-            if (!isDragging) (e.currentTarget as HTMLLabelElement).style.borderColor = "#e2e8f0";
-          }}
-        >
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-200"
-            style={{ background: isDragging ? "rgba(108,92,231,0.12)" : "#f0f0f5" }}
-          >
-            <Upload className="w-4 h-4" style={{ color: isDragging ? "#6c5ce7" : "#9ca3af" }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-foreground">
-              {preview ? "Replace image" : "Drop image here or click to browse"}
-            </p>
-            <p className="text-xs text-muted mt-0.5">JPG, PNG or WEBP</p>
-          </div>
-          {preview && (
-            <span
-              className="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-              style={{ background: "#f0f0f5", color: "#6b7280" }}
-            >
-              Replace
-            </span>
-          )}
-        </label>
-        <input
-          ref={inputRef}
-          id="creative-product-image"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) processFile(file);
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ── Main component ────────────────────────────────────── */
-
-export default function CreativeStudio({ summaries, winners }: CreativeStudioProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("copy");
-  const [productDesc, setProductDesc] = useState("");
-  const [copyLoading, setCopyLoading] = useState(false);
-  const [creativeLoading, setCreativeLoading] = useState(false);
-  const [copyVariants, setCopyVariants] = useState<CopyVariant[]>([]);
-  const [creativeConcepts, setCreativeConcepts] = useState<CreativeConcept[]>([]);
-  const [copyError, setCopyError] = useState<string | null>(null);
-  const [creativeError, setCreativeError] = useState<string | null>(null);
-
-  // Product image state (creatives tab only)
-  const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
-  const [productImageType, setProductImageType] = useState<string>("image/png");
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-
-  const suggestedProduct = summaries.map((s) => s.campaignName).join(", ");
-
-  const handleProductImage = useCallback((base64: string, mimeType: string) => {
-    setProductImageBase64(base64);
-    setProductImageType(mimeType);
-    setProductImagePreview(`data:${mimeType};base64,${base64}`);
-  }, []);
-
-  async function generateCopy() {
-    if (!productDesc.trim()) return;
-    setCopyLoading(true);
-    setCopyError(null);
+  async function downloadImage(img: CreativeImage, index: number) {
     try {
-      const res = await fetch("/api/generate-copy", {
-        method: "POST",
+      const res  = await fetch(img.url);
+      const blob = await res.blob();
+      const obj  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      const slug = img.angle ? img.angle.replace(/\s+/g, "-").toLowerCase() + "-" : "";
+      a.href     = obj;
+      a.download = `adurai-${slug}${index + 1}.png`;
+      a.click();
+      URL.revokeObjectURL(obj);
+    } catch {
+      window.open(img.url, "_blank");
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════
+     AD COPY TAB STATE
+  ════════════════════════════════════════════════════════ */
+  const [copyProduct,  setCopyProduct]  = useState("");
+  const [copyAudience, setCopyAudience] = useState("");
+  const [copyBenefit,  setCopyBenefit]  = useState("");
+  const [copyLang,     setCopyLang]     = useState("English");
+  const [copyLoading,  setCopyLoading]  = useState(false);
+  const [copyVariants, setCopyVariants] = useState<AdCopyVariant[]>([]);
+  const [copyError,    setCopyError]    = useState<string | null>(null);
+  const [copiedIdx,    setCopiedIdx]    = useState<number | null>(null);
+
+  async function generateAdCopy() {
+    if (!copyProduct.trim() || copyLoading) return;
+    setCopyLoading(true); setCopyError(null); setCopyVariants([]);
+    try {
+      const res  = await fetch("/api/generate-ad-copy", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campaigns: summaries.map((c) => ({
-            campaignName: c.campaignName,
-            spend: c.spend,
-            roas: c.roas,
-            ctr: c.ctr,
-            conversions: c.conversions,
-            objective: c.objective,
-          })),
-          productDescription: productDesc,
-          winners,
+        body:    JSON.stringify({
+          productDescription: copyProduct,
+          targetAudience:     copyAudience,
+          mainBenefit:        copyBenefit,
+          language:           copyLang,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate copy");
-      }
-      const data = await res.json();
-      setCopyVariants(data.variants || []);
+      const data = await res.json() as { variants?: AdCopyVariant[]; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+      setCopyVariants(data.variants ?? []);
     } catch (err) {
-      setCopyError(err instanceof Error ? err.message : "Something went wrong");
+      setCopyError(err instanceof Error ? err.message : "Failed to generate. Try again.");
     } finally {
       setCopyLoading(false);
     }
   }
 
-  async function generateCreatives() {
-    if (!productDesc.trim() || !productImageBase64) return;
-    setCreativeLoading(true);
-    setCreativeError(null);
-    try {
-      const res = await fetch("/api/generate-creative", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productDescription: productDesc,
-          campaigns: summaries.map((c) => ({
-            campaignName: c.campaignName,
-            spend: c.spend,
-            roas: c.roas,
-            ctr: c.ctr,
-            conversions: c.conversions,
-            objective: c.objective,
-          })),
-          winners,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate creatives");
-      }
-      const data = await res.json();
-      setCreativeConcepts(data.concepts || []);
-    } catch (err) {
-      setCreativeError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setCreativeLoading(false);
-    }
+  function copyToClipboard(variant: AdCopyVariant, idx: number) {
+    const parts = [
+      variant.primaryText,
+      `HEADLINE: ${variant.headline}`,
+      variant.description ? `DESCRIPTION: ${variant.description}` : null,
+      `CTA: ${variant.cta}`,
+    ].filter(Boolean);
+    navigator.clipboard.writeText(parts.join("\n\n")).then(() => {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    });
   }
 
-  function handleGenerate() {
-    if (activeTab === "copy") generateCopy();
-    else generateCreatives();
-  }
-
-  const isLoading = activeTab === "copy" ? copyLoading : creativeLoading;
-  const error = activeTab === "copy" ? copyError : creativeError;
-
-  // Generate button is disabled if: no product desc, loading, OR (creatives tab + no image)
-  const generateDisabled =
-    !productDesc.trim() ||
-    isLoading ||
-    (activeTab === "creatives" && !productImageBase64);
-
-  function buildFullCopy(v: CopyVariant) {
-    return `${v.primaryText}\n\n${v.headline}\n${v.description}`;
-  }
-
+  /* ── Render ──────────────────────────────────────── */
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="card overflow-hidden"
     >
-      <div className="card overflow-hidden">
-        {/* Header */}
-        <div className="px-7 py-6 border-b border-card-border bg-gradient-to-r from-purple/5 to-teal/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple to-teal flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-semibold text-foreground">Creative Studio</h2>
-              <p className="text-muted text-sm">Generate scroll-stopping ad copy and creative concepts</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-card-border">
-          <button
-            onClick={() => setActiveTab("copy")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium transition-all cursor-pointer ${
-              activeTab === "copy"
-                ? "text-purple border-b-2 border-purple bg-purple/5"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <PenTool className="w-4 h-4" />
-            Ad Copy Generator
-          </button>
-          <button
-            onClick={() => setActiveTab("creatives")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium transition-all cursor-pointer ${
-              activeTab === "creatives"
-                ? "text-purple border-b-2 border-purple bg-purple/5"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <ImageIcon className="w-4 h-4" />
-            Creative Concepts
-          </button>
-        </div>
-
-        {/* Input area */}
-        <div className="p-7 space-y-5">
-          {/* Product image upload — creatives tab only */}
-          {activeTab === "creatives" && (
-            <ProductImageUpload
-              preview={productImagePreview}
-              onImage={handleProductImage}
-            />
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Describe your product or offer
-            </label>
-            <textarea
-              value={productDesc}
-              onChange={(e) => setProductDesc(e.target.value)}
-              placeholder={`e.g., "Premium leather sneakers for men, $129, free shipping, 30-day returns"\n\nYour campaigns: ${suggestedProduct}`}
-              className="w-full h-24 px-4 py-3 rounded-xl border border-card-border bg-surface text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all placeholder:text-muted/50"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div
-              className="relative"
-              title={
-                activeTab === "creatives" && !productImageBase64
-                  ? "Upload your product image first"
-                  : undefined
-              }
+      {/* ── Tab bar ── */}
+      <div className="flex border-b border-[#f0f0f5] bg-white px-6 pt-5">
+        <div className="flex gap-1 p-1 rounded-xl bg-[#f4f4f8]">
+          {(["creative", "adcopy"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+              style={{
+                background: activeTab === tab ? "#ffffff" : "transparent",
+                color:      activeTab === tab ? "#0a0a0f"  : "#6b7280",
+                boxShadow:  activeTab === tab ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+              }}
             >
+              {tab === "creative"
+                ? <><Image className="w-3.5 h-3.5" /> Creative</>
+                : <><FileText className="w-3.5 h-3.5" /> Ad Copy</>
+              }
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+
+        {/* ════════════════════════════════════════════
+            CREATIVE TAB
+        ════════════════════════════════════════════ */}
+        {activeTab === "creative" && (
+          <motion.div
+            key="creative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex flex-col lg:flex-row min-h-[640px]"
+          >
+            {/* LEFT — Controls */}
+            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-6 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5]">
+
+              <div>
+                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">
+                  Creative Studio
+                </h2>
+                <p className="text-sm text-[#6b7280] mt-1">
+                  Generate 4 scroll-stopping ad creatives
+                </p>
+              </div>
+
+              {/* Image upload */}
+              <div className="space-y-2">
+                {refImage ? (
+                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#e8e8f0] bg-[#f8f8fc]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={refImage.previewUrl}
+                      alt="Product"
+                      className="w-16 h-16 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block" />
+                        Ready
+                      </span>
+                      <p className="text-xs text-[#6b7280] mt-1 truncate">{refImage.file.name}</p>
+                    </div>
+                    <button
+                      onClick={clearImage}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => imageInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDragEnter={(e) => e.preventDefault()}
+                    className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#6c5ce7]/40 hover:bg-[#6c5ce7]/[0.02] transition-all duration-200 cursor-pointer group"
+                  >
+                    <div className="w-11 h-11 rounded-2xl bg-[#f4f4f8] flex items-center justify-center group-hover:bg-[#6c5ce7]/8 transition-colors">
+                      <Upload className="w-5 h-5 text-[#9ca3af] group-hover:text-[#6c5ce7] transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload your product image</p>
+                      <p className="text-xs text-[#9ca3af] mt-0.5">JPG, PNG, WEBP</p>
+                    </div>
+                  </div>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </div>
+
+              {/* Prompt */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#0a0a0f]">Describe your ad</label>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate();
+                  }}
+                  placeholder="e.g. Premium supplement for men, dark powerful background, bold headline"
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
+                />
+              </div>
+
+              {/* Generate button */}
               <button
-                onClick={handleGenerate}
-                disabled={generateDisabled}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple text-white text-sm font-medium transition-all hover:shadow-lg hover:shadow-purple/20 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none cursor-pointer"
+                onClick={generate}
+                disabled={!prompt.trim() || loading}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: (!prompt.trim() || loading)
+                    ? "#e8e8f0"
+                    : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                  color:     (!prompt.trim() || loading) ? "#9ca3af" : "#ffffff",
+                  boxShadow: (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                }}
               >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                {isLoading
-                  ? activeTab === "copy" ? "Writing copy..." : "Designing concepts..."
-                  : activeTab === "copy" ? "Generate 5 Ad Variants" : "Generate 3 Concepts"}
+                {loading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                  : <><Sparkles className="w-4 h-4" /> Generate 4 Creatives</>
+                }
+              </button>
+
+              {!loading && images.length === 0 && !error && (
+                <p className="text-xs text-[#9ca3af] text-center leading-relaxed">
+                  Adur designs 4 unique creative concepts — Hero Shot, Lifestyle, Social Proof, and Pattern Interrupt
+                </p>
+              )}
+            </div>
+
+            {/* RIGHT — Output */}
+            <div className="w-full lg:w-[60%] bg-[#f8f8fc] flex flex-col p-6 overflow-y-auto">
+              <AnimatePresence mode="wait">
+
+                {/* ── Loading ── */}
+                {loading && (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col gap-5"
+                  >
+                    {/* 2×2 skeleton grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="flex flex-col gap-2">
+                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#e8e8f5] to-[#dcdcf0] animate-pulse" />
+                          <div className="h-3.5 rounded-lg bg-[#e8e8f0] animate-pulse w-2/3" />
+                          <div className="h-3   rounded-lg bg-[#ebebf5] animate-pulse w-1/2" />
+                        </div>
+                      ))}
+                    </div>
+                    {/* Status */}
+                    <div className="text-center space-y-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 text-[#6c5ce7] animate-spin" />
+                        <p className="text-sm font-semibold text-[#0a0a0f]">
+                          Adur is designing 4 creative concepts...
+                        </p>
+                      </div>
+                      <p className="text-xs text-[#9ca3af]">This takes about 30–60 seconds</p>
+                      <div className="w-48 h-1 rounded-full bg-[#e0e0f0] overflow-hidden mx-auto">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width:      `${progress}%`,
+                            background: "linear-gradient(90deg, #6c5ce7, #00cec9)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── Error ── */}
+                {!loading && error && (
+                  <motion.div
+                    key="error"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-5"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">
+                      ⚠️
+                    </div>
+                    <p className="text-sm font-semibold text-[#0a0a0f]">
+                      Generation failed. Please try again.
+                    </p>
+                    <button
+                      onClick={generate}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
+                      style={{ background: "#6c5ce7" }}
+                    >
+                      <RefreshCw className="w-4 h-4" /> Try Again
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* ── Empty ── */}
+                {!loading && !error && images.length === 0 && (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-5"
+                  >
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="aspect-square rounded-2xl bg-[#ebebf3] border-2 border-dashed border-[#dcdcec] flex items-center justify-center"
+                        >
+                          <ImageIcon className="w-5 h-5 text-[#c4c4d8]" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[#0a0a0f]">
+                        4 creative concepts will appear here
+                      </p>
+                      <p className="text-xs text-[#9ca3af] mt-1">
+                        Hero Shot · Lifestyle · Social Proof · Pattern Interrupt
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── 2×2 Image grid ── */}
+                {!loading && images.length > 0 && (
+                  <motion.div
+                    key="images"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      {images.map((img, i) => {
+                        const isRegen = regenMap[i] ?? false;
+                        const isHover = hoveredIdx === i && !isRegen;
+                        const color   = ANGLE_COLORS[i % ANGLE_COLORS.length];
+
+                        return (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.97 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{
+                              delay:    i * 0.08,
+                              duration: 0.35,
+                              ease:     [0.22, 1, 0.36, 1],
+                            }}
+                            className="flex flex-col gap-2"
+                          >
+                            {/* Angle badge */}
+                            {img.angle && (
+                              <span
+                                className="self-start inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border leading-none"
+                                style={{
+                                  background:  color.bg,
+                                  color:       color.text,
+                                  borderColor: color.border,
+                                }}
+                              >
+                                {img.angle}
+                              </span>
+                            )}
+
+                            {/* Image — always 1:1 square */}
+                            <div
+                              className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#e0e0ec] shadow-sm"
+                              onMouseEnter={() => setHoveredIdx(i)}
+                              onMouseLeave={() => setHoveredIdx(null)}
+                            >
+                              {isRegen ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-[#f0f0f8]">
+                                  <Loader2 className="w-5 h-5 text-[#6c5ce7] animate-spin" />
+                                </div>
+                              ) : (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={img.url}
+                                    alt={img.angle ?? `Creative ${i + 1}`}
+                                    className="absolute inset-0 w-full h-full object-fill"
+                                  />
+                                  <AnimatePresence>
+                                    {isHover && (
+                                      <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute inset-0 flex items-center justify-center"
+                                        style={{
+                                          background:    "rgba(10,10,15,0.45)",
+                                          backdropFilter: "blur(2px)",
+                                        }}
+                                      >
+                                        <button
+                                          onClick={() => downloadImage(img, i)}
+                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#0a0a0f] text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer shadow-lg"
+                                        >
+                                          <Download className="w-3.5 h-3.5" /> Download
+                                        </button>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Headline */}
+                            {img.headline && (
+                              <p className="text-xs font-bold text-[#0a0a0f] leading-snug line-clamp-2">
+                                {img.headline}
+                              </p>
+                            )}
+
+                            {/* Why it works */}
+                            {img.rationale && (
+                              <p className="text-[10px] text-[#9ca3af] leading-relaxed line-clamp-2">
+                                {img.rationale}
+                              </p>
+                            )}
+
+                            {/* Action buttons */}
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => downloadImage(img, i)}
+                                disabled={isRegen}
+                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40"
+                                style={{
+                                  background: "rgba(108,92,231,0.08)",
+                                  color:      "#6c5ce7",
+                                  border:     "1px solid rgba(108,92,231,0.15)",
+                                }}
+                              >
+                                <Download className="w-3 h-3" /> Download
+                              </button>
+                              <button
+                                onClick={() => regenerateOne(i)}
+                                disabled={isRegen}
+                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border border-[#e8e8f0] bg-white text-[#6b7280] hover:text-[#0a0a0f] hover:border-[#d1d5db] transition-colors cursor-pointer disabled:opacity-40"
+                              >
+                                <RefreshCw className={`w-3 h-3 ${isRegen ? "animate-spin" : ""}`} />
+                                Regenerate
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ════════════════════════════════════════════
+            AD COPY TAB
+        ════════════════════════════════════════════ */}
+        {activeTab === "adcopy" && (
+          <motion.div
+            key="adcopy"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex flex-col lg:flex-row min-h-[640px]"
+          >
+            {/* LEFT — Inputs */}
+            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5]">
+
+              <div>
+                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">Ad Copy</h2>
+                <p className="text-sm text-[#6b7280] mt-1">Generate 5 high-converting ad variants</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#0a0a0f]">Describe your product</label>
+                <textarea
+                  value={copyProduct}
+                  onChange={(e) => setCopyProduct(e.target.value)}
+                  placeholder="e.g. Collagen supplement for women 35+, unflavoured powder, 30-day supply"
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#0a0a0f]">Who is your target customer?</label>
+                <input
+                  type="text"
+                  value={copyAudience}
+                  onChange={(e) => setCopyAudience(e.target.value)}
+                  placeholder="e.g. Women 35-55, health-conscious, busy moms"
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#0a0a0f]">What is the #1 benefit?</label>
+                <input
+                  type="text"
+                  value={copyBenefit}
+                  onChange={(e) => setCopyBenefit(e.target.value)}
+                  placeholder="e.g. Reduces joint pain and improves skin within 30 days"
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-[#0a0a0f]">Language</label>
+                <select
+                  value={copyLang}
+                  onChange={(e) => setCopyLang(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all cursor-pointer"
+                >
+                  {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+
+              <button
+                onClick={generateAdCopy}
+                disabled={!copyProduct.trim() || copyLoading}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
+                style={{
+                  background: (!copyProduct.trim() || copyLoading)
+                    ? "#e8e8f0"
+                    : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                  color:     (!copyProduct.trim() || copyLoading) ? "#9ca3af" : "#ffffff",
+                  boxShadow: (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                }}
+              >
+                {copyLoading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing...</>
+                  : <><Sparkles className="w-4 h-4" /> Generate Ad Copy</>
+                }
               </button>
             </div>
-            {activeTab === "creatives" && !productImageBase64 && !creativeLoading && (
-              <p className="text-xs text-muted flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
-                Upload your product image first
-              </p>
-            )}
-            {activeTab === "copy" && !copyLoading && (
-              <p className="text-xs text-muted">
-                5 hook types: Pain Point, Curiosity, Social Proof, Offer, Pattern Interrupt
-              </p>
-            )}
-            {activeTab === "creatives" && productImageBase64 && !creativeLoading && (
-              <p className="text-xs text-muted">
-                3 concepts for Feed, Story, and Reel — each with AI image generation
-              </p>
-            )}
-          </div>
 
-          {error && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-        </div>
+            {/* RIGHT — Results */}
+            <div className="w-full lg:w-[60%] bg-[#f8f8fc] flex flex-col p-6 overflow-y-auto">
+              <AnimatePresence mode="wait">
 
-        {/* ── Ad Copy Results ───────────────────────── */}
-        <AnimatePresence mode="wait">
-          {activeTab === "copy" && copyVariants.length > 0 && (
-            <motion.div
-              key="copy-results"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-t border-card-border"
-            >
-              <div className="p-7 space-y-5">
-                {copyVariants.map((variant, i) => {
-                  const colors = HOOK_COLORS[variant.hookType] || HOOK_COLORS["Pain Point"];
-                  const icon = HOOK_ICONS[variant.hookType] || "📝";
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="rounded-xl border overflow-hidden transition-all hover:shadow-md"
-                      style={{ borderColor: colors.border }}
+                {copyLoading && (
+                  <motion.div
+                    key="copy-loading"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-4"
+                  >
+                    <Loader2 className="w-8 h-8 text-[#6c5ce7] animate-spin" />
+                    <p className="text-sm font-semibold text-[#0a0a0f]">Adur is writing your ad copy...</p>
+                    <p className="text-xs text-[#9ca3af]">Crafting 5 high-converting variants…</p>
+                  </motion.div>
+                )}
+
+                {!copyLoading && copyError && (
+                  <motion.div
+                    key="copy-error"
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-3"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">⚠️</div>
+                    <p className="text-sm font-semibold text-red-600 text-center">{copyError}</p>
+                    <button
+                      onClick={generateAdCopy}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
+                      style={{ background: "#6c5ce7" }}
                     >
-                      <div className="px-5 py-3 flex items-center justify-between" style={{ backgroundColor: colors.bg }}>
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-lg">{icon}</span>
-                          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: colors.text }}>
-                            Hook {variant.hookNumber}
-                          </span>
-                          <span className="text-xs" style={{ color: colors.text, opacity: 0.4 }}>|</span>
-                          <span className="text-xs font-semibold" style={{ color: colors.text }}>
-                            {variant.hookType}
-                          </span>
-                        </div>
-                        <CopyButton text={buildFullCopy(variant)} label="Copy All" />
-                      </div>
-                      <div className="px-5 py-5 bg-white space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">Primary Text</p>
-                            <CopyButton text={variant.primaryText} />
-                          </div>
-                          <div className="px-4 py-3 rounded-lg bg-surface border border-card-border">
-                            {variant.primaryText.split("\\n").map((line, li) => (
-                              <p key={li} className="text-foreground text-[15px] leading-relaxed select-all" style={{ marginTop: li > 0 ? 4 : 0 }}>
-                                {line}
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">Headline</p>
-                              <CopyButton text={variant.headline} />
-                            </div>
-                            <div className="px-4 py-3 rounded-lg bg-surface border border-card-border">
-                              <p className="text-foreground font-bold text-base select-all">{variant.headline}</p>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-[11px] font-semibold text-muted uppercase tracking-widest">Description</p>
-                              <CopyButton text={variant.description} />
-                            </div>
-                            <div className="px-4 py-3 rounded-lg bg-surface border border-card-border">
-                              <p className="text-foreground text-sm select-all">{variant.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
+                      <RefreshCw className="w-4 h-4" /> Try Again
+                    </button>
+                  </motion.div>
+                )}
 
-          {/* ── Creative Concepts Results ────────────── */}
-          {activeTab === "creatives" && creativeConcepts.length > 0 && (
-            <motion.div
-              key="creative-results"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-t border-card-border"
-            >
-              <div className="p-7 space-y-6">
-                {creativeConcepts.map((concept, i) => (
-                  <ConceptCard
-                    key={i}
-                    concept={concept}
-                    index={i}
-                    productImagePreview={productImagePreview ?? undefined}
-                    productDescription={productDesc}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                {!copyLoading && !copyError && copyVariants.length === 0 && (
+                  <motion.div
+                    key="copy-empty"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-4"
+                  >
+                    <div className="w-16 h-16 rounded-2xl bg-[#ebebf3] flex items-center justify-center">
+                      <FileText className="w-7 h-7 text-[#c4c4d8]" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[#0a0a0f]">5 ad variants will appear here</p>
+                      <p className="text-xs text-[#9ca3af] mt-1">Fill in your product details and click Generate</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {!copyLoading && copyVariants.length > 0 && (
+                  <motion.div
+                    key="copy-variants"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="space-y-3"
+                  >
+                    {copyVariants.map((v, i) => {
+                      const color    = hookColor(v.hookType);
+                      const isCopied = copiedIdx === i;
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.07, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                          className="bg-white rounded-2xl border border-[#f0f0f5] p-4 space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border"
+                              style={{ background: color.bg, color: color.text, borderColor: color.border }}
+                            >
+                              {v.hookType}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(v, i)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                              style={{
+                                background:  isCopied ? "#ecfdf5" : "#f8f8fc",
+                                color:       isCopied ? "#059669" : "#6b7280",
+                                border:      `1px solid ${isCopied ? "#a7f3d0" : "#e8e8f0"}`,
+                              }}
+                            >
+                              {isCopied
+                                ? <><Check className="w-3 h-3" /> Copied</>
+                                : <><Copy  className="w-3 h-3" /> Copy</>
+                              }
+                            </button>
+                          </div>
+
+                          <p className="text-sm text-[#0a0a0f] leading-relaxed whitespace-pre-line">{v.primaryText}</p>
+
+                          <div className="px-3 py-2.5 rounded-xl bg-[#f8f8fc] border border-[#f0f0f5] space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9ca3af]">Headline</p>
+                            <p className="text-base font-bold text-[#0a0a0f] leading-snug">{v.headline}</p>
+                            {v.description && (
+                              <p className="text-xs text-[#6b7280] italic leading-relaxed pt-0.5">{v.description}</p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9ca3af]">CTA</span>
+                            <span
+                              className="px-3 py-1 rounded-full text-xs font-bold"
+                              style={{
+                                background: "rgba(108,92,231,0.08)",
+                                color:      "#6c5ce7",
+                                border:     "1px solid rgba(108,92,231,0.15)",
+                              }}
+                            >
+                              {v.cta}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </motion.div>
   );
 }

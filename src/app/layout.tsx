@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Syne } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/auth-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${syne.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>{children}</body>
+    <html lang="en" className={`${inter.variable} ${syne.variable} h-full antialiased`} suppressHydrationWarning={true}>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
