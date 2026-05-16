@@ -411,6 +411,10 @@ export default function Home() {
                       style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, fontFamily: "var(--font-inter)" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0d0d1a"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6b7280"; }}
+                      onClick={() => {
+                        if (link === "How it works") document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+                        if (link === "Pricing") document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+                      }}
                     >
                       {link}
                     </span>
@@ -494,23 +498,22 @@ export default function Home() {
 
                       {/* Filled Start Free */}
                       <button
-                        onClick={handleNavStart}
-                        disabled={navCheckoutLoading}
-                        className="inline-flex items-center gap-1.5 font-semibold text-white cursor-pointer transition-all duration-200 disabled:opacity-70"
+                        onClick={scrollToOnboarding}
+                        className="inline-flex items-center gap-1.5 font-semibold text-white cursor-pointer transition-all duration-200"
                         style={{
                           padding: "8px 18px",
                           borderRadius: 100,
-                          background: navCheckoutLoading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #e040fb)",
+                          background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
                           fontSize: 13,
                           fontFamily: "var(--font-inter)",
                           border: "none",
-                          boxShadow: navCheckoutLoading ? "none" : "0 3px 16px rgba(108,92,231,0.38)",
+                          boxShadow: "0 3px 16px rgba(108,92,231,0.38)",
                         }}
-                        onMouseEnter={e => { if (!navCheckoutLoading) { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 22px rgba(108,92,231,0.54)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; } }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 22px rgba(108,92,231,0.54)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 3px 16px rgba(108,92,231,0.38)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
                       >
-                        {navCheckoutLoading ? "Loading…" : "Start Free"}
-                        {!navCheckoutLoading && <ArrowRight className="w-3.5 h-3.5" />}
+                        Start Free
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )

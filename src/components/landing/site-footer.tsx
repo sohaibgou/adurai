@@ -32,6 +32,10 @@ export default function SiteFooter() {
                 style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-inter)", fontWeight: 400 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "rgba(255,255,255,0.85)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "rgba(255,255,255,0.4)"; }}
+                onClick={() => {
+                  if (link === "How it works") document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+                  if (link === "Pricing") document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+                }}
               >
                 {link}
               </span>

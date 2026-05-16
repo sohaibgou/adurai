@@ -124,7 +124,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             </button>
 
             <button
-              onClick={onCtaClick}
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               className="inline-flex items-center gap-2 font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
               style={{ padding: "15px 32px", borderRadius: 100, background: "#ffffff", border: "1.5px solid #e5e7eb", fontSize: 15, color: "#0d0d1a" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#c4bef0"; }}
