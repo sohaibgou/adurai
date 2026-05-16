@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 const FEATURES = [
   "Unlimited analyses",
@@ -15,6 +17,14 @@ const FEATURES = [
 type State = "verifying" | "success" | "invalid";
 
 export default function SuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
+  );
+}
+
+function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState<State>("verifying");

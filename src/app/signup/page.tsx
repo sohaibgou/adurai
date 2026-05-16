@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
 
+export const dynamic = "force-dynamic";
+
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupContent />
+    </Suspense>
+  );
+}
+
+function SignupContent() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
 

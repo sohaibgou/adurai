@@ -12,6 +12,8 @@ import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
 
+export const dynamic = "force-dynamic";
+
 interface Subscription {
   plan: string;
   status: string;
