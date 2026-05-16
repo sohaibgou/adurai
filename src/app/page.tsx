@@ -404,7 +404,7 @@ export default function Home() {
                 </span>
 
                 <div className="hidden md:flex items-center gap-7">
-                  {["How it works", "Pricing", "Case studies"].map((link) => (
+                  {["How it works", "Pricing"].map((link) => (
                     <span
                       key={link}
                       className="cursor-pointer transition-colors duration-150"
