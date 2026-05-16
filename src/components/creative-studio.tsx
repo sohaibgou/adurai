@@ -352,37 +352,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 </p>
               </div>
 
-              {/* Usage counter */}
-              {!isPaid && (
-                <div className="rounded-xl px-4 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
-                      {imageUsage} of {CREATIVE_LIMIT} free generations used
-                    </span>
-                    {imageUsage >= CREATIVE_LIMIT ? (
-                      <button
-                        onClick={() => onPaywall?.("image")}
-                        style={{ fontSize: 11, fontWeight: 700, color: "#e17055", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}
-                      >
-                        Upgrade to continue
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
-                        {CREATIVE_LIMIT - imageUsage} remaining
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: 100,
-                      width: `${Math.min(100, (imageUsage / CREATIVE_LIMIT) * 100)}%`,
-                      background: imageUsage >= CREATIVE_LIMIT ? "#e17055" : "linear-gradient(90deg, #6c5ce7, #e040fb)",
-                      transition: "width 0.6s ease",
-                    }} />
-                  </div>
-                </div>
-              )}
-
               {/* Image upload */}
               <div className="space-y-2">
                 {refImage ? (
@@ -448,30 +417,73 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 />
               </div>
 
-              {/* Generate button */}
-              <button
-                onClick={generate}
-                disabled={!prompt.trim() || loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: (!prompt.trim() || loading)
-                    ? "#e8e8f0"
-                    : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
-                  color:     (!prompt.trim() || loading) ? "#9ca3af" : "#ffffff",
-                  boxShadow: (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
-                }}
-              >
-                {loading
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                  : <><Sparkles className="w-4 h-4" /> Generate 4 Creatives</>
-                }
-              </button>
+              {/* Usage counter + Generate button */}
+              <div className="flex flex-col gap-3">
+                {!isPaid && (() => {
+                  const remaining = CREATIVE_LIMIT - imageUsage;
+                  const isExhausted = remaining <= 0;
+                  const isLast      = remaining === 1;
+                  const color = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "#10b981";
+                  const bg    = isExhausted ? "rgba(225,112,85,0.06)" : isLast ? "rgba(245,158,11,0.06)" : "rgba(16,185,129,0.06)";
+                  const border= isExhausted ? "rgba(225,112,85,0.20)" : isLast ? "rgba(245,158,11,0.20)" : "rgba(16,185,129,0.20)";
+                  const barBg = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "linear-gradient(90deg, #6c5ce7, #e040fb)";
+                  const label = isExhausted ? "No generations left" : `${remaining} generation${remaining === 1 ? "" : "s"} remaining`;
+                  return (
+                    <div className="rounded-xl px-4 py-3" style={{ background: bg, border: `1px solid ${border}` }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "var(--font-inter)" }}>
+                          {label}
+                        </span>
+                        {isLast && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.14)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Last free!
+                          </span>
+                        )}
+                        {isExhausted && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e17055", background: "rgba(225,112,85,0.12)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Upgrade to continue
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 100, width: `${Math.min(100, (imageUsage / CREATIVE_LIMIT) * 100)}%`, background: barBg, transition: "width 0.6s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })()}
 
-              {!loading && images.length === 0 && !error && (
-                <p className="text-xs text-[#9ca3af] text-center leading-relaxed">
-                  Adur designs 4 unique creative concepts — Hero Shot, Lifestyle, Social Proof, and Pattern Interrupt
-                </p>
-              )}
+                {!isPaid && imageUsage >= CREATIVE_LIMIT ? (
+                  <button
+                    onClick={() => onPaywall?.("image")}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", color: "#ffffff", boxShadow: "0 4px 20px rgba(108,92,231,0.3)" }}
+                  >
+                    <Sparkles className="w-4 h-4" /> Upgrade to Continue
+                  </button>
+                ) : (
+                  <button
+                    onClick={generate}
+                    disabled={!prompt.trim() || loading}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: (!prompt.trim() || loading) ? "#e8e8f0" : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                      color:      (!prompt.trim() || loading) ? "#9ca3af" : "#ffffff",
+                      boxShadow:  (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                    }}
+                  >
+                    {loading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                      : <><Sparkles className="w-4 h-4" /> Generate 4 Creatives</>
+                    }
+                  </button>
+                )}
+
+                {!loading && images.length === 0 && !error && (
+                  <p className="text-xs text-[#9ca3af] text-center leading-relaxed">
+                    Adur designs 4 unique creative concepts — Hero Shot, Lifestyle, Social Proof, and Pattern Interrupt
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* RIGHT — Output */}
@@ -727,37 +739,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 <p className="text-sm text-[#6b7280] mt-1">Generate 5 high-converting ad variants</p>
               </div>
 
-              {/* Usage counter */}
-              {!isPaid && (
-                <div className="rounded-xl px-4 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
-                      {copyUsage} of {CREATIVE_LIMIT} free generations used
-                    </span>
-                    {copyUsage >= CREATIVE_LIMIT ? (
-                      <button
-                        onClick={() => onPaywall?.("copy")}
-                        style={{ fontSize: 11, fontWeight: 700, color: "#e17055", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}
-                      >
-                        Upgrade to continue
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
-                        {CREATIVE_LIMIT - copyUsage} remaining
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: 100,
-                      width: `${Math.min(100, (copyUsage / CREATIVE_LIMIT) * 100)}%`,
-                      background: copyUsage >= CREATIVE_LIMIT ? "#e17055" : "linear-gradient(90deg, #6c5ce7, #e040fb)",
-                      transition: "width 0.6s ease",
-                    }} />
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#0a0a0f]">Describe your product</label>
                 <textarea
@@ -802,23 +783,67 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 </select>
               </div>
 
-              <button
-                onClick={generateAdCopy}
-                disabled={!copyProduct.trim() || copyLoading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
-                style={{
-                  background: (!copyProduct.trim() || copyLoading)
-                    ? "#e8e8f0"
-                    : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
-                  color:     (!copyProduct.trim() || copyLoading) ? "#9ca3af" : "#ffffff",
-                  boxShadow: (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
-                }}
-              >
-                {copyLoading
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing...</>
-                  : <><Sparkles className="w-4 h-4" /> Generate Ad Copy</>
-                }
-              </button>
+              {/* Usage counter + Generate button */}
+              <div className="flex flex-col gap-3 mt-auto">
+                {!isPaid && (() => {
+                  const remaining = CREATIVE_LIMIT - copyUsage;
+                  const isExhausted = remaining <= 0;
+                  const isLast      = remaining === 1;
+                  const color = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "#10b981";
+                  const bg    = isExhausted ? "rgba(225,112,85,0.06)" : isLast ? "rgba(245,158,11,0.06)" : "rgba(16,185,129,0.06)";
+                  const border= isExhausted ? "rgba(225,112,85,0.20)" : isLast ? "rgba(245,158,11,0.20)" : "rgba(16,185,129,0.20)";
+                  const barBg = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "linear-gradient(90deg, #6c5ce7, #e040fb)";
+                  const label = isExhausted ? "No generations left" : `${remaining} generation${remaining === 1 ? "" : "s"} remaining`;
+                  return (
+                    <div className="rounded-xl px-4 py-3" style={{ background: bg, border: `1px solid ${border}` }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "var(--font-inter)" }}>
+                          {label}
+                        </span>
+                        {isLast && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.14)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Last free!
+                          </span>
+                        )}
+                        {isExhausted && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e17055", background: "rgba(225,112,85,0.12)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Upgrade to continue
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 100, width: `${Math.min(100, (copyUsage / CREATIVE_LIMIT) * 100)}%`, background: barBg, transition: "width 0.6s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {!isPaid && copyUsage >= CREATIVE_LIMIT ? (
+                  <button
+                    onClick={() => onPaywall?.("copy")}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", color: "#ffffff", boxShadow: "0 4px 20px rgba(108,92,231,0.3)" }}
+                  >
+                    <Sparkles className="w-4 h-4" /> Upgrade to Continue
+                  </button>
+                ) : (
+                  <button
+                    onClick={generateAdCopy}
+                    disabled={!copyProduct.trim() || copyLoading}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: (!copyProduct.trim() || copyLoading) ? "#e8e8f0" : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                      color:      (!copyProduct.trim() || copyLoading) ? "#9ca3af" : "#ffffff",
+                      boxShadow:  (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                    }}
+                  >
+                    {copyLoading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing...</>
+                      : <><Sparkles className="w-4 h-4" /> Generate Ad Copy</>
+                    }
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* RIGHT — Results */}
