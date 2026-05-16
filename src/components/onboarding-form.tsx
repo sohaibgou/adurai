@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag,
   Globe,
-  DollarSign,
-  Clock,
   Calculator,
   Target,
   AlertTriangle,
@@ -422,9 +420,9 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
   }, [aov, cogs]);
 
   // Step validation
-  const step1Valid = product.trim() && market && monthlyBudget && adExperience;
+  const step1Valid = product.trim() && market;
   const step2Valid = parseFloat(aov) > 0 && parseFloat(cogs) > 0;
-  const step3Valid = mainGoal && biggestChallenge;
+  const step3Valid = !!mainGoal;
 
   function goNext() {
     setDirection(1);
@@ -542,43 +540,45 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
                 </div>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-7">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">What do you sell?</label>
+                  <label className="block text-base font-semibold text-foreground mb-1">What do you sell?</label>
+                  <p className="text-sm text-muted mb-3">Describe your product or service so we can tailor the analysis.</p>
                   <div className="relative">
-                    <ShoppingBag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                    <ShoppingBag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
                     <input
                       type="text"
                       value={product}
                       onChange={(e) => setProduct(e.target.value)}
                       placeholder="e.g. Skincare products, Fashion brand, Online course"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-card-border bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all placeholder:text-muted/50"
+                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-card-border bg-white text-foreground text-base focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all placeholder:text-muted/50"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <Globe className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5 text-muted" />
+                  <label className="block text-base font-semibold text-foreground mb-1">
                     Target market
                   </label>
-                  <GroupedSelect value={market} onChange={setMarket} groups={MARKET_GROUPS} placeholder="Select your market" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <DollarSign className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5 text-muted" />
-                    Monthly ad budget
-                  </label>
-                  <Select value={monthlyBudget} onChange={setMonthlyBudget} options={BUDGETS} placeholder="Select budget range" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    <Clock className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5 text-muted" />
-                    Meta Ads experience
-                  </label>
-                  <Select value={adExperience} onChange={setAdExperience} options={EXPERIENCE} placeholder="How long have you been running ads?" />
+                  <p className="text-sm text-muted mb-3">Which country are you running your ads in?</p>
+                  <div className="relative">
+                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none z-10" />
+                    <select
+                      value={market}
+                      onChange={(e) => setMarket(e.target.value)}
+                      className="w-full pl-12 pr-10 py-4 rounded-xl border border-card-border bg-white text-foreground text-base focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all appearance-none cursor-pointer"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center" }}
+                    >
+                      <option value="" disabled>Select your market</option>
+                      {MARKET_GROUPS.map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.options.map((o) => (
+                            <option key={`${group.label}-${o}`} value={o}>{o}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -682,21 +682,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Current average ROAS <span className="text-muted font-normal">(optional)</span></label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={currentRoas}
-                      onChange={(e) => setCurrentRoas(e.target.value)}
-                      placeholder="e.g. 2.5"
-                      min="0"
-                      step="0.1"
-                      className="w-full pl-4 pr-8 py-3 rounded-xl border border-card-border bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all placeholder:text-muted/50"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted text-sm font-medium">x</span>
-                  </div>
-                </div>
+
               </div>
 
               <div className="flex justify-between mt-8">
@@ -741,28 +727,40 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-3">What is your main goal right now?</label>
-                  <RadioGroup options={GOALS} value={mainGoal} onChange={setMainGoal} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-3">What is your biggest challenge?</label>
-                  <RadioGroup options={CHALLENGES} value={biggestChallenge} onChange={setBiggestChallenge} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Any specific campaigns to focus on? <span className="text-muted font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={focusCampaigns}
-                    onChange={(e) => setFocusCampaigns(e.target.value)}
-                    placeholder="e.g. Summer Sale, Retargeting BOF"
-                    className="w-full px-4 py-3 rounded-xl border border-card-border bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple/30 focus:border-purple/50 transition-all placeholder:text-muted/50"
-                  />
+              <div>
+                <label className="block text-base font-semibold text-foreground mb-1">What is your main goal right now?</label>
+                <p className="text-sm text-muted mb-5">We'll prioritize recommendations around this.</p>
+                <div className="flex flex-col gap-3">
+                  {GOALS.map((opt) => {
+                    const Icon = opt.icon;
+                    const selected = mainGoal === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setMainGoal(opt.value)}
+                        className="flex items-center gap-4 w-full px-5 py-4 rounded-xl border-2 text-left transition-all cursor-pointer"
+                        style={{
+                          borderColor: selected ? "#6c5ce7" : "var(--card-border)",
+                          background: selected ? "rgba(108,92,231,0.06)" : "#ffffff",
+                          boxShadow: selected ? "0 0 0 1px rgba(108,92,231,0.15)" : "none",
+                        }}
+                      >
+                        <div
+                          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${opt.color}18` }}
+                        >
+                          <Icon className="w-5 h-5" style={{ color: opt.color }} />
+                        </div>
+                        <span className="text-base font-medium" style={{ color: selected ? "#0d0d1a" : "var(--muted)" }}>
+                          {opt.value}
+                        </span>
+                        {selected && (
+                          <Check className="w-5 h-5 ml-auto flex-shrink-0" style={{ color: "#6c5ce7" }} />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

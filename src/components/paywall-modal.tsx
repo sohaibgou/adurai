@@ -11,7 +11,14 @@ import { useAuth } from "@/context/auth-context";
 interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
+  reason?: "analysis" | "image" | "copy";
 }
+
+const LIMIT_MESSAGES: Record<string, string> = {
+  analysis: "You've used all 3 free analyses.",
+  image:    "You've used all 3 free image generations.",
+  copy:     "You've used all 3 free ad copy generations.",
+};
 
 const FEATURES = [
   "Unlimited analyses",
@@ -22,7 +29,7 @@ const FEATURES = [
   "Priority support",
 ];
 
-export default function PaywallModal({ open, onClose }: PaywallModalProps) {
+export default function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -157,12 +164,14 @@ export default function PaywallModal({ open, onClose }: PaywallModalProps) {
                   className="font-heading font-bold mb-2"
                   style={{ fontSize: 22, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.15 }}
                 >
-                  {user ? "Upgrade to Starter" : "Create an account to upgrade"}
+                  {reason ? "You've reached your free limit" : user ? "Upgrade to Starter" : "Create an account to upgrade"}
                 </h2>
                 <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, fontFamily: "var(--font-inter)", marginBottom: 18 }}>
-                  {user
-                    ? "Unlock unlimited analyses, Creative Studio, and your full 7-Day Battle Plan."
-                    : "Enter your details below — you'll be at the checkout in under 60 seconds."}
+                  {reason
+                    ? LIMIT_MESSAGES[reason]
+                    : user
+                      ? "Unlock unlimited analyses, Creative Studio, and your full 7-Day Battle Plan."
+                      : "Enter your details below — you'll be at the checkout in under 60 seconds."}
                 </p>
 
                 {/* Price */}
@@ -181,8 +190,8 @@ export default function PaywallModal({ open, onClose }: PaywallModalProps) {
                   </span>
                 </div>
 
-                {/* Feature list — only shown to logged-in users (form takes the space otherwise) */}
-                {user && (
+                {/* Feature list — shown to logged-in users or when a limit is hit */}
+                {(user || reason) && (
                   <ul className="space-y-2 mb-5">
                     {FEATURES.map(f => (
                       <li key={f} className="flex items-center gap-2.5">

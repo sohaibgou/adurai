@@ -13,6 +13,8 @@ interface PricingSectionProps {
 
 const FREE_FEATURES = [
   "3 analyses per month",
+  "3 ad image generations",
+  "3 ad copy generations",
   "Campaign performance table",
   "Basic AI recommendations",
   "No login required",
@@ -20,9 +22,10 @@ const FREE_FEATURES = [
 
 const STARTER_FEATURES = [
   "Unlimited analyses",
+  "Unlimited ad image generations",
+  "Unlimited ad copy generations",
   "Full 7-Day Battle Plan",
   "Profit Leak calculator",
-  "Creative Studio — copy + images",
   "PDF report export",
   "Priority support",
 ];

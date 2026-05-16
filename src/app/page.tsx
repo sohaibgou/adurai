@@ -50,7 +50,8 @@ export default function Home() {
   const [summaries, setSummaries] = useState<CampaignSummary[] | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
-  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallOpen,   setPaywallOpen]   = useState(false);
+  const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan, setPaidPlan] = useState(false);
   const onboardingRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,7 @@ export default function Home() {
     const currentCount = getCount();
     const currentPaid = isPaid();
     if (!currentPaid && currentCount >= FREE_LIMIT) {
+      setPaywallReason("analysis");
       setPaywallOpen(true);
       return;
     }
@@ -199,7 +201,7 @@ export default function Home() {
 
   return (
     <>
-      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} />
+      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
 
       <AnimatePresence mode="wait">
         {showDashboard ? (
@@ -354,7 +356,12 @@ export default function Home() {
 
                   {/* ── Creative Studio ── */}
                   <section>
-                    <CreativeStudio summaries={summaries} winners={analysis.winners} />
+                    <CreativeStudio
+                    summaries={summaries}
+                    winners={analysis.winners}
+                    isPaid={paidPlan}
+                    onPaywall={(reason) => { setPaywallReason(reason); setPaywallOpen(true); }}
+                  />
                   </section>
 
                 </div>
@@ -534,7 +541,7 @@ export default function Home() {
                     </span>
                     {remaining === 0 ? (
                       <button
-                        onClick={() => setPaywallOpen(true)}
+                        onClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
                         className="text-xs font-semibold cursor-pointer transition-colors"
                         style={{ color: "#6c5ce7", fontFamily: "var(--font-inter)" }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#e040fb"; }}

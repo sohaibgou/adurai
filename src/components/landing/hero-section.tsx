@@ -17,7 +17,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
-    }, 2200);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 
@@ -71,15 +71,15 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
         <FadeIn delay={0.1}>
           <div
             className="font-heading"
-            style={{ fontSize: "clamp(56px, 8vw, 88px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", minHeight: "1.1em", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4 }}
+            style={{ fontSize: "clamp(56px, 8vw, 88px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", minHeight: "1.1em", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4, overflow: "hidden" }}
           >
             <AnimatePresence mode="wait">
               <motion.span
                 key={wordIndex}
-                initial={{ y: 48, opacity: 0, filter: "blur(8px)" }}
-                animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-                exit={{ y: -48, opacity: 0, filter: "blur(8px)" }}
-                transition={{ type: "spring", stiffness: 280, damping: 26, opacity: { duration: 0.16 }, filter: { duration: 0.2 } }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ type: "spring", stiffness: 200, damping: 25, duration: 0.3 }}
                 style={{
                   display: "inline-block",
                   fontStyle: "italic",
@@ -87,6 +87,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  willChange: "transform",
                 }}
               >
                 {ROTATING_WORDS[wordIndex]}

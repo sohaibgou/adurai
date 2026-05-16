@@ -9,12 +9,12 @@ const PROBLEMS = [
     icon: TrendingUp,
     label: "Rising Costs",
     title: "Ads are expensive.",
-    desc: "CPMs up 24% YoY. You're paying more for the same reach while margins shrink.",
+    desc: "CPMs up 24% vs last year. You're paying more for the same reach while your margins keep shrinking.",
     mockup: (
       <div style={{ padding: "12px 14px", background: "#fff", borderRadius: 10, border: "1px solid #f0f0f5", fontSize: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#e17055", fontWeight: 600 }}>
           <TrendingUp style={{ width: 13, height: 13 }} />
-          CPMs +24% YOY
+          CPMs +24% vs last year
         </div>
         <div style={{ marginTop: 8, height: 6, borderRadius: 3, background: "linear-gradient(90deg, #e17055 70%, #f0f0f5 70%)" }} />
       </div>

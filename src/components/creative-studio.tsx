@@ -20,8 +20,10 @@ import type { CampaignSummary } from "@/lib/types";
 /* ── Props ───────────────────────────────────────────────── */
 
 interface CreativeStudioProps {
-  summaries: CampaignSummary[];
-  winners?:  string[];
+  summaries:  CampaignSummary[];
+  winners?:   string[];
+  isPaid?:    boolean;
+  onPaywall?: (reason: "image" | "copy") => void;
 }
 
 interface ReferenceImage {
@@ -74,9 +76,28 @@ const ANGLE_COLORS = [
 
 const LANGUAGES = ["English", "French", "Arabic"];
 
+const CREATIVE_LIMIT = 3;
+
+function getImageCount(): number {
+  try { return parseInt(localStorage.getItem("adur_image_count") ?? "0", 10) || 0; } catch { return 0; }
+}
+function getCopyCount(): number {
+  try { return parseInt(localStorage.getItem("adur_copy_count") ?? "0", 10) || 0; } catch { return 0; }
+}
+function incrementImageCount(): number {
+  const next = getImageCount() + 1;
+  try { localStorage.setItem("adur_image_count", String(next)); } catch { /* noop */ }
+  return next;
+}
+function incrementCopyCount(): number {
+  const next = getCopyCount() + 1;
+  try { localStorage.setItem("adur_copy_count", String(next)); } catch { /* noop */ }
+  return next;
+}
+
 /* ── Main component ──────────────────────────────────────── */
 
-export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeStudioProps) {
+export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, onPaywall }: CreativeStudioProps) {
   /* ── Tab ─────────────────────────────────────────── */
   const [activeTab, setActiveTab] = useState<"creative" | "adcopy">("creative");
 
@@ -96,6 +117,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [regenMap,   setRegenMap]   = useState<Record<number, boolean>>({});
 
+  const [imageUsage, setImageUsage] = useState(0);
+  const [copyUsage,  setCopyUsage]  = useState(0);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ── Progress bar (60 s window for 4 parallel images) ── */
@@ -111,6 +135,12 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
     }, 150);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
+
+  /* ── Hydrate usage counts from localStorage ─────── */
+  useEffect(() => {
+    setImageUsage(getImageCount());
+    setCopyUsage(getCopyCount());
+  }, []);
 
   /* ── Image upload helpers ────────────────────────── */
   function readImageFile(file: File) {
@@ -160,6 +190,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
 
   async function generate() {
     if (!prompt.trim() || loading) return;
+    if (!isPaid && getImageCount() >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
     setLoading(true); setError(null); setImages([]); setBriefs([]); setRegenMap({});
     try {
       const { images: newImages, briefs: newBriefs } = await callGenerateApi(prompt);
@@ -167,6 +198,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
       setBriefs(newBriefs);
       setPromptUsed(prompt.trim());
       setProgress(100);
+      if (!isPaid) { const next = incrementImageCount(); setImageUsage(next); }
     } catch {
       setError("Generation failed. Please try again.");
     } finally {
@@ -226,6 +258,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
 
   async function generateAdCopy() {
     if (!copyProduct.trim() || copyLoading) return;
+    if (!isPaid && getCopyCount() >= CREATIVE_LIMIT) { onPaywall?.("copy"); return; }
     setCopyLoading(true); setCopyError(null); setCopyVariants([]);
     try {
       const res  = await fetch("/api/generate-ad-copy", {
@@ -241,6 +274,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
       const data = await res.json() as { variants?: AdCopyVariant[]; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
       setCopyVariants(data.variants ?? []);
+      if (!isPaid) { const next = incrementCopyCount(); setCopyUsage(next); }
     } catch (err) {
       setCopyError(err instanceof Error ? err.message : "Failed to generate. Try again.");
     } finally {
@@ -317,6 +351,37 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
                   Generate 4 scroll-stopping ad creatives
                 </p>
               </div>
+
+              {/* Usage counter */}
+              {!isPaid && (
+                <div className="rounded-xl px-4 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
+                      {imageUsage} of {CREATIVE_LIMIT} free generations used
+                    </span>
+                    {imageUsage >= CREATIVE_LIMIT ? (
+                      <button
+                        onClick={() => onPaywall?.("image")}
+                        style={{ fontSize: 11, fontWeight: 700, color: "#e17055", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}
+                      >
+                        Upgrade to continue
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
+                        {CREATIVE_LIMIT - imageUsage} remaining
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 100,
+                      width: `${Math.min(100, (imageUsage / CREATIVE_LIMIT) * 100)}%`,
+                      background: imageUsage >= CREATIVE_LIMIT ? "#e17055" : "linear-gradient(90deg, #6c5ce7, #e040fb)",
+                      transition: "width 0.6s ease",
+                    }} />
+                  </div>
+                </div>
+              )}
 
               {/* Image upload */}
               <div className="space-y-2">
@@ -661,6 +726,37 @@ export default function CreativeStudio({ summaries: _s, winners: _w }: CreativeS
                 <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">Ad Copy</h2>
                 <p className="text-sm text-[#6b7280] mt-1">Generate 5 high-converting ad variants</p>
               </div>
+
+              {/* Usage counter */}
+              {!isPaid && (
+                <div className="rounded-xl px-4 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
+                      {copyUsage} of {CREATIVE_LIMIT} free generations used
+                    </span>
+                    {copyUsage >= CREATIVE_LIMIT ? (
+                      <button
+                        onClick={() => onPaywall?.("copy")}
+                        style={{ fontSize: 11, fontWeight: 700, color: "#e17055", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}
+                      >
+                        Upgrade to continue
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
+                        {CREATIVE_LIMIT - copyUsage} remaining
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 100,
+                      width: `${Math.min(100, (copyUsage / CREATIVE_LIMIT) * 100)}%`,
+                      background: copyUsage >= CREATIVE_LIMIT ? "#e17055" : "linear-gradient(90deg, #6c5ce7, #e040fb)",
+                      transition: "width 0.6s ease",
+                    }} />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#0a0a0f]">Describe your product</label>

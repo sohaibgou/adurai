@@ -50,6 +50,8 @@ function SuccessContent() {
         // Set localStorage for immediate local access
         localStorage.setItem("adur_plan", "starter");
         localStorage.setItem("adur_analysis_count", "0");
+        localStorage.setItem("adur_image_count", "0");
+        localStorage.setItem("adur_copy_count", "0");
 
         // Activate subscription + send verification email in background
         const { data: { session } } = await supabase.auth.getSession();
