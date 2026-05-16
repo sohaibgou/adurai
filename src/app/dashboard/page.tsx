@@ -409,29 +409,40 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <button
-                  disabled={checkoutLoading}
-                  onClick={async () => {
-                    setCheckoutLoading(true);
-                    try { await redirectToCheckout(); } finally { setCheckoutLoading(false); }
-                  }}
-                  className="inline-flex items-center gap-2 text-white font-semibold cursor-pointer transition-all flex-shrink-0"
-                  style={{
-                    padding: "12px 26px",
-                    borderRadius: 100,
-                    background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
-                    fontSize: 14,
-                    fontFamily: "var(--font-inter)",
-                    boxShadow: "0 4px 20px rgba(108,92,231,0.38)",
-                    border: "none",
-                    opacity: checkoutLoading ? 0.7 : 1,
-                  }}
-                  onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(108,92,231,0.52)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(108,92,231,0.38)"; }}
-                >
-                  {checkoutLoading ? "Redirecting…" : "Upgrade Now"}
-                  {!checkoutLoading && <ArrowRight className="w-4 h-4" />}
-                </button>
+                <div className="flex flex-col items-stretch sm:items-end gap-2 flex-shrink-0">
+                  <button
+                    disabled={checkoutLoading}
+                    onClick={async () => {
+                      setCheckoutLoading(true);
+                      try { await redirectToCheckout(); } finally { setCheckoutLoading(false); }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 text-white font-semibold cursor-pointer transition-all"
+                    style={{
+                      padding: "12px 26px",
+                      borderRadius: 100,
+                      background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+                      fontSize: 14,
+                      fontFamily: "var(--font-inter)",
+                      boxShadow: "0 4px 20px rgba(108,92,231,0.38)",
+                      border: "none",
+                      opacity: checkoutLoading ? 0.7 : 1,
+                    }}
+                    onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(108,92,231,0.52)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(108,92,231,0.38)"; }}
+                  >
+                    {checkoutLoading ? "Redirecting…" : "Upgrade Now"}
+                    {!checkoutLoading && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => router.push("/#pricing")}
+                    className="text-center text-sm font-medium cursor-pointer transition-colors"
+                    style={{ color: "#6c5ce7", fontFamily: "var(--font-inter)", background: "none", border: "none", padding: "2px 0" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#5a4bd1"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6c5ce7"; }}
+                  >
+                    View Plans →
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
