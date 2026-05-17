@@ -20,7 +20,8 @@ import type { OnboardingData } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT   = 3;
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
 
 function getCount(): number {
   try { return parseInt(localStorage.getItem("adur_analysis_count") ?? "0", 10) || 0; } catch { return 0; }
@@ -32,6 +33,12 @@ function incrementCount(): number {
   const next = getCount() + 1;
   try { localStorage.setItem("adur_analysis_count", String(next)); } catch { /* noop */ }
   return next;
+}
+async function isAdminUser(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!(session?.user?.email && ADMIN_EMAILS.includes(session.user.email));
+  } catch { return false; }
 }
 
 export default function Home() {
@@ -76,7 +83,8 @@ export default function Home() {
   async function handleFileSelected(file: File) {
     const currentCount = getCount();
     const currentPaid  = isPaidPlan();
-    if (!currentPaid && currentCount >= FREE_LIMIT) {
+    const admin        = await isAdminUser();
+    if (!admin && !currentPaid && currentCount >= FREE_LIMIT) {
       setPaywallReason("analysis");
       setPaywallOpen(true);
       return;

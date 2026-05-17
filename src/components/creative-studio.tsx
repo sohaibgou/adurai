@@ -16,6 +16,16 @@ import {
   FileText,
 } from "lucide-react";
 import type { CampaignSummary } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+
+async function isAdminUser(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!(session?.user?.email && ADMIN_EMAILS.includes(session.user.email));
+  } catch { return false; }
+}
 
 /* ── Props ───────────────────────────────────────────────── */
 
@@ -327,7 +337,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
   async function generate() {
     if (!prompt.trim() || loading) return;
-    if (!isPaid && getImageCount() >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
+    const admin = await isAdminUser();
+    if (!admin && !isPaid && getImageCount() >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
 
     const arabicMode = /arabic/i.test(prompt);
     setIsArabicMode(arabicMode);
@@ -426,7 +437,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
   async function generateAdCopy() {
     if (!copyProduct.trim() || copyLoading) return;
-    if (!isPaid && getCopyCount() >= CREATIVE_LIMIT) { onPaywall?.("copy"); return; }
+    const admin = await isAdminUser();
+    if (!admin && !isPaid && getCopyCount() >= CREATIVE_LIMIT) { onPaywall?.("copy"); return; }
     setCopyLoading(true); setCopyError(null); setCopyVariants([]);
     try {
       const res  = await fetch("/api/generate-ad-copy", {
