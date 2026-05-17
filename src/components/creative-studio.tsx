@@ -361,7 +361,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       setBriefs(newBriefs);
       setPromptUsed(prompt.trim());
       setProgress(100);
-      if (!isPaid) { const next = incrementImageCount(); setImageUsage(next); }
+      if (!isAdmin && !isPaid) { const next = incrementImageCount(); setImageUsage(next); }
     } catch {
       setError("Generation failed. Please try again.");
     } finally {
@@ -443,7 +443,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       const data = await res.json() as { variants?: AdCopyVariant[]; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
       setCopyVariants(data.variants ?? []);
-      if (!isPaid) { const next = incrementCopyCount(); setCopyUsage(next); }
+      if (!isAdmin && !isPaid) { const next = incrementCopyCount(); setCopyUsage(next); }
     } catch (err) {
       setCopyError(err instanceof Error ? err.message : "Failed to generate. Try again.");
     } finally {
@@ -601,7 +601,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
               {/* Usage counter + Generate button */}
               <div className="flex flex-col gap-3">
-                {!isPaid && (() => {
+                {!isAdmin && !isPaid && (() => {
                   const remaining = CREATIVE_LIMIT - imageUsage;
                   const isExhausted = remaining <= 0;
                   const isLast      = remaining === 1;
@@ -634,7 +634,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   );
                 })()}
 
-                {!isPaid && imageUsage >= CREATIVE_LIMIT ? (
+                {!isAdmin && !isPaid && imageUsage >= CREATIVE_LIMIT ? (
                   <button
                     onClick={() => onPaywall?.("image")}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"
@@ -967,7 +967,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
               {/* Usage counter + Generate button */}
               <div className="flex flex-col gap-3 mt-auto">
-                {!isPaid && (() => {
+                {!isAdmin && !isPaid && (() => {
                   const remaining = CREATIVE_LIMIT - copyUsage;
                   const isExhausted = remaining <= 0;
                   const isLast      = remaining === 1;
@@ -1000,7 +1000,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   );
                 })()}
 
-                {!isPaid && copyUsage >= CREATIVE_LIMIT ? (
+                {!isAdmin && !isPaid && copyUsage >= CREATIVE_LIMIT ? (
                   <button
                     onClick={() => onPaywall?.("copy")}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"

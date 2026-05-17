@@ -330,7 +330,7 @@ export default function Home() {
         </div>
 
         {/* Usage counter */}
-        {!paidPlan && analysisCount > 0 && (
+        {!paidPlan && analysisCount > 0 && !(user?.email && ADMIN_EMAILS.includes(user.email)) && (
           <div className="max-w-lg mx-auto px-6 -mt-4 mb-6">
             <div className="rounded-xl px-5 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
               <div className="flex items-center justify-between mb-2">
