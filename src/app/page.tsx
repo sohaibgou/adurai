@@ -203,24 +203,20 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="min-h-screen overflow-x-hidden"
-        style={{ background: "#ffffff" }}
+        style={{ background: "#F7F5F2" }}
       >
-        {/* ── Floating pill nav ── */}
-        <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4">
-          <nav
-            className="flex items-center justify-between gap-4 sm:gap-8"
-            style={{
-              background:           "rgba(255,255,255,0.95)",
-              backdropFilter:       "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border:               "1px solid rgba(0,0,0,0.08)",
-              borderRadius:         100,
-              padding:              "10px 16px 10px 20px",
-              boxShadow:            "0 4px 24px rgba(0,0,0,0.08)",
-              width:                "100%",
-              maxWidth:             720,
-            }}
-          >
+        {/* ── Nav card ── */}
+        <nav
+          className="flex items-center justify-between"
+          style={{
+            height:       64,
+            background:   "#FFFFFF",
+            borderRadius: 14,
+            margin:       "16px 24px 0",
+            boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
+            padding:      "0 32px",
+          }}
+        >
             <span
               className="font-heading font-bold cursor-default select-none flex-shrink-0"
               style={{ fontSize: 17, color: "#0d0d1a", letterSpacing: "-0.025em" }}
@@ -232,10 +228,10 @@ export default function Home() {
               {["How it works", "Pricing"].map((link) => (
                 <span
                   key={link}
-                  className="cursor-pointer transition-colors duration-150"
-                  style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, fontFamily: "var(--font-inter)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0d0d1a"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6b7280"; }}
+                  className="cursor-pointer"
+                  style={{ fontSize: 14, color: "#6B6B72", fontWeight: 500, fontFamily: "var(--font-inter)", transition: "color 0.15s" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0D0D12"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6B6B72"; }}
                   onClick={() => {
                     if (link === "How it works") document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
                     if (link === "Pricing")       document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
@@ -288,49 +284,48 @@ export default function Home() {
                 </div>
               ) : (
                 /* ── Logged-out nav ── */
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2.5 flex-shrink-0">
                   <Link
                     href="/login"
-                    className="hidden md:inline-flex items-center font-medium cursor-pointer transition-all duration-150"
+                    className="hidden md:inline-flex items-center font-medium cursor-pointer"
                     style={{
-                      padding:     "8px 16px",
-                      borderRadius: 100,
-                      border:       "1px solid rgba(0,0,0,0.14)",
-                      background:   "#ffffff",
-                      fontSize:     13,
-                      color:        "#0d0d1a",
-                      fontFamily:   "var(--font-inter)",
-                      textDecoration: "none",
-                      boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
+                      fontSize:       14,
+                      color:          "#0D0D12",
+                      background:     "none",
+                      border:         "1.5px solid #E2E0DA",
+                      padding:        "9px 20px",
+                      borderRadius:    10,
+                      textDecoration:  "none",
+                      fontFamily:     "var(--font-inter)",
+                      transition:     "border-color 0.15s",
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.26)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 2px 6px rgba(0,0,0,0.10)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.14)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#B0ADAA"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#E2E0DA"; }}
                   >
                     Sign In
                   </Link>
                   <button
                     onClick={scrollToOnboarding}
-                    className="inline-flex items-center gap-1.5 font-semibold text-white cursor-pointer transition-all duration-200"
+                    className="inline-flex items-center gap-1.5 font-semibold text-white cursor-pointer"
                     style={{
-                      padding:      "8px 18px",
-                      borderRadius:  100,
-                      background:   "linear-gradient(135deg, #6c5ce7, #e040fb)",
-                      fontSize:      13,
-                      fontFamily:   "var(--font-inter)",
+                      fontSize:      14,
+                      background:   "linear-gradient(135deg, #7C3AED, #C026D3)",
                       border:       "none",
-                      boxShadow:    "0 3px 16px rgba(108,92,231,0.38)",
+                      padding:      "10px 22px",
+                      borderRadius:  10,
+                      fontFamily:   "var(--font-inter)",
+                      boxShadow:    "0 2px 12px rgba(124,58,237,0.25)",
+                      transition:   "opacity 0.15s, transform 0.15s",
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 22px rgba(108,92,231,0.54)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 3px 16px rgba(108,92,231,0.38)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
                   >
-                    Start Free
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    Start Free →
                   </button>
                 </div>
               )
             )}
-          </nav>
-        </div>
+        </nav>
 
         <HeroSection onCtaClick={scrollToOnboarding} />
 

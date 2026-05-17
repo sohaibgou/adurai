@@ -7,13 +7,53 @@ interface HeroSectionProps {
   onCtaClick: () => void;
 }
 
+/* ─── Metric sidebar data ─── */
+const METRICS = [
+  { name: "Total spend",    val: "$4,820",   type: "neutral" },
+  { name: "Avg. ROAS",      val: "3.2×",     type: "good"    },
+  { name: "CPP",            val: "$38.40",   type: "bad"     },
+  { name: "Wasted budget",  val: "$1,140",   type: "bad"     },
+  { name: "Active ad sets", val: "14",       type: "neutral" },
+  { name: "Health score",   val: "62 / 100", type: "amber"   },
+] as const;
+
+/* ─── Diagnosis cards data ─── */
+const DIAGNOSIS = [
+  {
+    dot:   "#DC2626",
+    title: `Ad Set "Lookalike 2% — Cold" is bleeding budget`,
+    body:  "$640 spent in 7 days. 0 purchases. CPM is 3× account average. Audience likely saturated or wrong creative match.",
+    tag:   "→ Pause immediately",
+    tagBg: "#FEE2E2",
+    tagColor: "#991B1B",
+  },
+  {
+    dot:   "#16A34A",
+    title: `"Retargeting — Viewers 7d" has room to scale`,
+    body:  "ROAS 5.8× on $320 spend. Frequency still low at 1.4. Budget is too conservative for this performance level.",
+    tag:   "→ Scale budget 2×",
+    tagBg: "#DCFCE7",
+    tagColor: "#14532D",
+  },
+  {
+    dot:   "#D97706",
+    title: "Creative fatigue detected across 3 ad sets",
+    body:  "CTR dropped 40% week-over-week. Same creative running for 18 days. Introduce new angles to reset performance.",
+    tag:   "→ Refresh creatives",
+    tagBg: "#FEF3C7",
+    tagColor: "#78350F",
+  },
+] as const;
+
 export default function HeroSection({ onCtaClick }: HeroSectionProps) {
   return (
-    <section
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: "#F7F5F2" }}
-    >
-      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-32 pb-24">
+    <section style={{ background: "#F7F5F2" }}>
+
+      {/* ── Hero copy ── */}
+      <div
+        className="flex flex-col items-center text-center mx-auto px-6"
+        style={{ maxWidth: 900, paddingTop: 80, paddingBottom: 60 }}
+      >
 
         {/* Headline */}
         <FadeIn delay={0.05}>
@@ -25,6 +65,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               lineHeight:     1.03,
               letterSpacing: "-0.04em",
               color:         "#0D0D12",
+              marginBottom:  24,
             }}
           >
             The AI Media Buyer
@@ -36,27 +77,31 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
         {/* Subhead */}
         <FadeIn delay={0.15}>
           <p
-            className="mx-auto mt-6"
             style={{
               fontSize:    18,
-              color:       "#6B6B72",
-              lineHeight:  1.65,
-              maxWidth:    540,
-              fontFamily:  "var(--font-inter)",
               fontWeight:  400,
+              lineHeight:  1.65,
+              color:       "#6B6B72",
+              maxWidth:    540,
+              marginBottom: 40,
+              fontFamily:  "var(--font-inter)",
             }}
           >
-            Upload your Meta Ads CSV and get a complete diagnosis in 60 seconds — what to kill, what to scale, and exactly why. No agency. No guesswork.
+            Upload your Meta Ads CSV and get a complete diagnosis in 60 seconds —
+            what to kill, what to scale, and exactly why. No agency. No guesswork.
           </p>
         </FadeIn>
 
         {/* CTAs */}
         <FadeIn delay={0.25}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
+            style={{ marginBottom: 16 }}
+          >
             {/* Primary */}
             <button
               onClick={onCtaClick}
-              className="inline-flex items-center gap-2.5 text-white font-semibold cursor-pointer transition-all duration-200"
+              className="inline-flex items-center gap-2.5 text-white font-semibold cursor-pointer"
               style={{
                 padding:       "16px 36px",
                 borderRadius:   12,
@@ -66,14 +111,19 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 fontFamily:    "var(--font-inter)",
                 boxShadow:     "0 4px 20px rgba(124,58,237,0.3)",
                 border:        "none",
+                transition:    "opacity 0.15s, transform 0.15s, box-shadow 0.2s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(124,58,237,0.38)";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.opacity   = "0.92";
+                b.style.transform = "translateY(-2px)";
+                b.style.boxShadow = "0 8px 28px rgba(124,58,237,0.35)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.3)";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.opacity   = "1";
+                b.style.transform = "translateY(0)";
+                b.style.boxShadow = "0 4px 20px rgba(124,58,237,0.3)";
               }}
             >
               Start Free Trial
@@ -83,7 +133,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             {/* Secondary */}
             <button
               onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
-              className="inline-flex items-center gap-2 font-medium cursor-pointer transition-all duration-150"
+              className="inline-flex items-center gap-2 font-medium cursor-pointer"
               style={{
                 padding:       "16px 32px",
                 borderRadius:   12,
@@ -93,14 +143,17 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 letterSpacing: "-0.01em",
                 color:         "#0D0D12",
                 fontFamily:    "var(--font-inter)",
+                transition:    "border-color 0.15s, box-shadow 0.15s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#B0ADAA";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow   = "0 2px 8px rgba(0,0,0,0.06)";
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.borderColor = "#B0ADAA";
+                b.style.boxShadow   = "0 2px 8px rgba(0,0,0,0.06)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2E0DA";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow   = "none";
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.borderColor = "#E2E0DA";
+                b.style.boxShadow   = "none";
               }}
             >
               <Play className="w-4 h-4" fill="currentColor" />
@@ -113,10 +166,10 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
         <FadeIn delay={0.30}>
           <p
             style={{
-              fontSize:   13,
-              color:      "#A8A5A0",
-              marginTop:  16,
-              fontFamily: "var(--font-inter)",
+              fontSize:    13,
+              color:       "#A8A5A0",
+              marginBottom: 48,
+              fontFamily:  "var(--font-inter)",
             }}
           >
             No credit card required · Free analysis on your first account
@@ -125,40 +178,218 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
 
         {/* Proof pill */}
         <FadeIn delay={0.35}>
-          <div className="flex justify-center mt-10">
-            <div
-              className="inline-flex items-center gap-2.5 cursor-default"
-              style={{
-                background:   "#0D0D12",
-                color:        "#ffffff",
-                borderRadius:  100,
-                padding:      "11px 22px",
-                fontSize:      13,
-                fontWeight:    400,
-                fontFamily:   "var(--font-inter)",
-              }}
-            >
-              <Users className="w-4 h-4 flex-shrink-0" style={{ color: "rgba(255,255,255,0.6)" }} />
-              <span>
-                Built by media buyers who&apos;ve managed{" "}
-                <strong
-                  style={{
-                    fontWeight:           600,
-                    background:           "linear-gradient(90deg, #A78BFA, #E879F9)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor:  "transparent",
-                    backgroundClip:       "text",
-                  }}
-                >
-                  $70M+
-                </strong>{" "}
-                in ad spend
-              </span>
-            </div>
+          <div
+            className="inline-flex items-center gap-2.5 cursor-default"
+            style={{
+              background:   "#0D0D12",
+              color:        "#ffffff",
+              borderRadius:  100,
+              padding:      "11px 22px",
+              fontSize:      13,
+              fontWeight:    400,
+              fontFamily:   "var(--font-inter)",
+            }}
+          >
+            <Users
+              className="flex-shrink-0"
+              style={{ width: 18, height: 18, opacity: 0.6 }}
+            />
+            <span>
+              Built by media buyers who&apos;ve managed{" "}
+              <strong
+                style={{
+                  fontWeight:           600,
+                  background:           "linear-gradient(90deg, #A78BFA, #E879F9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor:  "transparent",
+                  backgroundClip:       "text",
+                }}
+              >
+                &nbsp;$10M+&nbsp;
+              </strong>
+              {" "}in Arab market ad spend
+            </span>
           </div>
         </FadeIn>
-
       </div>
+
+      {/* ── Product preview / screen mockup ── */}
+      <FadeIn delay={0.45}>
+        <div
+          style={{
+            padding:   "0 24px 80px",
+            maxWidth:   1000,
+            margin:    "0 auto",
+          }}
+        >
+          {/* Screen frame */}
+          <div
+            style={{
+              background:  "#FFFFFF",
+              border:      "1px solid #E8E5E0",
+              borderRadius: 20,
+              padding:      2,
+              boxShadow:   "0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)",
+              overflow:    "hidden",
+            }}
+          >
+            {/* Browser chrome bar */}
+            <div
+              style={{
+                display:      "flex",
+                alignItems:   "center",
+                gap:          6,
+                padding:      "12px 16px",
+                borderBottom: "1px solid #F0EDE8",
+              }}
+            >
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#FF5F57" }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#FFBD2E" }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#28C940" }} />
+            </div>
+
+            {/* Screen body: sidebar + main */}
+            <div
+              style={{
+                padding:             24,
+                display:             "grid",
+                gridTemplateColumns: "240px 1fr",
+                gap:                 16,
+                minHeight:           320,
+              }}
+            >
+              {/* ── Sidebar ── */}
+              <div
+                style={{
+                  background:   "#F7F5F2",
+                  borderRadius:  12,
+                  padding:       16,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize:       10,
+                    fontWeight:     600,
+                    letterSpacing:  "0.1em",
+                    textTransform:  "uppercase",
+                    color:          "#A8A5A0",
+                    marginBottom:   12,
+                    fontFamily:     "var(--font-inter)",
+                  }}
+                >
+                  Account overview
+                </p>
+
+                {METRICS.map(({ name, val, type }, i) => (
+                  <div
+                    key={name}
+                    style={{
+                      display:        "flex",
+                      justifyContent: "space-between",
+                      alignItems:     "center",
+                      padding:        "9px 0",
+                      borderBottom:   i < METRICS.length - 1 ? "1px solid #EDE9E3" : "none",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize:   13,
+                        color:      "#6B6B72",
+                        fontFamily: "var(--font-inter)",
+                      }}
+                    >
+                      {name}
+                    </span>
+                    <span
+                      style={{
+                        fontSize:   13,
+                        fontWeight: 600,
+                        fontFamily: "var(--font-inter)",
+                        color:
+                          type === "good"    ? "#16A34A" :
+                          type === "bad"     ? "#DC2626" :
+                          type === "amber"   ? "#D97706" :
+                          "#0D0D12",
+                      }}
+                    >
+                      {val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Diagnosis cards ── */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {DIAGNOSIS.map(({ dot, title, body, tag, tagBg, tagColor }) => (
+                  <div
+                    key={title}
+                    style={{
+                      background:   "#F7F5F2",
+                      borderRadius:  12,
+                      padding:      "16px 20px",
+                      display:      "flex",
+                      alignItems:   "flex-start",
+                      gap:          12,
+                    }}
+                  >
+                    {/* Status dot */}
+                    <div
+                      style={{
+                        width:       8,
+                        height:      8,
+                        borderRadius: "50%",
+                        background:  dot,
+                        marginTop:   5,
+                        flexShrink:  0,
+                      }}
+                    />
+
+                    <div>
+                      <p
+                        style={{
+                          fontSize:    13,
+                          fontWeight:  600,
+                          marginBottom: 4,
+                          color:       "#0D0D12",
+                          fontFamily:  "var(--font-inter)",
+                        }}
+                      >
+                        {title}
+                      </p>
+                      <p
+                        style={{
+                          fontSize:   12,
+                          color:      "#6B6B72",
+                          lineHeight:  1.5,
+                          fontFamily: "var(--font-inter)",
+                        }}
+                      >
+                        {body}
+                      </p>
+                      <span
+                        style={{
+                          display:      "inline-block",
+                          marginTop:    8,
+                          fontSize:     11,
+                          fontWeight:   600,
+                          padding:      "3px 10px",
+                          borderRadius:  6,
+                          background:   tagBg,
+                          color:        tagColor,
+                          fontFamily:   "var(--font-inter)",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+
     </section>
   );
 }
