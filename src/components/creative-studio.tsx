@@ -53,6 +53,12 @@ interface CreativeBrief {
   rationale: string;
 }
 
+interface ArabicTextData {
+  headline:    string;
+  subheadline: string;
+  cta:         string;
+}
+
 /* ── Colour maps ─────────────────────────────────────────── */
 
 const HOOK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -95,6 +101,132 @@ function incrementCopyCount(): number {
   return next;
 }
 
+/* ── Arabic font loader ─────────────────────────────────── */
+
+let arabicFontLoaded = false;
+
+async function ensureArabicFont(): Promise<void> {
+  if (arabicFontLoaded) return;
+  // Inject Google Fonts link if not already present
+  if (!document.getElementById("adur-cairo-font")) {
+    const link  = document.createElement("link");
+    link.id     = "adur-cairo-font";
+    link.rel    = "stylesheet";
+    link.href   = "https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap";
+    document.head.appendChild(link);
+  }
+  // Wait for the font to be ready (with 3 s timeout fallback)
+  try {
+    await Promise.race([
+      document.fonts.load("900 16px Cairo"),
+      new Promise<void>((_, rej) => setTimeout(() => rej(new Error("timeout")), 3000)),
+    ]);
+  } catch {
+    /* fall back to system sans-serif */
+  }
+  arabicFontLoaded = true;
+}
+
+/* ── Canvas overlay: Arabic text on top of a generated image ── */
+
+async function applyArabicOverlay(
+  imageUrl:   string,
+  arabicText: ArabicTextData,
+): Promise<string> {
+  await ensureArabicFont();
+
+  // Load the source image into an <img>
+  const img = new window.Image();
+  img.crossOrigin = "anonymous";
+  await new Promise<void>((resolve, reject) => {
+    img.onload  = () => resolve();
+    img.onerror = () => reject(new Error("image load failed"));
+    img.src     = imageUrl;
+  });
+
+  const size   = img.naturalWidth  || 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  // 1 — Draw base image
+  ctx.drawImage(img, 0, 0, size, size);
+
+  const pad = Math.round(size * 0.048);
+
+  // 2 — Top gradient (headline + subheadline background)
+  const topGrad = ctx.createLinearGradient(0, 0, 0, size * 0.44);
+  topGrad.addColorStop(0,   "rgba(0,0,0,0.80)");
+  topGrad.addColorStop(1,   "rgba(0,0,0,0)");
+  ctx.fillStyle = topGrad;
+  ctx.fillRect(0, 0, size, size * 0.44);
+
+  // 3 — Bottom gradient (CTA background)
+  const botGrad = ctx.createLinearGradient(0, size * 0.70, 0, size);
+  botGrad.addColorStop(0, "rgba(0,0,0,0)");
+  botGrad.addColorStop(1, "rgba(0,0,0,0.76)");
+  ctx.fillStyle = botGrad;
+  ctx.fillRect(0, size * 0.70, size, size * 0.30);
+
+  ctx.direction = "rtl";
+
+  // 4 — Headline (top, right-aligned)
+  const hlSize = Math.round(size * 0.075);
+  ctx.font         = `900 ${hlSize}px Cairo, Arial`;
+  ctx.fillStyle    = "#ffffff";
+  ctx.textAlign    = "right";
+  ctx.shadowColor  = "rgba(0,0,0,0.55)";
+  ctx.shadowBlur   = Math.round(size * 0.018);
+  ctx.fillText(arabicText.headline, size - pad, Math.round(size * 0.150));
+
+  // 5 — Subheadline (below headline)
+  const shSize = Math.round(size * 0.043);
+  ctx.font      = `400 ${shSize}px Cairo, Arial`;
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.shadowBlur = Math.round(size * 0.010);
+  ctx.fillText(arabicText.subheadline, size - pad, Math.round(size * 0.252));
+
+  // 6 — CTA pill button (bottom center)
+  ctx.shadowBlur = 0;
+  const ctaSize  = Math.round(size * 0.040);
+  ctx.font       = `700 ${ctaSize}px Cairo, Arial`;
+  ctx.textAlign  = "center";
+
+  const ctaMetrics  = ctx.measureText(arabicText.cta);
+  const ctaPadX     = size * 0.065;
+  const ctaBtnW     = ctaMetrics.width + ctaPadX * 2;
+  const ctaBtnH     = size * 0.074;
+  const ctaBtnX     = (size - ctaBtnW) / 2;
+  const ctaBtnY     = size * 0.855;
+  const ctaRadius   = ctaBtnH / 2;
+
+  // Draw pill
+  ctx.beginPath();
+  ctx.moveTo(ctaBtnX + ctaRadius, ctaBtnY);
+  ctx.lineTo(ctaBtnX + ctaBtnW - ctaRadius, ctaBtnY);
+  ctx.arcTo(ctaBtnX + ctaBtnW, ctaBtnY, ctaBtnX + ctaBtnW, ctaBtnY + ctaBtnH, ctaRadius);
+  ctx.lineTo(ctaBtnX + ctaBtnW, ctaBtnY + ctaBtnH - ctaRadius);
+  ctx.arcTo(ctaBtnX + ctaBtnW, ctaBtnY + ctaBtnH, ctaBtnX + ctaBtnW - ctaRadius, ctaBtnY + ctaBtnH, ctaRadius);
+  ctx.lineTo(ctaBtnX + ctaRadius, ctaBtnY + ctaBtnH);
+  ctx.arcTo(ctaBtnX, ctaBtnY + ctaBtnH, ctaBtnX, ctaBtnY + ctaBtnH - ctaRadius, ctaRadius);
+  ctx.lineTo(ctaBtnX, ctaBtnY + ctaRadius);
+  ctx.arcTo(ctaBtnX, ctaBtnY, ctaBtnX + ctaRadius, ctaBtnY, ctaRadius);
+  ctx.closePath();
+
+  const btnGrad = ctx.createLinearGradient(ctaBtnX, ctaBtnY, ctaBtnX + ctaBtnW, ctaBtnY);
+  btnGrad.addColorStop(0, "#6c5ce7");
+  btnGrad.addColorStop(1, "#e040fb");
+  ctx.fillStyle = btnGrad;
+  ctx.fill();
+
+  // CTA text
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(arabicText.cta, size / 2, ctaBtnY + ctaBtnH * 0.64);
+
+  return canvas.toDataURL("image/png");
+}
+
 /* ── Main component ──────────────────────────────────────── */
 
 export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, onPaywall }: CreativeStudioProps) {
@@ -108,14 +240,16 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [refImage,  setRefImage]  = useState<ReferenceImage | null>(null);
   const imageInputRef             = useRef<HTMLInputElement>(null);
 
-  const [loading,    setLoading]    = useState(false);
-  const [progress,   setProgress]   = useState(0);
-  const [images,     setImages]     = useState<CreativeImage[]>([]);
-  const [briefs,     setBriefs]     = useState<CreativeBrief[]>([]);
-  const [error,      setError]      = useState<string | null>(null);
-  const [promptUsed, setPromptUsed] = useState("");
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [regenMap,   setRegenMap]   = useState<Record<number, boolean>>({});
+  const [loading,       setLoading]       = useState(false);
+  const [progress,      setProgress]      = useState(0);
+  const [images,        setImages]        = useState<CreativeImage[]>([]);
+  const [briefs,        setBriefs]        = useState<CreativeBrief[]>([]);
+  const [error,         setError]         = useState<string | null>(null);
+  const [promptUsed,    setPromptUsed]    = useState("");
+  const [hoveredIdx,    setHoveredIdx]    = useState<number | null>(null);
+  const [regenMap,      setRegenMap]      = useState<Record<number, boolean>>({});
+  const [isArabicMode,  setIsArabicMode]  = useState(false);
+  const [arabicTexts,   setArabicTexts]   = useState<ArabicTextData[]>([]);
 
   const [imageUsage, setImageUsage] = useState(0);
   const [copyUsage,  setCopyUsage]  = useState(0);
@@ -163,38 +297,66 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   /* ── API call ────────────────────────────────────── */
   async function callGenerateApi(
     p: string,
-  ): Promise<{ images: CreativeImage[]; briefs: CreativeBrief[] }> {
+    arabicMode: boolean,
+  ): Promise<{ images: CreativeImage[]; briefs: CreativeBrief[]; arabicTexts?: ArabicTextData[] }> {
     if (refImage) {
       const fd = new FormData();
-      fd.append("image",  refImage.file, refImage.file.name || "product.jpg");
-      fd.append("prompt", p.trim());
+      fd.append("image",    refImage.file, refImage.file.name || "product.jpg");
+      fd.append("prompt",   p.trim());
+      fd.append("isArabic", String(arabicMode));
       const res  = await fetch("/api/generate-creative-with-image", { method: "POST", body: fd });
-      const data = await res.json() as { images?: CreativeImage[]; briefs?: CreativeBrief[]; error?: string };
+      const data = await res.json() as { images?: CreativeImage[]; briefs?: CreativeBrief[]; arabicTexts?: ArabicTextData[]; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
-      return { images: data.images ?? [], briefs: data.briefs ?? [] };
+      return { images: data.images ?? [], briefs: data.briefs ?? [], arabicTexts: data.arabicTexts };
     }
 
     const res  = await fetch("/api/generate-creative", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ prompt: p.trim() }),
+      body:    JSON.stringify({ prompt: p.trim(), isArabic: arabicMode }),
     });
     const data = await res.json() as {
-      images?: CreativeImage[];
-      briefs?: CreativeBrief[];
-      error?:  string;
+      images?:      CreativeImage[];
+      briefs?:      CreativeBrief[];
+      arabicTexts?: ArabicTextData[];
+      error?:       string;
     };
     if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
-    return { images: data.images ?? [], briefs: data.briefs ?? [] };
+    return { images: data.images ?? [], briefs: data.briefs ?? [], arabicTexts: data.arabicTexts };
   }
 
   async function generate() {
     if (!prompt.trim() || loading) return;
     if (!isPaid && getImageCount() >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
+
+    const arabicMode = /arabic/i.test(prompt);
+    setIsArabicMode(arabicMode);
+    setArabicTexts([]);
     setLoading(true); setError(null); setImages([]); setBriefs([]); setRegenMap({});
+
     try {
-      const { images: newImages, briefs: newBriefs } = await callGenerateApi(prompt);
-      setImages(newImages);
+      const { images: newImages, briefs: newBriefs, arabicTexts: newArabicTexts } =
+        await callGenerateApi(prompt, arabicMode);
+
+      // If Arabic mode, composite each image with the Arabic text overlay
+      let finalImages = newImages;
+      if (arabicMode && newArabicTexts && newArabicTexts.length > 0) {
+        setArabicTexts(newArabicTexts);
+        finalImages = await Promise.all(
+          newImages.map(async (img, i) => {
+            const txt = newArabicTexts[i];
+            if (!txt) return img;
+            try {
+              const composited = await applyArabicOverlay(img.url, txt);
+              return { ...img, url: composited };
+            } catch {
+              return img;
+            }
+          })
+        );
+      }
+
+      setImages(finalImages);
       setBriefs(newBriefs);
       setPromptUsed(prompt.trim());
       setProgress(100);
@@ -213,13 +375,19 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       const res  = await fetch("/api/generate-creative-one", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ prompt: briefPrompt }),
+        body:    JSON.stringify({ prompt: briefPrompt, isArabic: isArabicMode }),
       });
       const data = await res.json() as { url?: string; error?: string };
       if (data.url) {
+        let finalUrl = data.url;
+        if (isArabicMode && arabicTexts[index]) {
+          try {
+            finalUrl = await applyArabicOverlay(data.url, arabicTexts[index]);
+          } catch { /* keep raw url */ }
+        }
         setImages((prev) => {
           const next = [...prev];
-          next[index] = { ...next[index], url: data.url! };
+          next[index] = { ...next[index], url: finalUrl };
           return next;
         });
       }
@@ -404,7 +572,17 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
               {/* Prompt */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#0a0a0f]">Describe your ad</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-[#0a0a0f]">Describe your ad</label>
+                  {/arabic/i.test(prompt) && (
+                    <span
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                      style={{ background: "rgba(108,92,231,0.10)", color: "#6c5ce7", border: "1px solid rgba(108,92,231,0.22)" }}
+                    >
+                      🌙 Arabic overlay
+                    </span>
+                  )}
+                </div>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -415,6 +593,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   rows={4}
                   className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
                 />
+                <p className="text-[11px] text-[#9ca3af] leading-relaxed">
+                  Mention <span className="font-semibold text-[#6c5ce7]">&quot;Arabic&quot;</span> in your prompt to generate clean images with browser-rendered Arabic text overlay.
+                </p>
               </div>
 
               {/* Usage counter + Generate button */}
