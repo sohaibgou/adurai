@@ -213,6 +213,7 @@ export default function Home() {
             background:   "#FFFFFF",
             borderRadius: 14,
             margin:       "16px 24px 0",
+            border:       "1px solid #E8E5E0",
             boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
             padding:      "0 32px",
           }}
