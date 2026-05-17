@@ -17,7 +17,7 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: "Adur.ai — AI-Powered Meta Ads Analyzer",
+  title: "Adur.ai — AI Meta Ads Analysis for E-commerce",
   description:
     "Upload your Meta Ads Manager CSV and get instant AI-powered campaign analysis with actionable recommendations.",
 };
