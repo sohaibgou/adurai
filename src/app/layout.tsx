@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Syne } from "next/font/google";
+import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Analytics } from "@vercel/analytics/next";
@@ -10,10 +10,10 @@ const inter = Inter({
   weight: ["400", "500", "600"],
 });
 
-const syne = Syne({
+const geist = Geist({
   variable: "--font-syne",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${syne.variable} h-full antialiased`} suppressHydrationWarning={true}>
+    <html lang="en" className={`${inter.variable} ${geist.variable} ${geist.className} h-full antialiased`} suppressHydrationWarning={true}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         <AuthProvider>{children}</AuthProvider>
         <Analytics />

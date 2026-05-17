@@ -22,13 +22,15 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           <h1
             className="font-heading"
             style={{
-              fontSize:      "clamp(44px, 5.5vw, 76px)",
-              fontWeight:     800,
+              fontSize:      72,
+              fontWeight:     900,
               lineHeight:     1.05,
               letterSpacing: "-0.04em",
               color:         "#0D0D12",
-              maxWidth:       750,
-              margin:        "0 auto 24px",
+              maxWidth:       700,
+              marginLeft:    "auto",
+              marginRight:   "auto",
+              whiteSpace:    "nowrap",
             }}
           >
             The AI Media Buyer
