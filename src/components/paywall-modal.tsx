@@ -79,7 +79,7 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
         await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
       if (signInError) {
-        throw new Error("Account created! Verify your email then sign in to complete your upgrade.");
+        throw new Error("Account created! If sign-in failed, try again in a moment.");
       }
 
       if (signInData.session?.access_token) {
