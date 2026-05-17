@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import OnboardingForm from "@/components/onboarding-form";
 import PaywallModal from "@/components/paywall-modal";
+import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
 import SiteFooter from "@/components/landing/site-footer";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
 import type { OnboardingData } from "@/lib/types";
@@ -46,6 +47,7 @@ export default function AnalyzePage() {
   const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan, setPaidPlan]           = useState(false);
+  const [showLoader, setShowLoader]       = useState(false);
 
   useEffect(() => {
     document.title = "Analyze Your Meta Ads — Adur.ai";
@@ -82,6 +84,7 @@ export default function AnalyzePage() {
       return;
     }
 
+    setShowLoader(true);
     setIsLoading(true);
     setError(null);
 
@@ -146,17 +149,17 @@ export default function AnalyzePage() {
         setAnalysisCount(next);
       }
 
-      // Store results and navigate to /results
+      // Store results — loader will navigate to /results once animation completes
       try {
         sessionStorage.setItem("adur_results",   JSON.stringify(analysisResult));
         sessionStorage.setItem("adur_form_data", JSON.stringify(onboarding));
       } catch { /* noop */ }
-      router.push("/results");
 
     } catch (err) {
       const msg = err instanceof Error
         ? (err.name === "AbortError" ? "Analysis timed out after 90 seconds — please try again" : err.message)
         : "Something went wrong";
+      setShowLoader(false); // hide loader immediately on error
       setError(msg);
     } finally {
       clearTimeout(timeout);
@@ -169,6 +172,11 @@ export default function AnalyzePage() {
   return (
     <>
       <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
+      <AnalysisLoadingScreen
+        visible={showLoader}
+        active={isLoading}
+        onComplete={() => { setShowLoader(false); router.push("/results"); }}
+      />
 
       <div className="min-h-screen flex flex-col" style={{ background: "#fafafa" }}>
 

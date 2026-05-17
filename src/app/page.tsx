@@ -15,6 +15,7 @@ import PricingSection from "@/components/landing/pricing-section";
 import CtaSection from "@/components/landing/cta-section";
 import SiteFooter from "@/components/landing/site-footer";
 import PaywallModal from "@/components/paywall-modal";
+import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
 import type { OnboardingData } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
@@ -51,6 +52,7 @@ export default function Home() {
   const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan, setPaidPlan]       = useState(false);
+  const [showLoader, setShowLoader]   = useState(false);
   const onboardingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,6 +92,7 @@ export default function Home() {
       return;
     }
 
+    setShowLoader(true);
     setIsLoading(true);
     setError(null);
 
@@ -154,17 +157,17 @@ export default function Home() {
         setAnalysisCount(next);
       }
 
-      // Store results and navigate to /results
+      // Store results — loader will navigate to /results once animation completes
       try {
         sessionStorage.setItem("adur_results",   JSON.stringify(analysisResult));
         sessionStorage.setItem("adur_form_data", JSON.stringify(onboarding));
       } catch { /* noop */ }
-      router.push("/results");
 
     } catch (err) {
       const msg = err instanceof Error
         ? (err.name === "AbortError" ? "Analysis timed out after 90 seconds — please try again" : err.message)
         : "Something went wrong";
+      setShowLoader(false); // hide loader immediately on error
       setError(msg);
     } finally {
       clearTimeout(timeout);
@@ -181,6 +184,11 @@ export default function Home() {
   return (
     <>
       <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
+      <AnalysisLoadingScreen
+        visible={showLoader}
+        active={isLoading}
+        onComplete={() => { setShowLoader(false); router.push("/results"); }}
+      />
 
       <motion.div
         initial={{ opacity: 0 }}
