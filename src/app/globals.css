@@ -38,7 +38,7 @@ body {
 
 h1 {
   font-family: var(--font-syne), sans-serif;
-  font-weight: 700;
+  font-weight: 800;
   font-size: clamp(36px, 5vw, 64px);
   letter-spacing: -0.02em;
   color: #0a0a0f;

@@ -61,7 +61,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             className="font-heading"
             style={{
               fontSize:      "clamp(48px, 7vw, 80px)",
-              fontWeight:     900,
+              fontWeight:     800,
               lineHeight:     1.03,
               letterSpacing: "-0.04em",
               color:         "#0D0D12",
