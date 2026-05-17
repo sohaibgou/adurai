@@ -74,7 +74,8 @@
       "Bash(wait)",
       "Bash(timeout 90 curl -s -X POST http://localhost:3001/api/generate-creative -H 'Content-Type: application/json' -d '{\"prompt\":\"whey protein supplement black packaging\"}' -o /tmp/creative-test.json)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(find ~/Desktop /Users/sohaib -name \"*.html\" -name \"*hero*\" 2>/dev/null | head -10)"
     ]
   }
 }

@@ -1,156 +1,163 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users } from "lucide-react";
+import { Play, Users, ArrowRight } from "lucide-react";
 import FadeIn from "@/components/fade-in";
-
-const ROTATING_WORDS = ["Analyzed.", "Optimized.", "Scaled.", "Automated."];
 
 interface HeroSectionProps {
   onCtaClick: () => void;
 }
 
 export default function HeroSection({ onCtaClick }: HeroSectionProps) {
-  const [wordIndex, setWordIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
-    }, 1500);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <section
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{
-        background: "linear-gradient(160deg, #fafafa 0%, #f5f0ff 60%, #faf5ff 100%)",
-      }}
+      style={{ background: "#F7F5F2" }}
     >
-      {/* Radial glow orbs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{
-          position: "absolute", top: "20%", left: "15%", width: 500, height: 500,
-          borderRadius: "50%", background: "radial-gradient(circle, rgba(108,92,231,0.10) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }} />
-        <div style={{
-          position: "absolute", top: "30%", right: "10%", width: 400, height: 400,
-          borderRadius: "50%", background: "radial-gradient(circle, rgba(224,64,251,0.08) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }} />
-      </div>
+      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-32 pb-24">
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-36 pb-24">
-
-        {/* Badge */}
-        <FadeIn delay={0}>
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-10 cursor-default"
-            style={{ background: "rgba(108,92,231,0.08)", border: "1px solid rgba(108,92,231,0.18)" }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#00b894", display: "inline-block", flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 500, color: "#6c5ce7", letterSpacing: "0.01em", fontFamily: "var(--font-inter)" }}>
-              AI-Powered Media Buying
-            </span>
-          </div>
-        </FadeIn>
-
-        {/* Headline line 1 */}
-        <FadeIn delay={0.06}>
+        {/* Headline */}
+        <FadeIn delay={0.05}>
           <h1
             className="font-heading"
-            style={{ fontSize: "clamp(56px, 8vw, 88px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-0.03em", color: "#0d0d1a" }}
+            style={{
+              fontSize:      "clamp(48px, 7vw, 80px)",
+              fontWeight:     900,
+              lineHeight:     1.03,
+              letterSpacing: "-0.04em",
+              color:         "#0D0D12",
+            }}
           >
-            Your Meta Ads.
+            The AI Media Buyer
+            <br />
+            for Meta Ads.
           </h1>
         </FadeIn>
 
-        {/* Rotating word — gradient italic */}
-        <FadeIn delay={0.1}>
-          <div
-            className="font-heading"
-            style={{ fontSize: "clamp(56px, 8vw, 88px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", minHeight: "1.1em", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4, overflow: "hidden" }}
+        {/* Subhead */}
+        <FadeIn delay={0.15}>
+          <p
+            className="mx-auto mt-6"
+            style={{
+              fontSize:    18,
+              color:       "#6B6B72",
+              lineHeight:  1.65,
+              maxWidth:    540,
+              fontFamily:  "var(--font-inter)",
+              fontWeight:  400,
+            }}
           >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={wordIndex}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ type: "spring", stiffness: 200, damping: 25, duration: 0.3 }}
-                style={{
-                  display: "inline-block",
-                  fontStyle: "italic",
-                  background: "linear-gradient(135deg, #6c5ce7 0%, #e040fb 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  willChange: "transform",
-                }}
-              >
-                {ROTATING_WORDS[wordIndex]}
-              </motion.span>
-            </AnimatePresence>
-          </div>
-        </FadeIn>
-
-        {/* Subheadline */}
-        <FadeIn delay={0.18}>
-          <p className="mx-auto mt-8" style={{ fontSize: 18, color: "#4b5563", lineHeight: 1.65, maxWidth: 500, fontFamily: "var(--font-inter)", fontWeight: 400 }}>
-            Upload your Meta Ads CSV and get a complete AI media buyer analysis in 60 seconds. No agency. No login. No guesswork.
+            Upload your Meta Ads CSV and get a complete diagnosis in 60 seconds — what to kill, what to scale, and exactly why. No agency. No guesswork.
           </p>
         </FadeIn>
 
         {/* CTAs */}
-        <FadeIn delay={0.26}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+        <FadeIn delay={0.25}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
+            {/* Primary */}
             <button
               onClick={onCtaClick}
-              className="inline-flex items-center gap-2.5 text-white font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+              className="inline-flex items-center gap-2.5 text-white font-semibold cursor-pointer transition-all duration-200"
               style={{
-                padding: "15px 32px",
-                borderRadius: 100,
-                background: "linear-gradient(135deg, #6c5ce7 0%, #e040fb 100%)",
-                fontSize: 15,
-                boxShadow: "0 6px 30px rgba(108,92,231,0.38)",
+                padding:       "16px 36px",
+                borderRadius:   12,
+                background:    "linear-gradient(135deg, #7C3AED, #C026D3)",
+                fontSize:       16,
+                letterSpacing: "-0.01em",
+                fontFamily:    "var(--font-inter)",
+                boxShadow:     "0 4px 20px rgba(124,58,237,0.3)",
+                border:        "none",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 36px rgba(108,92,231,0.52)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 30px rgba(108,92,231,0.38)"; }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(124,58,237,0.38)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.3)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              }}
             >
               Start Free Trial
               <ArrowRight className="w-4 h-4" />
             </button>
 
+            {/* Secondary */}
             <button
               onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
-              className="inline-flex items-center gap-2 font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-              style={{ padding: "15px 32px", borderRadius: 100, background: "#ffffff", border: "1.5px solid #e5e7eb", fontSize: 15, color: "#0d0d1a" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#c4bef0"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; }}
+              className="inline-flex items-center gap-2 font-medium cursor-pointer transition-all duration-150"
+              style={{
+                padding:       "16px 32px",
+                borderRadius:   12,
+                background:    "#ffffff",
+                border:        "1.5px solid #E2E0DA",
+                fontSize:       16,
+                letterSpacing: "-0.01em",
+                color:         "#0D0D12",
+                fontFamily:    "var(--font-inter)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#B0ADAA";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow   = "0 2px 8px rgba(0,0,0,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2E0DA";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow   = "none";
+              }}
             >
+              <Play className="w-4 h-4" fill="currentColor" />
               See how it works
             </button>
           </div>
         </FadeIn>
 
-        {/* Social proof pill */}
-        <FadeIn delay={0.34}>
-          <div className="flex justify-center mt-8">
+        {/* Trust text */}
+        <FadeIn delay={0.30}>
+          <p
+            style={{
+              fontSize:   13,
+              color:      "#A8A5A0",
+              marginTop:  16,
+              fontFamily: "var(--font-inter)",
+            }}
+          >
+            No credit card required · Free analysis on your first account
+          </p>
+        </FadeIn>
+
+        {/* Proof pill */}
+        <FadeIn delay={0.35}>
+          <div className="flex justify-center mt-10">
             <div
-              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full cursor-default"
-              style={{ background: "#0d0d1a", color: "#ffffff" }}
+              className="inline-flex items-center gap-2.5 cursor-default"
+              style={{
+                background:   "#0D0D12",
+                color:        "#ffffff",
+                borderRadius:  100,
+                padding:      "11px 22px",
+                fontSize:      13,
+                fontWeight:    400,
+                fontFamily:   "var(--font-inter)",
+              }}
             >
-              <Users className="w-4 h-4 flex-shrink-0" style={{ color: "#e040fb" }} />
-              <span style={{ fontSize: 13, fontWeight: 500, fontFamily: "var(--font-inter)" }}>
+              <Users className="w-4 h-4 flex-shrink-0" style={{ color: "rgba(255,255,255,0.6)" }} />
+              <span>
                 Built by media buyers who&apos;ve managed{" "}
-                <span style={{ color: "#e040fb", fontWeight: 700 }}>$70M+</span>
-                {" "}in ad spend
+                <strong
+                  style={{
+                    fontWeight:           600,
+                    background:           "linear-gradient(90deg, #A78BFA, #E879F9)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor:  "transparent",
+                    backgroundClip:       "text",
+                  }}
+                >
+                  $70M+
+                </strong>{" "}
+                in ad spend
               </span>
             </div>
           </div>
         </FadeIn>
+
       </div>
     </section>
   );
