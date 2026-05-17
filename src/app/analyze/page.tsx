@@ -33,7 +33,7 @@ function incrementCount(): number {
 
 export default function AnalyzePage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, session, loading: authLoading, signOut } = useAuth();
   const [isLoading, setIsLoading]         = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [onboarding, setOnboarding]       = useState<OnboardingData | null>(null);
@@ -92,7 +92,13 @@ export default function AnalyzePage() {
       const response = await fetch("/api/analyze", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ summaries: campaignSummaries, onboarding }),
+        body:    JSON.stringify({
+          summaries:     campaignSummaries,
+          onboarding,
+          sessionToken:  session?.access_token,
+          plan:          localStorage.getItem("adur_plan") ?? "free",
+          analysisCount: currentCount,
+        }),
         signal:  controller.signal,
       });
 
@@ -101,6 +107,14 @@ export default function AnalyzePage() {
         data = await response.json();
       } catch {
         throw new Error(`Server returned non-JSON response (status ${response.status})`);
+      }
+
+      // Server-side limit gate
+      if (response.status === 403 && (data as { code?: string }).code === "FREE_LIMIT_EXCEEDED") {
+        setShowLoader(false);
+        setPaywallReason("analysis");
+        setPaywallOpen(true);
+        return;
       }
 
       if (!response.ok) {
@@ -286,7 +300,7 @@ export default function AnalyzePage() {
             <div className="rounded-xl px-5 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
               <div className="flex items-center justify-between mb-2">
                 <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
-                  {analysisCount} of {FREE_LIMIT} free analyses used
+                  {Math.min(analysisCount, FREE_LIMIT)} of {FREE_LIMIT} free analyses used
                 </span>
                 {remaining === 0 ? (
                   <button

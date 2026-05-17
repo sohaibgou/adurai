@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
 import type { CampaignSummary } from "@/lib/types";
 
 // Allow up to 120 seconds for the Claude API call
 export const maxDuration = 120;
+
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const FREE_LIMIT   = 3;
 
 const INDUSTRY_BENCHMARKS = `
 META ADS INDUSTRY BENCHMARKS — use these as hard reference points. Compare EVERY campaign metric against these benchmarks and cite them explicitly in your recommendations. Never guess without context.
@@ -163,10 +167,53 @@ interface OnboardingData {
 
 export async function POST(request: NextRequest) {
   try {
-    const { summaries, onboarding } = (await request.json()) as {
+    const body = (await request.json()) as {
       summaries: CampaignSummary[];
       onboarding?: OnboardingData | null;
+      sessionToken?: string;
+      plan?: string;
+      analysisCount?: number;
     };
+    const { summaries, onboarding, sessionToken, plan, analysisCount: clientCount } = body;
+
+    // ── Server-side limit enforcement ─────────────────────────────────────────
+    let serverPaid  = false;
+    let serverAdmin = false;
+
+    if (sessionToken) {
+      try {
+        const sb = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { global: { headers: { Authorization: `Bearer ${sessionToken}` } } }
+        );
+        const { data: { user } } = await sb.auth.getUser();
+        if (user?.email) {
+          serverAdmin = ADMIN_EMAILS.includes(user.email);
+          if (!serverAdmin) {
+            const { data: sub } = await sb
+              .from("subscriptions")
+              .select("status")
+              .eq("user_id", user.id)
+              .eq("status", "active")
+              .maybeSingle();
+            serverPaid = !!sub;
+          }
+        }
+      } catch { /* fall through to client-count check */ }
+    }
+
+    if (!serverAdmin && !serverPaid) {
+      const count       = typeof clientCount === "number" ? clientCount : 0;
+      const clientPlan  = typeof plan === "string" ? plan : "free";
+      if (clientPlan === "free" && count >= FREE_LIMIT) {
+        return NextResponse.json(
+          { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
+          { status: 403 }
+        );
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     if (!summaries || summaries.length === 0) {
       return NextResponse.json(
