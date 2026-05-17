@@ -19,6 +19,8 @@ import type { AnalysisResult, OnboardingData } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+
 function isPaidPlan(): boolean {
   try { return localStorage.getItem("adur_plan") === "starter"; } catch { return false; }
 }
@@ -292,6 +294,7 @@ export default function ResultsPage() {
                   summaries={summaries}
                   winners={analysis.winners}
                   isPaid={paidPlan}
+                  isAdmin={!!(user?.email && ADMIN_EMAILS.includes(user.email))}
                   onPaywall={(reason) => { setPaywallReason(reason); setPaywallOpen(true); }}
                 />
               </section>

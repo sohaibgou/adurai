@@ -35,12 +35,6 @@ function incrementCount(): number {
   try { localStorage.setItem("adur_analysis_count", String(next)); } catch { /* noop */ }
   return next;
 }
-async function isAdminUser(): Promise<boolean> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    return !!(session?.user?.email && ADMIN_EMAILS.includes(session.user.email));
-  } catch { return false; }
-}
 
 export default function Home() {
   const router = useRouter();
@@ -85,8 +79,8 @@ export default function Home() {
   async function handleFileSelected(file: File) {
     const currentCount = getCount();
     const currentPaid  = isPaidPlan();
-    const admin        = await isAdminUser();
-    if (!admin && !currentPaid && currentCount >= FREE_LIMIT) {
+    const isAdmin      = !!(user?.email && ADMIN_EMAILS.includes(user.email));
+    if (!isAdmin && !currentPaid && currentCount >= FREE_LIMIT) {
       setPaywallReason("analysis");
       setPaywallOpen(true);
       return;
