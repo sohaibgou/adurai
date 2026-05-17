@@ -203,19 +203,20 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="min-h-screen overflow-x-hidden"
-        style={{ background: "#F7F5F2" }}
+        style={{ background: "#FAF8F5", backgroundImage: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 100, 180, 0.07) 0%, transparent 70%)" }}
       >
         {/* ── Nav card ── */}
         <nav
           className="flex items-center justify-between"
           style={{
-            height:       64,
-            background:   "#FFFFFF",
-            borderRadius: 14,
-            margin:       "16px 24px 0",
-            border:       "1px solid #E8E5E0",
-            boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
-            padding:      "0 32px",
+            height:               64,
+            background:           "rgba(250, 248, 245, 0.92)",
+            backdropFilter:       "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderRadius:         0,
+            margin:               0,
+            borderBottom:         "1px solid #EDE9E3",
+            padding:              "0 48px",
           }}
         >
             <span
@@ -310,12 +311,12 @@ export default function Home() {
                     className="inline-flex items-center gap-1.5 font-semibold text-white cursor-pointer"
                     style={{
                       fontSize:      14,
-                      background:   "linear-gradient(135deg, #7C3AED, #C026D3)",
+                      background:   "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       border:       "none",
                       padding:      "10px 22px",
                       borderRadius:  10,
                       fontFamily:   "var(--font-inter)",
-                      boxShadow:    "0 2px 12px rgba(124,58,237,0.25)",
+                      boxShadow:    "0 2px 12px rgba(255, 60, 172, 0.25)",
                       transition:   "opacity 0.15s, transform 0.15s",
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}

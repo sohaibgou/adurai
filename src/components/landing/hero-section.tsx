@@ -9,7 +9,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onCtaClick }: HeroSectionProps) {
   return (
-    <section style={{ background: "#F7F5F2" }}>
+    <section style={{ background: "transparent" }}>
 
       {/* ── Hero copy ── */}
       <div
@@ -70,11 +70,11 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               style={{
                 padding:       "16px 36px",
                 borderRadius:   12,
-                background:    "linear-gradient(135deg, #7C3AED, #C026D3)",
+                background:    "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                 fontSize:       16,
                 letterSpacing: "-0.01em",
                 fontFamily:    "var(--font-inter)",
-                boxShadow:     "0 4px 20px rgba(124,58,237,0.3)",
+                boxShadow:     "0 4px 20px rgba(255, 60, 172, 0.35)",
                 border:        "none",
                 transition:    "opacity 0.15s, transform 0.15s, box-shadow 0.2s",
               }}
@@ -82,13 +82,13 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 const b = e.currentTarget as HTMLButtonElement;
                 b.style.opacity   = "0.92";
                 b.style.transform = "translateY(-2px)";
-                b.style.boxShadow = "0 8px 28px rgba(124,58,237,0.35)";
+                b.style.boxShadow = "0 8px 28px rgba(255, 60, 172, 0.45)";
               }}
               onMouseLeave={(e) => {
                 const b = e.currentTarget as HTMLButtonElement;
                 b.style.opacity   = "1";
                 b.style.transform = "translateY(0)";
-                b.style.boxShadow = "0 4px 20px rgba(124,58,237,0.3)";
+                b.style.boxShadow = "0 4px 20px rgba(255, 60, 172, 0.35)";
               }}
             >
               Start Free Trial
