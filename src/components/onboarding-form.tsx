@@ -199,16 +199,13 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
   return (
     <section
       style={{
-        background:   "#FFFFFF",
-        borderTop:    "1px solid #E8E5E0",
-        paddingTop:    64,
-        paddingBottom: 80,
+        background:      "#FFFFFF",
+        backgroundImage: "linear-gradient(180deg, #FDF2F8 0px, #FFFFFF 120px)",
+        paddingTop:       72,
+        paddingBottom:    80,
       }}
     >
-      {/* Subtle top gradient glow to separate from landing above */}
-      <div style={{ position: "absolute", left: 0, right: 0, height: 320, background: "radial-gradient(ellipse 60% 100% at 50% 0%, rgba(255,60,172,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-      <div className="relative px-4 sm:px-6" style={{ maxWidth: 600, margin: "0 auto" }}>
+      <div className="px-4 sm:px-6" style={{ maxWidth: 600, margin: "0 auto" }}>
 
         {/* ── Header ── */}
         <AnimatePresence mode="wait">
