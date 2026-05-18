@@ -140,9 +140,9 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
         </FadeIn>
 
         {/* Proof pill */}
-        <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"#0D0D12",color:"#fff",borderRadius:100,padding:"11px 22px",fontSize:13,marginTop:32}}>
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{opacity:0.6,flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Built by media buyers who&apos;ve managed <strong style={{fontWeight:600,background:"linear-gradient(90deg,#FF3CAC,#FF6B35)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>&nbsp;$70M+&nbsp;</strong> in ad spend
+        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"#0D0D12",color:"#fff",borderRadius:100,padding:"10px 18px",fontSize:12,marginTop:32,whiteSpace:"nowrap",flexShrink:0}}>
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{opacity:0.6,flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Built by media buyers who&apos;ve managed&nbsp;<strong style={{fontWeight:700,background:"linear-gradient(90deg,#FF3CAC,#FF6B35)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>$70M+</strong>&nbsp;in ad spend
         </div>
 
       </div>
