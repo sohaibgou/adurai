@@ -209,14 +209,13 @@ export default function Home() {
         <nav
           className="flex items-center justify-between"
           style={{
-            height:               64,
-            background:           "rgba(250, 248, 245, 0.92)",
-            backdropFilter:       "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderRadius:         0,
-            margin:               0,
-            borderBottom:         "1px solid #EDE9E3",
-            padding:              "0 48px",
+            height:       64,
+            background:   "#FFFFFF",
+            borderRadius: 14,
+            margin:       "16px 24px 0",
+            border:       "1px solid #E8E5E0",
+            boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
+            padding:      "0 32px",
           }}
         >
             <span
