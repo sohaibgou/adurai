@@ -350,52 +350,11 @@ export default function Home() {
             onComplete={setOnboarding}
             onFileSelected={handleFileSelected}
             isLoading={isLoading}
+            analysisCount={analysisCount}
+            isPaid={paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email))}
+            onUpgradeClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
           />
         </div>
-
-        {/* Usage counter */}
-        {!paidPlan && analysisCount > 0 && !(user?.email && ADMIN_EMAILS.includes(user.email)) && (
-          <div className="max-w-lg mx-auto px-6 -mt-4 mb-6">
-            <div className="rounded-xl px-5 py-3" style={{ background: "#f8f8fc", border: "1px solid #f0f0f5" }}>
-              <div className="flex items-center justify-between mb-2">
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", fontFamily: "var(--font-inter)" }}>
-                  {Math.min(analysisCount, FREE_LIMIT)} of {FREE_LIMIT} free analyses used
-                </span>
-                {remaining === 0 ? (
-                  <button
-                    onClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
-                    className="text-xs font-semibold cursor-pointer transition-colors"
-                    style={{ color: "#FF3CAC", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF6B35"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF3CAC"; }}
-                  >
-                    Upgrade for unlimited →
-                  </button>
-                ) : (
-                  <span style={{ fontSize: 12, color: remaining === 1 ? "#e17055" : "#6b7280", fontFamily: "var(--font-inter)", fontWeight: remaining === 1 ? 600 : 400 }}>
-                    {remaining} remaining
-                  </span>
-                )}
-              </div>
-              <div style={{ height: 5, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(analysisCount / FREE_LIMIT) * 100}%` }}
-                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  style={{
-                    height:     "100%",
-                    borderRadius: 100,
-                    background: analysisCount >= FREE_LIMIT
-                      ? "#e17055"
-                      : analysisCount === FREE_LIMIT - 1
-                      ? "linear-gradient(90deg, #FF3CAC, #FF6B35)"
-                      : "linear-gradient(90deg, #FF3CAC, #FF6B35)",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Error display */}
         {error && (

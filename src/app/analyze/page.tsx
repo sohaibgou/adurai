@@ -291,6 +291,9 @@ export default function AnalyzePage() {
             onComplete={setOnboarding}
             onFileSelected={handleFileSelected}
             isLoading={isLoading}
+            analysisCount={0}
+            isPaid={true}
+            onUpgradeClick={() => {}}
           />
         </motion.div>
 
