@@ -14,12 +14,12 @@ export default function SiteFooter() {
           <div className="flex items-center gap-2.5">
             <div
               className="flex items-center justify-center font-bold text-white"
-              style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #6c5ce7, #e040fb)", fontSize: 13 }}
+              style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 13 }}
             >
               A
             </div>
             <span className="font-heading font-bold" style={{ fontSize: 16, color: "#ffffff", letterSpacing: "-0.02em" }}>
-              Adur<span style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
+              Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
             </span>
           </div>
 

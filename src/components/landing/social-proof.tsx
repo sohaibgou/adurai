@@ -66,8 +66,8 @@ const PROBLEMS = [
           <span style={{ fontSize: 10, color: "#9ca3af" }}>LOSER</span>
         </div>
         <div style={{ flex: 1, textAlign: "center" }}>
-          <div style={{ height: 64, borderRadius: 6, background: "linear-gradient(180deg, #e040fb40 0%, #6c5ce740 100%)", border: "1.5px solid #6c5ce760", marginBottom: 4 }} />
-          <span style={{ fontSize: 10, color: "#6c5ce7", fontWeight: 600 }}>SCALER</span>
+          <div style={{ height: 64, borderRadius: 6, background: "linear-gradient(180deg, rgba(255,60,172,0.25) 0%, rgba(255,107,53,0.25) 100%)", border: "1.5px solid rgba(255,60,172,0.35)", marginBottom: 4 }} />
+          <span style={{ fontSize: 10, color: "#FF3CAC", fontWeight: 600 }}>SCALER</span>
         </div>
       </div>
     ),
@@ -80,13 +80,13 @@ export default function SocialProof() {
       <div className="relative z-10 max-w-6xl mx-auto">
         <FadeIn>
           <div className="mb-16">
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e040fb", marginBottom: 16, fontFamily: "var(--font-inter)" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF3CAC", marginBottom: 16, fontFamily: "var(--font-inter)" }}>
               The Advertising Crisis
             </p>
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
               <h2 className="font-heading" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.05, maxWidth: 560 }}>
                 Performance advertising<br />is{" "}
-                <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>broken.</span>
+                <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>broken.</span>
               </h2>
               <p style={{ fontSize: 16, color: "#6b7280", lineHeight: 1.65, maxWidth: 360, fontFamily: "var(--font-inter)" }}>
                 Every day, e-commerce brands waste thousands of dollars on underperforming campaigns — not because they don&apos;t care, but because no tool has ever told them exactly what to do. Until now.
@@ -102,7 +102,7 @@ export default function SocialProof() {
                 whileHover={{ y: -5, boxShadow: "0 16px 48px rgba(0,0,0,0.10)" }}
                 transition={{ duration: 0.22 }}
                 className="flex flex-col h-full rounded-2xl p-6 cursor-default"
-                style={{ background: "#f9f9fc", border: "1px solid #f0f0f5", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                style={{ background: "#F7F5F2", border: "1px solid #E8E5E0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
               >
                 {/* Mini mockup */}
                 <div className="mb-5 rounded-xl p-3" style={{ background: "#ffffff", border: "1px solid #f0f0f5", minHeight: 80 }}>
@@ -110,8 +110,8 @@ export default function SocialProof() {
                 </div>
                 {/* Icon + label */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.12), rgba(224,64,251,0.12))" }}>
-                    <p.icon style={{ width: 14, height: 14, color: "#6c5ce7" }} />
+                  <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "rgba(255,60,172,0.08)" }}>
+                    <p.icon style={{ width: 14, height: 14, color: "#FF3CAC" }} />
                   </div>
                 </div>
                 <h3 className="font-heading" style={{ fontSize: 18, fontWeight: 700, color: "#0d0d1a", letterSpacing: "-0.01em", marginBottom: 8 }}>{p.title}</h3>

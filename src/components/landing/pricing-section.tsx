@@ -63,12 +63,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
   }
 
   return (
-    <section className="py-28 relative" id="pricing" style={{ background: "#f8f8fc" }}>
+    <section className="py-28 relative" id="pricing" style={{ background: "#FAF8F5" }}>
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(108,92,231,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,60,172,0.06) 0%, transparent 70%)",
         }}
       />
 
@@ -78,7 +78,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           <div className="text-center mb-14">
             <span
               className="inline-block text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#6c5ce7", letterSpacing: "0.12em" }}
+              style={{ color: "#FF3CAC", letterSpacing: "0.12em" }}
             >
               Pricing
             </span>
@@ -155,27 +155,27 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           {/* ── STARTER (highlighted) ── */}
           <FadeIn delay={0.1}>
             <motion.div
-              whileHover={{ y: -8, boxShadow: "0 24px 70px rgba(108,92,231,0.22)" }}
+              whileHover={{ y: -8, boxShadow: "0 24px 70px rgba(255,60,172,0.22)" }}
               transition={{ duration: 0.25 }}
               className="flex flex-col h-full rounded-2xl p-8 relative"
               style={{
                 background: "#ffffff",
-                border: "1.5px solid rgba(108,92,231,0.4)",
-                boxShadow: "0 8px 40px rgba(108,92,231,0.14)",
+                border: "1.5px solid rgba(255,60,172,0.35)",
+                boxShadow: "0 8px 40px rgba(255,60,172,0.14)",
                 transform: "scale(1.03)",
               }}
             >
               <div
                 className="absolute inset-0 rounded-2xl pointer-events-none"
                 style={{
-                  background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,92,231,0.06) 0%, transparent 70%)",
+                  background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,60,172,0.06) 0%, transparent 70%)",
                 }}
               />
 
               <div className="mb-5 relative">
                 <span
                   className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full"
-                  style={{ background: "rgba(108,92,231,0.12)", color: "#6c5ce7", letterSpacing: "0.08em" }}
+                  style={{ background: "rgba(255,60,172,0.1)", color: "#FF3CAC", letterSpacing: "0.08em" }}
                 >
                   <Sparkles className="w-3 h-3" />
                   Most Popular
@@ -200,9 +200,9 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                   <li key={f} className="flex items-start gap-3">
                     <div
                       className="mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
-                      style={{ background: "rgba(108,92,231,0.12)" }}
+                      style={{ background: "rgba(255,60,172,0.1)" }}
                     >
-                      <Check className="w-3 h-3" style={{ color: "#6c5ce7" }} strokeWidth={3} />
+                      <Check className="w-3 h-3" style={{ color: "#FF3CAC" }} strokeWidth={3} />
                     </div>
                     <span className="text-sm font-medium" style={{ color: "#374151" }}>{f}</span>
                   </li>
@@ -215,8 +215,8 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                 className="relative w-full py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{
                   borderRadius: "8px",
-                  background: checkoutLoading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #8b7cf7)",
-                  boxShadow: checkoutLoading ? "none" : "0 4px 24px rgba(108,92,231,0.4)",
+                  background: checkoutLoading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                  boxShadow: checkoutLoading ? "none" : "0 4px 20px rgba(255,60,172,0.3)",
                 }}
               >
                 {checkoutLoading ? "Checking…" : "Get Started"}
@@ -295,7 +295,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                   className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md"
                   style={{ background: "rgba(255,255,255,0.9)", border: "1px solid #f0f0f5" }}
                 >
-                  <Lock className="w-4 h-4" style={{ color: "#6c5ce7" }} />
+                  <Lock className="w-4 h-4" style={{ color: "#FF3CAC" }} />
                 </div>
               </div>
             </motion.div>
@@ -340,7 +340,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                   boxShadow: "0 32px 80px rgba(0,0,0,0.20), 0 0 0 1px rgba(0,0,0,0.06)",
                 }}
               >
-                <div style={{ height: 4, background: "linear-gradient(90deg, #0a0a0f, #6c5ce7)" }} />
+                <div style={{ height: 4, background: "linear-gradient(90deg, #0D0D12, #FF3CAC)" }} />
                 <button
                   onClick={() => { setWaitlistOpen(false); setWaitlistSubmitted(false); setWaitlistEmail(""); }}
                   className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-colors"
@@ -394,7 +394,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                             fontFamily: "var(--font-inter)",
                             color: "#0d0d1a",
                           }}
-                          onFocus={e => { (e.currentTarget as HTMLInputElement).style.borderColor = "#6c5ce7"; }}
+                          onFocus={e => { (e.currentTarget as HTMLInputElement).style.borderColor = "#FF3CAC"; }}
                           onBlur={e => { (e.currentTarget as HTMLInputElement).style.borderColor = "#e5e7eb"; }}
                         />
                         <button

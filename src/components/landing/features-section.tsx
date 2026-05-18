@@ -34,14 +34,14 @@ const FEATURES = [
   },
   {
     icon: Target,
-    accentColor: "#6c5ce7",
+    accentColor: "#FF3CAC",
     label: "Action Plan",
     title: "7-Day Battle Plan",
     description: "Stop wondering what to do next. Get a precise, ordered list of actions ranked by revenue impact — built specifically around your goals and account data.",
     bullets: ["Priority-ranked action list", "Tailored to your goals", "7-day execution timeline"],
     mockup: (
-      <div style={{ background: "#f8f8ff", borderRadius: 16, padding: 20, border: "1px solid rgba(108,92,231,0.12)" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#6c5ce7", marginBottom: 12 }}>7-DAY BATTLE PLAN</p>
+      <div style={{ background: "#FAF8F5", borderRadius: 16, padding: 20, border: "1px solid rgba(255,60,172,0.12)" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#FF3CAC", marginBottom: 12 }}>7-DAY BATTLE PLAN</p>
         {[
           { day: "Day 1", action: "Pause BOF Cold campaign immediately", priority: "HIGH", color: "#e17055" },
           { day: "Day 2", action: "Scale Summer Sale budget +40%", priority: "HIGH", color: "#e17055" },
@@ -61,14 +61,14 @@ const FEATURES = [
   },
   {
     icon: Wand2,
-    accentColor: "#e040fb",
+    accentColor: "#FF6B35",
     label: "AI Creative",
     title: "Ad Copy Generator",
     description: "Turn your winners into a content engine. Our AI writes high-converting Meta ad copy — headlines, primary text, and CTAs — based on what already works in your account.",
     bullets: ["Platform-native copy", "Trained on winner patterns", "5 copy variants instantly"],
     mockup: (
-      <div style={{ background: "#fdf5ff", borderRadius: 16, padding: 20, border: "1px solid rgba(224,64,251,0.12)" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#e040fb", marginBottom: 12 }}>AI COPY GENERATOR</p>
+      <div style={{ background: "#FAF8F5", borderRadius: 16, padding: 20, border: "1px solid rgba(255,107,53,0.12)" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B35", marginBottom: 12 }}>AI COPY GENERATOR</p>
         {[
           { label: "Headline", copy: "Stop wasting money on Meta ads →" },
           { label: "Primary", copy: "Your ROAS data tells a story. We read it for you in 60 seconds..." },
@@ -88,16 +88,16 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <section className="relative py-28 px-6 overflow-hidden" style={{ background: "#f8f8fc" }}>
+    <section className="relative py-28 px-6 overflow-hidden" style={{ background: "#FAF8F5" }}>
       <div className="relative z-10 max-w-6xl mx-auto">
         <FadeIn>
           <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6" style={{ background: "rgba(108,92,231,0.08)", border: "1px solid rgba(108,92,231,0.18)" }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6c5ce7" }}>Execution Layer</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6" style={{ background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.18)" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FF3CAC" }}>Execution Layer</span>
             </div>
             <h2 className="font-heading" style={{ fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.05 }}>
               One-Click Meta{" "}
-              <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                 Auto-Implementation.
               </span>
             </h2>
@@ -139,7 +139,7 @@ export default function FeaturesSection() {
                   whileHover={{ y: -6, boxShadow: "0 24px 64px rgba(0,0,0,0.10)" }}
                   transition={{ duration: 0.22 }}
                   className="flex-1 w-full rounded-2xl p-6"
-                  style={{ background: "#ffffff", border: "1px solid #f0f0f5", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+                  style={{ background: "#ffffff", border: "1px solid #E8E5E0", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
                 >
                   {feature.mockup}
                 </motion.div>

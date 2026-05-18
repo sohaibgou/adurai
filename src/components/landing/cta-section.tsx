@@ -13,19 +13,19 @@ export default function CtaSection({ onCtaClick }: CtaSectionProps) {
     <section className="relative py-32 px-6 overflow-hidden" style={{ background: "#0d0d1a" }}>
       {/* Orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{ position: "absolute", top: "50%", left: "20%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(108,92,231,0.20) 0%, transparent 70%)", filter: "blur(80px)" }} />
-        <div style={{ position: "absolute", top: "50%", right: "10%", transform: "translateY(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(224,64,251,0.15) 0%, transparent 70%)", filter: "blur(80px)" }} />
+        <div style={{ position: "absolute", top: "50%", left: "20%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,60,172,0.20) 0%, transparent 70%)", filter: "blur(80px)" }} />
+        <div style={{ position: "absolute", top: "50%", right: "10%", transform: "translateY(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,107,53,0.15) 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto text-center">
         <FadeIn>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e040fb", marginBottom: 20, fontFamily: "var(--font-inter)" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF3CAC", marginBottom: 20, fontFamily: "var(--font-inter)" }}>
             Get Started Free
           </p>
           <h2 className="font-heading" style={{ fontSize: "clamp(40px, 5vw, 64px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#ffffff", lineHeight: 1.05 }}>
             Stop guessing.
             <br />
-            <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               Start winning.
             </span>
           </h2>
@@ -44,9 +44,9 @@ export default function CtaSection({ onCtaClick }: CtaSectionProps) {
               style={{
                 padding: "16px 36px",
                 borderRadius: 100,
-                background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+                background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                 fontSize: 15,
-                boxShadow: "0 6px 30px rgba(108,92,231,0.45)",
+                boxShadow: "0 6px 30px rgba(255,60,172,0.35)",
               }}
             >
               Analyze My Ads Free
