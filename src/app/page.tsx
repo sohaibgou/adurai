@@ -203,47 +203,47 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="min-h-screen overflow-x-hidden"
-        style={{ background: "#FAF8F5", backgroundImage: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 100, 180, 0.07) 0%, transparent 70%)" }}
+        style={{ background: "#FAF8F5", backgroundImage: "radial-gradient(ellipse 80% 60% at 50% 10%, rgba(255, 100, 180, 0.09) 0%, transparent 65%)" }}
       >
-        {/* ── Nav card ── */}
+        {/* ── Nav ── */}
         <nav
-          className="flex items-center justify-between"
+          className="flex items-center justify-between sticky top-0 z-50"
           style={{
-            height:       68,
-            background:   "#FFFFFF",
-            borderRadius: 16,
-            margin:       "16px 24px 0",
-            border:       "1px solid #E8E5E0",
-            boxShadow:    "0 2px 8px rgba(0,0,0,0.06)",
-            padding:      "0 28px",
+            height:       72,
+            background:   "rgba(255,255,255,0.96)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderBottom: "1px solid #E8E5E0",
+            boxShadow:    "0 1px 3px rgba(0,0,0,0.04)",
+            padding:      "0 40px",
           }}
         >
             {/* Logo */}
             <div className="flex items-center gap-2.5 cursor-default select-none flex-shrink-0">
               <div
                 className="flex items-center justify-center font-bold text-white"
-                style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 13, flexShrink: 0 }}
+                style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 14, flexShrink: 0, boxShadow: "0 2px 8px rgba(255,60,172,0.30)" }}
               >
                 A
               </div>
               <span
                 className="font-heading font-bold"
-                style={{ fontSize: 17, color: "#0d0d1a", letterSpacing: "-0.025em" }}
+                style={{ fontSize: 18, color: "#0d0d1a", letterSpacing: "-0.03em" }}
               >
                 Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
               </span>
             </div>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-9">
               {[
-                { label: "How it works", id: "how-it-works" },
-                { label: "Features",     id: "features" },
-                { label: "Pricing",      id: "pricing" },
+                { label: "HOW IT WORKS", id: "how-it-works" },
+                { label: "FEATURES",     id: "features" },
+                { label: "PRICING",      id: "pricing" },
               ].map(({ label, id }) => (
                 <span
                   key={label}
                   className="cursor-pointer"
-                  style={{ fontSize: 14, color: "#6B6B72", fontWeight: 500, fontFamily: "var(--font-inter)", transition: "color 0.15s", whiteSpace: "nowrap" }}
+                  style={{ fontSize: 11, color: "#6B6B72", fontWeight: 600, fontFamily: "var(--font-inter)", letterSpacing: "0.08em", transition: "color 0.15s", whiteSpace: "nowrap" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0D0D12"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6B6B72"; }}
                   onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}
@@ -298,22 +298,22 @@ export default function Home() {
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                   <Link
                     href="/login"
-                    className="hidden md:inline-flex items-center font-medium cursor-pointer"
+                    className="hidden md:inline-flex items-center font-semibold cursor-pointer"
                     style={{
-                      fontSize:       14,
-                      color:          "#0D0D12",
-                      background:     "none",
-                      border:         "1.5px solid #E2E0DA",
-                      padding:        "9px 20px",
-                      borderRadius:    10,
-                      textDecoration:  "none",
-                      fontFamily:     "var(--font-inter)",
-                      transition:     "border-color 0.15s",
+                      fontSize:      13,
+                      color:         "#4B4B55",
+                      background:    "none",
+                      border:        "none",
+                      padding:       "8px 12px",
+                      textDecoration: "none",
+                      fontFamily:    "var(--font-inter)",
+                      letterSpacing: "0.02em",
+                      transition:    "color 0.15s",
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#B0ADAA"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#E2E0DA"; }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D0D12"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#4B4B55"; }}
                   >
-                    Sign In
+                    LOG IN
                   </Link>
                   <button
                     onClick={scrollToOnboarding}
