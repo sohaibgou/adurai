@@ -85,7 +85,7 @@ const EFFORT_CONFIG = {
 
 const DAY_GROUP_ACCENT: Record<number, string> = {
   1: "#e17055", 2: "#e17055",   // Immediate — red-orange
-  3: "#6c5ce7", 4: "#6c5ce7",   // Testing — purple
+  3: "#FF6B35", 4: "#FF6B35",   // Testing — brand orange
   5: "#00cec9", 6: "#00cec9",   // Monitor — teal
   7: "#0984e3",                  // Review — blue
 };
@@ -109,7 +109,7 @@ export default function Recommendations({
           {/* Gradient accent top bar */}
           <div
             className="h-[3px] w-full"
-            style={{ background: "linear-gradient(90deg, #6c5ce7 0%, #00cec9 100%)" }}
+            style={{ background: "linear-gradient(90deg, #FF3CAC 0%, #FF6B35 100%)" }}
           />
 
           <div className="p-8">
@@ -312,7 +312,7 @@ export default function Recommendations({
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: "#f0edff" }}
             >
-              <Compass className="w-5 h-5" style={{ color: "#6c5ce7" }} />
+              <Compass className="w-5 h-5" style={{ color: "#FF3CAC" }} />
             </div>
             <div>
               <p className="section-label">Action Plan</p>
@@ -328,7 +328,7 @@ export default function Recommendations({
           {/* Day cards */}
           <div className="divide-y divide-card-border">
             {battlePlan.map((day, i) => {
-              const accent = DAY_GROUP_ACCENT[day.day] ?? "#6c5ce7";
+              const accent = DAY_GROUP_ACCENT[day.day] ?? "#FF3CAC";
               const effortCfg = EFFORT_CONFIG[day.effort] ?? EFFORT_CONFIG["Strategic"];
               const EffortIcon = effortCfg.icon;
 

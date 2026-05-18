@@ -96,7 +96,7 @@ function SuccessContent() {
         >
           <div
             className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "rgba(108,92,231,0.3)", borderTopColor: "#6c5ce7" }}
+            style={{ borderColor: "rgba(255,60,172,0.25)", borderTopColor: "#FF3CAC" }}
           />
           <p style={{ fontSize: 14, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
             Confirming your payment…
@@ -164,7 +164,7 @@ function SuccessContent() {
             style={{ fontSize: 16, color: "#6b7280", lineHeight: 1.65, fontFamily: "var(--font-inter)", marginBottom: 32 }}
           >
             Unlimited analyses unlocked. Welcome to{" "}
-            <span style={{ color: "#6c5ce7", fontWeight: 600 }}>Adur.ai</span>
+            <span style={{ color: "#FF3CAC", fontWeight: 600 }}>Adur.ai</span>
           </motion.p>
 
           {/* Feature pills */}
@@ -208,10 +208,10 @@ function SuccessContent() {
             style={{
               padding: "15px 36px",
               borderRadius: 100,
-              background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+              background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
               fontSize: 15,
               fontFamily: "var(--font-inter)",
-              boxShadow: "0 6px 30px rgba(108,92,231,0.40)",
+              boxShadow: "0 6px 30px rgba(255,60,172,0.38)",
               border: "none",
             }}
           >
@@ -226,9 +226,9 @@ function SuccessContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.0, duration: 0.4 }}
               className="mt-5 w-full flex items-start gap-3 px-4 py-3 rounded-xl"
-              style={{ background: "rgba(108,92,231,0.06)", border: "1px solid rgba(108,92,231,0.15)" }}
+              style={{ background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.18)" }}
             >
-              <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#6c5ce7" }} />
+              <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#FF3CAC" }} />
               <p style={{ fontSize: 13, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
                 <span style={{ fontWeight: 600, color: "#0d0d1a" }}>Verify your email</span> — we sent a link to your inbox. Your account is active now.
               </p>
@@ -260,10 +260,10 @@ function fireConfetti() {
       confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
     }
 
-    fire(0.25, { spread: 26, startVelocity: 55, colors: ["#6c5ce7", "#e040fb"] });
-    fire(0.2, { spread: 60, colors: ["#6c5ce7", "#00b894"] });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ["#e040fb", "#00b894", "#6c5ce7"] });
-    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ["#6c5ce7"] });
-    fire(0.1, { spread: 120, startVelocity: 45, colors: ["#e040fb"] });
+    fire(0.25, { spread: 26, startVelocity: 55, colors: ["#FF3CAC", "#FF6B35"] });
+    fire(0.2,  { spread: 60, colors: ["#FF3CAC", "#00b894"] });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ["#FF6B35", "#00b894", "#FF3CAC"] });
+    fire(0.1,  { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ["#FF3CAC"] });
+    fire(0.1,  { spread: 120, startVelocity: 45, colors: ["#FF6B35"] });
   });
 }

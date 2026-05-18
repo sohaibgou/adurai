@@ -1,5 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
@@ -11,38 +9,118 @@ export interface ArabicTextData {
   cta:         string;
 }
 
+/* ── Nanobanana models (latest first) ── */
+const IMAGE_MODELS = [
+  "gemini-3-pro-image-preview",
+  "gemini-2.5-flash-image",
+];
+
+/* ── Shared 1:1 format spec for every prompt ── */
+const FORMAT_SPEC = `
+OUTPUT FORMAT — CRITICAL:
+- SQUARE 1:1 composition — equal width and height, like a 1080×1080 pixel Meta Feed ad canvas
+- Keep all critical content within the safe zone: centered 80% of the canvas, away from edges
+- Mobile-first: typography must be large enough to read on a 6-inch phone screen
+- Text coverage: ad copy should occupy no more than 20% of the image area
+- No letterboxing, no widescreen, no portrait format — SQUARE ONLY`;
+
+/* ── 4 Meta ad angles — text-to-image (no reference product image) ── */
 const ANGLES = [
   {
-    angle:  "Hero Shot",
-    suffix: "Product hero shot. Clean premium background. Minimal composition. Apple-style product photography. Professional studio lighting.",
+    angle:     "Hero Product Shot",
+    headline:  "",
+    rationale: "",
+    suffix:    `HERO PRODUCT SHOT — Channel Apple-level product photography. Pristine product centered on a clean, dramatic background (pure white, deep black, or bold complementary color). Professional studio lighting with subtle shadows for depth. Negative space. Zero clutter. Pure product confidence.
+Ad copy on image: bold benefit-driven headline (4–7 words) + supporting subheadline (8–12 words) + pill-shaped CTA button at bottom. High-contrast typography legible on mobile.`,
   },
   {
-    angle:  "Lifestyle",
-    suffix: "Lifestyle and emotion angle. Show transformation and aspiration. Warm relatable mood. Person benefiting from product.",
+    angle:     "Lifestyle & Emotion",
+    headline:  "",
+    rationale: "",
+    suffix:    `LIFESTYLE & EMOTION — Show the transformation, not the product. Feature a real person experiencing the result or benefit. Capture confidence, joy, or relief. Warm color grading, golden-hour or soft natural lighting. Feel editorial but authentic — magazine meets UGC.
+Ad copy on image: emotionally-charged transformation headline + specific benefit subheadline + pill-shaped CTA ("Start Today", "See Results") at bottom. Clean sans-serif, high-contrast.`,
   },
   {
-    angle:  "Social Proof",
-    suffix: "Social proof angle. Raw authentic feel. High credibility visual. Bold statistics layout.",
+    angle:     "Social Proof",
+    headline:  "",
+    rationale: "",
+    suffix:    `SOCIAL PROOF — Lead with credibility. Bold numbers as the visual anchor: "50,000+ sold", "4.9★ from 12,400 reviews". Design feels like viral UGC or a screenshot testimonial blown up. Raw, authentic, trustworthy — not over-polished.
+Ad copy on image: large bold proof statistic or star-rating graphic (★★★★★) as headline element + specific customer testimonial quote + trust-reinforcing CTA ("Join 50k+ Customers") at bottom.`,
   },
   {
-    angle:  "Pattern Interrupt",
-    suffix: "Bold unexpected scroll-stopping composition. Contrarian angle. High contrast. Something nobody else is doing.",
+    angle:     "Pattern Interrupt",
+    headline:  "",
+    rationale: "",
+    suffix:    `PATTERN INTERRUPT — Break every category convention. Extreme macro close-up, bold unexpected color palette, split-screen contrast, or surreal conceptual scene. Something that makes someone stop mid-scroll and say "wait — what is that?" Visually disruptive, polarizing, and memorable.
+Ad copy on image: oversized provocative headline as a design element (contrarian or curiosity-gap) + clarifying subheadline + bold CTA ("Find Out Why", "Switch Now"). Typography dominates.`,
   },
 ];
 
-const NO_TEXT_SUFFIX =
-  "CRITICAL: The image must contain absolutely NO text, letters, words, numbers, Arabic script, or any written characters anywhere. Pure visual only — no captions, no headlines, no watermarks.";
+/* ── Raw REST call to Gemini (nanobanana approach) ── */
+async function generateImage(
+  apiKey: string,
+  prompt: string,
+): Promise<{ data: string; mimeType: string } | null> {
+  for (const model of IMAGE_MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body:    JSON.stringify({
+            contents:         [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+          }),
+        },
+      );
 
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`[generate-creative] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+        continue;
+      }
+
+      const json = await res.json() as {
+        candidates?: { content: { parts: { inlineData?: { data: string; mimeType: string } }[] } }[];
+        error?: { message: string };
+      };
+
+      if (json.error) {
+        console.error(`[generate-creative] ${model} error:`, json.error.message);
+        continue;
+      }
+
+      const parts     = json.candidates?.[0]?.content?.parts ?? [];
+      const imagePart = parts.find((p) => !!p.inlineData);
+      if (imagePart?.inlineData) {
+        console.log(`[generate-creative] ✓ ${model}`);
+        return { data: imagePart.inlineData.data, mimeType: imagePart.inlineData.mimeType || "image/jpeg" };
+      }
+
+      console.warn(`[generate-creative] ${model} returned no image`);
+    } catch (err) {
+      console.error(`[generate-creative] ${model} threw:`, err instanceof Error ? err.message : err);
+    }
+  }
+  return null;
+}
+
+/* ── Arabic copy (text-only, raw REST) ── */
 async function generateArabicCopy(
-  anthropic: Anthropic,
+  apiKey: string,
   userPrompt: string,
 ): Promise<ArabicTextData[]> {
-  const response = await anthropic.messages.create({
-    model:      "claude-haiku-4-5",
-    max_tokens: 600,
-    messages: [{
-      role:    "user",
-      content: `You are a professional Arabic advertising copywriter. Generate 4 Arabic ad copy sets for this brief: "${userPrompt}"
+  try {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body:    JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a professional Arabic advertising copywriter. Generate 4 Arabic ad copy sets for this brief: "${userPrompt}"
 
 Angles (in order): Hero Shot, Lifestyle, Social Proof, Pattern Interrupt.
 
@@ -50,55 +128,46 @@ Return ONLY a valid JSON array with exactly 4 objects. No markdown, no explanati
 - headline: Arabic headline (5-8 words, bold and punchy)
 - subheadline: Arabic subheadline (8-12 words, supporting the headline)
 - cta: Arabic CTA button text (2-4 words)`,
-    }],
-  });
-
-  const raw     = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-  try {
+            }],
+          }],
+        }),
+      },
+    );
+    const json    = await res.json() as { candidates?: { content: { parts: { text?: string }[] } }[] };
+    const raw     = json.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text?.trim() ?? "";
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     return JSON.parse(cleaned) as ArabicTextData[];
   } catch {
     return [];
   }
 }
 
+/* ── POST ── */
 export async function POST(req: Request) {
   const { prompt, isArabic } = await req.json() as { prompt: string; isArabic?: boolean };
 
-  const anthropic = isArabic ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! }) : null;
+  const apiKey = process.env.GOOGLE_AI_KEY!;
 
-  // Kick off Arabic copy + image generation in parallel
-  const arabicCopyPromise = isArabic && anthropic
-    ? generateArabicCopy(anthropic, prompt)
+  const arabicCopyPromise = isArabic
+    ? generateArabicCopy(apiKey, prompt)
     : Promise.resolve<ArabicTextData[]>([]);
 
   const imagePromises = ANGLES.map(async ({ angle, suffix }) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_KEY! });
+    const noTextClause = isArabic
+      ? "\n\nCRITICAL: The image must contain absolutely NO text, letters, words, numbers, or any written characters anywhere. Pure visual only — text will be added separately as an overlay."
+      : "";
 
-    const fullPrompt = isArabic
-      ? `Premium high-converting Meta Ads static creative. ${prompt}. ${suffix} Professional DTC brand advertising quality. Scroll-stopping visual. ${NO_TEXT_SUFFIX}`
-      : `Premium high-converting Meta Ads static creative. ${prompt}. ${suffix} Professional DTC brand advertising quality. Scroll-stopping visual.`;
+    const fullPrompt = `You are a world-class Meta ads creative director who has produced campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands. Produce a FINISHED, print-ready Meta Feed static ad creative.
 
-    try {
-      const response = await ai.models.generateContent({
-        model:    "gemini-3-pro-image-preview",
-        contents: fullPrompt,
-        config:   {
-          responseModalities: ["TEXT", "IMAGE"],
-          imageConfig: { aspectRatio: "1:1" },
-        },
-      });
+BRIEF: ${prompt}
 
-      const parts     = response.candidates?.[0]?.content?.parts;
-      const imagePart = parts?.find((p) => !!p.inlineData);
-      if (!imagePart?.inlineData) return null;
+CREATIVE ANGLE — ${suffix}
 
-      const base64 = imagePart.inlineData.data;
-      const mime   = imagePart.inlineData.mimeType || "image/png";
-      return { url: `data:${mime};base64,${base64}`, angle, headline: "", rationale: "" };
-    } catch {
-      return null;
-    }
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional. Scroll-stopping on a busy Instagram feed.${FORMAT_SPEC}${noTextClause}`;
+
+    const result = await generateImage(apiKey, fullPrompt);
+    if (!result) return null;
+    return { url: `data:${result.mimeType};base64,${result.data}`, angle, headline: "", rationale: "" };
   });
 
   const [imageResults, arabicTexts] = await Promise.all([
@@ -107,6 +176,13 @@ export async function POST(req: Request) {
   ]);
 
   const images = imageResults.filter(Boolean);
+
+  if (images.length === 0) {
+    return NextResponse.json(
+      { error: "Image generation failed — no images returned. Check GOOGLE_AI_KEY." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({
     images,

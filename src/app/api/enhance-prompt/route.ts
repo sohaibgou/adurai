@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const { prompt } = await req.json() as { prompt: string };
@@ -13,20 +12,25 @@ export async function POST(req: Request) {
   console.log("━━━ /api/enhance-prompt ━━━");
   console.log("INPUT:", prompt);
 
-  const message = await client.messages.create({
-    model: "claude-opus-4-5",
-    max_tokens: 400,
-    messages: [
-      {
-        role: "user",
-        content: `Expand this into a detailed Ideogram image generation prompt for a premium Meta Ad creative. Make it specific about composition, lighting, background, text overlay if relevant, and visual style. Keep it under 200 words. Output only the prompt text, no explanations or quotes.
+  const res = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GOOGLE_AI_KEY! },
+      body:    JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Expand this into a detailed Gemini image generation prompt for a premium Meta Ad creative. Make it specific about composition, lighting, background, text overlay if relevant, and visual style. Keep it under 200 words. Output only the prompt text, no explanations or quotes.
 
 Input: ${prompt.trim()}`,
-      },
-    ],
-  });
+          }],
+        }],
+      }),
+    },
+  );
 
-  const enhanced = message.content[0].type === "text" ? message.content[0].text.trim() : null;
+  const json = await res.json() as { candidates?: { content: { parts: { text?: string }[] } }[] };
+  const enhanced = json.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text?.trim() ?? null;
   console.log("ENHANCED:", enhanced);
 
   return NextResponse.json({ enhanced });

@@ -216,8 +216,8 @@ async function applyArabicOverlay(
   ctx.closePath();
 
   const btnGrad = ctx.createLinearGradient(ctaBtnX, ctaBtnY, ctaBtnX + ctaBtnW, ctaBtnY);
-  btnGrad.addColorStop(0, "#6c5ce7");
-  btnGrad.addColorStop(1, "#e040fb");
+  btnGrad.addColorStop(0, "#FF3CAC");
+  btnGrad.addColorStop(1, "#FF6B35");
   ctx.fillStyle = btnGrad;
   ctx.fill();
 
@@ -362,8 +362,10 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       setPromptUsed(prompt.trim());
       setProgress(100);
       if (!isAdmin && !isPaid) { const next = incrementImageCount(); setImageUsage(next); }
-    } catch {
-      setError("Generation failed. Please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Generation failed. Please try again.";
+      console.error("[creative-studio] generate error:", msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -474,7 +476,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     >
       {/* ── Tab bar ── */}
       <div className="flex border-b border-[#f0f0f5] bg-white px-6 pt-5">
-        <div className="flex gap-1 p-1 rounded-xl bg-[#f4f4f8]">
+        <div className="flex gap-1 p-1 rounded-xl bg-[#F7F5F2]">
           {(["creative", "adcopy"] as const).map((tab) => (
             <button
               key={tab}
@@ -524,7 +526,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
               {/* Image upload */}
               <div className="space-y-2">
                 {refImage ? (
-                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#e8e8f0] bg-[#f8f8fc]">
+                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={refImage.previewUrl}
@@ -551,10 +553,10 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
                     onDragEnter={(e) => e.preventDefault()}
-                    className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#6c5ce7]/40 hover:bg-[#6c5ce7]/[0.02] transition-all duration-200 cursor-pointer group"
+                    className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#FF3CAC]/40 hover:bg-[#FF3CAC]/[0.03] transition-all duration-200 cursor-pointer group"
                   >
-                    <div className="w-11 h-11 rounded-2xl bg-[#f4f4f8] flex items-center justify-center group-hover:bg-[#6c5ce7]/8 transition-colors">
-                      <Upload className="w-5 h-5 text-[#9ca3af] group-hover:text-[#6c5ce7] transition-colors" />
+                    <div className="w-11 h-11 rounded-2xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#FF3CAC]/8 transition-colors">
+                      <Upload className="w-5 h-5 text-[#9ca3af] group-hover:text-[#FF3CAC] transition-colors" />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-semibold text-[#0a0a0f]">Upload your product image</p>
@@ -578,7 +580,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   {/arabic/i.test(prompt) && (
                     <span
                       className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                      style={{ background: "rgba(108,92,231,0.10)", color: "#6c5ce7", border: "1px solid rgba(108,92,231,0.22)" }}
+                      style={{ background: "rgba(255,60,172,0.10)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.22)" }}
                     >
                       🌙 Arabic overlay
                     </span>
@@ -592,55 +594,88 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   }}
                   placeholder="e.g. Premium supplement for men, dark powerful background, bold headline"
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
                 />
-                <p className="text-[11px] text-[#9ca3af] leading-relaxed">
-                  Mention <span className="font-semibold text-[#6c5ce7]">&quot;Arabic&quot;</span> in your prompt to generate clean images with browser-rendered Arabic text overlay.
-                </p>
               </div>
 
-              {/* Usage counter + Generate button */}
+              {/* Usage bar + Generate button */}
               <div className="flex flex-col gap-3">
-                {!isAdmin && !isPaid && (() => {
-                  const remaining = CREATIVE_LIMIT - imageUsage;
-                  const isExhausted = remaining <= 0;
-                  const isLast      = remaining === 1;
-                  const color = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "#10b981";
-                  const bg    = isExhausted ? "rgba(225,112,85,0.06)" : isLast ? "rgba(245,158,11,0.06)" : "rgba(16,185,129,0.06)";
-                  const border= isExhausted ? "rgba(225,112,85,0.20)" : isLast ? "rgba(245,158,11,0.20)" : "rgba(16,185,129,0.20)";
-                  const barBg = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "linear-gradient(90deg, #6c5ce7, #e040fb)";
-                  const label = isExhausted ? "No generations left" : `${remaining} generation${remaining === 1 ? "" : "s"} remaining`;
+
+                {/* ── Usage bar — always visible for free users ── */}
+                {!isPaid && (() => {
+                  const used       = Math.min(imageUsage, CREATIVE_LIMIT);
+                  const remaining  = CREATIVE_LIMIT - used;
+                  const exhausted  = remaining <= 0;
+                  const lastOne    = remaining === 1;
                   return (
-                    <div className="rounded-xl px-4 py-3" style={{ background: bg, border: `1px solid ${border}` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "var(--font-inter)" }}>
-                          {label}
-                        </span>
-                        {isLast && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.14)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Last free!
+                    <div
+                      style={{
+                        background:   exhausted ? "rgba(225,112,85,0.05)" : "rgba(255,60,172,0.04)",
+                        border:       `1px solid ${exhausted ? "rgba(225,112,85,0.20)" : "rgba(255,60,172,0.15)"}`,
+                        borderRadius: 14,
+                        padding:      "12px 14px",
+                      }}
+                    >
+                      {/* Top row */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>
+                            {exhausted ? "🔒" : lastOne ? "⚡" : "🎨"}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: exhausted ? "#e17055" : "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                            {exhausted
+                              ? "No free generations left"
+                              : `${remaining} free generation${remaining === 1 ? "" : "s"} remaining`}
+                          </span>
+                        </div>
+                        {lastOne && !exhausted && (
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FF3CAC", background: "rgba(255,60,172,0.10)", padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Last free
                           </span>
                         )}
-                        {isExhausted && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e17055", background: "rgba(225,112,85,0.12)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Upgrade to continue
-                          </span>
+                        {exhausted && !isAdmin && (
+                          <button
+                            onClick={() => onPaywall?.("image")}
+                            style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", padding: "4px 12px", borderRadius: 100, border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+                          >
+                            Upgrade →
+                          </button>
                         )}
                       </div>
-                      <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
-                        <div style={{ height: "100%", borderRadius: 100, width: `${Math.min(100, (imageUsage / CREATIVE_LIMIT) * 100)}%`, background: barBg, transition: "width 0.6s ease" }} />
+                      {/* 3 progress pills */}
+                      <div style={{ display: "flex", gap: 5 }}>
+                        {[0, 1, 2].map((i) => (
+                          <div
+                            key={i}
+                            style={{
+                              flex:         1,
+                              height:       6,
+                              borderRadius: 100,
+                              background:   i < used
+                                ? (exhausted ? "#e17055" : "linear-gradient(90deg,#FF3CAC,#FF6B35)")
+                                : "#E8E5E0",
+                              transition:   "background 0.35s ease",
+                            }}
+                          />
+                        ))}
                       </div>
+                      {!exhausted && (
+                        <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
+                          {used} of {CREATIVE_LIMIT} free uses · <button onClick={() => onPaywall?.("image")} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                        </p>
+                      )}
                     </div>
                   );
                 })()}
 
+                {/* Generate / Upgrade button */}
                 {!isAdmin && !isPaid && imageUsage >= CREATIVE_LIMIT ? (
                   <button
                     onClick={() => onPaywall?.("image")}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"
-                    style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", color: "#ffffff", boxShadow: "0 4px 20px rgba(108,92,231,0.3)" }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", color: "#fff", boxShadow: "0 4px 20px rgba(255,60,172,0.32)", border: "none" }}
                   >
-                    <Sparkles className="w-4 h-4" /> Upgrade to Continue
+                    <Sparkles className="w-4 h-4" /> Upgrade to Starter — $19/mo
                   </button>
                 ) : (
                   <button
@@ -648,9 +683,10 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     disabled={!prompt.trim() || loading}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: (!prompt.trim() || loading) ? "#e8e8f0" : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                      background: (!prompt.trim() || loading) ? "#e8e8f0" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       color:      (!prompt.trim() || loading) ? "#9ca3af" : "#ffffff",
-                      boxShadow:  (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                      boxShadow:  (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(255,60,172,0.3)",
+                      border:     "none",
                     }}
                   >
                     {loading
@@ -669,7 +705,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
             </div>
 
             {/* RIGHT — Output */}
-            <div className="w-full lg:w-[60%] bg-[#f8f8fc] flex flex-col p-6 overflow-y-auto">
+            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
               <AnimatePresence mode="wait">
 
                 {/* ── Loading ── */}
@@ -694,7 +730,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     {/* Status */}
                     <div className="text-center space-y-2">
                       <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 text-[#6c5ce7] animate-spin" />
+                        <Loader2 className="w-4 h-4 text-[#FF3CAC] animate-spin" />
                         <p className="text-sm font-semibold text-[#0a0a0f]">
                           Adur is designing 4 creative concepts...
                         </p>
@@ -705,7 +741,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                           className="h-full rounded-full transition-all duration-300"
                           style={{
                             width:      `${progress}%`,
-                            background: "linear-gradient(90deg, #6c5ce7, #00cec9)",
+                            background: "linear-gradient(90deg, #FF3CAC, #FF6B35)",
                           }}
                         />
                       </div>
@@ -731,7 +767,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <button
                       onClick={generate}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                      style={{ background: "#6c5ce7" }}
+                      style={{ background: "#FF3CAC" }}
                     >
                       <RefreshCw className="w-4 h-4" /> Try Again
                     </button>
@@ -816,7 +852,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                             >
                               {isRegen ? (
                                 <div className="absolute inset-0 flex items-center justify-center bg-[#f0f0f8]">
-                                  <Loader2 className="w-5 h-5 text-[#6c5ce7] animate-spin" />
+                                  <Loader2 className="w-5 h-5 text-[#FF3CAC] animate-spin" />
                                 </div>
                               ) : (
                                 <>
@@ -873,9 +909,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                                 disabled={isRegen}
                                 className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40"
                                 style={{
-                                  background: "rgba(108,92,231,0.08)",
-                                  color:      "#6c5ce7",
-                                  border:     "1px solid rgba(108,92,231,0.15)",
+                                  background: "rgba(255,60,172,0.08)",
+                                  color:      "#FF3CAC",
+                                  border:     "1px solid rgba(255,60,172,0.15)",
                                 }}
                               >
                                 <Download className="w-3 h-3" /> Download
@@ -883,7 +919,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                               <button
                                 onClick={() => regenerateOne(i)}
                                 disabled={isRegen}
-                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border border-[#e8e8f0] bg-white text-[#6b7280] hover:text-[#0a0a0f] hover:border-[#d1d5db] transition-colors cursor-pointer disabled:opacity-40"
+                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border border-[#E8E5E0] bg-white text-[#6b7280] hover:text-[#0a0a0f] hover:border-[#d1d5db] transition-colors cursor-pointer disabled:opacity-40"
                               >
                                 <RefreshCw className={`w-3 h-3 ${isRegen ? "animate-spin" : ""}`} />
                                 Regenerate
@@ -928,7 +964,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   onChange={(e) => setCopyProduct(e.target.value)}
                   placeholder="e.g. Collagen supplement for women 35+, unflavoured powder, 30-day supply"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
                 />
               </div>
 
@@ -939,7 +975,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   value={copyAudience}
                   onChange={(e) => setCopyAudience(e.target.value)}
                   placeholder="e.g. Women 35-55, health-conscious, busy moms"
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af]"
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af]"
                 />
               </div>
 
@@ -950,7 +986,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   value={copyBenefit}
                   onChange={(e) => setCopyBenefit(e.target.value)}
                   placeholder="e.g. Reduces joint pain and improves skin within 30 days"
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all placeholder:text-[#9ca3af]"
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af]"
                 />
               </div>
 
@@ -959,54 +995,90 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 <select
                   value={copyLang}
                   onChange={(e) => setCopyLang(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#e8e8f0] bg-[#f8f8fc] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#6c5ce7]/25 focus:border-[#6c5ce7]/40 transition-all cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all cursor-pointer"
                 >
                   {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
 
-              {/* Usage counter + Generate button */}
+              {/* Usage bar + Generate button */}
               <div className="flex flex-col gap-3 mt-auto">
-                {!isAdmin && !isPaid && (() => {
-                  const remaining = CREATIVE_LIMIT - copyUsage;
-                  const isExhausted = remaining <= 0;
-                  const isLast      = remaining === 1;
-                  const color = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "#10b981";
-                  const bg    = isExhausted ? "rgba(225,112,85,0.06)" : isLast ? "rgba(245,158,11,0.06)" : "rgba(16,185,129,0.06)";
-                  const border= isExhausted ? "rgba(225,112,85,0.20)" : isLast ? "rgba(245,158,11,0.20)" : "rgba(16,185,129,0.20)";
-                  const barBg = isExhausted ? "#e17055" : isLast ? "#f59e0b" : "linear-gradient(90deg, #6c5ce7, #e040fb)";
-                  const label = isExhausted ? "No generations left" : `${remaining} generation${remaining === 1 ? "" : "s"} remaining`;
+
+                {/* ── Usage bar — always visible for free users ── */}
+                {!isPaid && (() => {
+                  const used      = Math.min(copyUsage, CREATIVE_LIMIT);
+                  const remaining = CREATIVE_LIMIT - used;
+                  const exhausted = remaining <= 0;
+                  const lastOne   = remaining === 1;
                   return (
-                    <div className="rounded-xl px-4 py-3" style={{ background: bg, border: `1px solid ${border}` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "var(--font-inter)" }}>
-                          {label}
-                        </span>
-                        {isLast && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.14)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Last free!
+                    <div
+                      style={{
+                        background:   exhausted ? "rgba(225,112,85,0.05)" : "rgba(255,60,172,0.04)",
+                        border:       `1px solid ${exhausted ? "rgba(225,112,85,0.20)" : "rgba(255,60,172,0.15)"}`,
+                        borderRadius: 14,
+                        padding:      "12px 14px",
+                      }}
+                    >
+                      {/* Top row */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>
+                            {exhausted ? "🔒" : lastOne ? "⚡" : "✍️"}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: exhausted ? "#e17055" : "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                            {exhausted
+                              ? "No free generations left"
+                              : `${remaining} free generation${remaining === 1 ? "" : "s"} remaining`}
+                          </span>
+                        </div>
+                        {lastOne && !exhausted && (
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FF3CAC", background: "rgba(255,60,172,0.10)", padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                            Last free
                           </span>
                         )}
-                        {isExhausted && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e17055", background: "rgba(225,112,85,0.12)", padding: "2px 8px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Upgrade to continue
-                          </span>
+                        {exhausted && !isAdmin && (
+                          <button
+                            onClick={() => onPaywall?.("copy")}
+                            style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", padding: "4px 12px", borderRadius: 100, border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+                          >
+                            Upgrade →
+                          </button>
                         )}
                       </div>
-                      <div style={{ height: 4, borderRadius: 100, background: "#e5e7eb", overflow: "hidden" }}>
-                        <div style={{ height: "100%", borderRadius: 100, width: `${Math.min(100, (copyUsage / CREATIVE_LIMIT) * 100)}%`, background: barBg, transition: "width 0.6s ease" }} />
+                      {/* 3 progress pills */}
+                      <div style={{ display: "flex", gap: 5 }}>
+                        {[0, 1, 2].map((i) => (
+                          <div
+                            key={i}
+                            style={{
+                              flex:         1,
+                              height:       6,
+                              borderRadius: 100,
+                              background:   i < used
+                                ? (exhausted ? "#e17055" : "linear-gradient(90deg,#FF3CAC,#FF6B35)")
+                                : "#E8E5E0",
+                              transition:   "background 0.35s ease",
+                            }}
+                          />
+                        ))}
                       </div>
+                      {!exhausted && (
+                        <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
+                          {used} of {CREATIVE_LIMIT} free uses · <button onClick={() => onPaywall?.("copy")} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                        </p>
+                      )}
                     </div>
                   );
                 })()}
 
+                {/* Generate / Upgrade button */}
                 {!isAdmin && !isPaid && copyUsage >= CREATIVE_LIMIT ? (
                   <button
                     onClick={() => onPaywall?.("copy")}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer"
-                    style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", color: "#ffffff", boxShadow: "0 4px 20px rgba(108,92,231,0.3)" }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold cursor-pointer"
+                    style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", color: "#fff", boxShadow: "0 4px 20px rgba(255,60,172,0.32)", border: "none" }}
                   >
-                    <Sparkles className="w-4 h-4" /> Upgrade to Continue
+                    <Sparkles className="w-4 h-4" /> Upgrade to Starter — $19/mo
                   </button>
                 ) : (
                   <button
@@ -1014,9 +1086,10 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     disabled={!copyProduct.trim() || copyLoading}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: (!copyProduct.trim() || copyLoading) ? "#e8e8f0" : "linear-gradient(135deg, #6c5ce7 0%, #5a4dd4 50%, #00cec9 100%)",
+                      background: (!copyProduct.trim() || copyLoading) ? "#e8e8f0" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       color:      (!copyProduct.trim() || copyLoading) ? "#9ca3af" : "#ffffff",
-                      boxShadow:  (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(108,92,231,0.3)",
+                      boxShadow:  (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(255,60,172,0.3)",
+                      border:     "none",
                     }}
                   >
                     {copyLoading
@@ -1029,7 +1102,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
             </div>
 
             {/* RIGHT — Results */}
-            <div className="w-full lg:w-[60%] bg-[#f8f8fc] flex flex-col p-6 overflow-y-auto">
+            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
               <AnimatePresence mode="wait">
 
                 {copyLoading && (
@@ -1038,7 +1111,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="flex-1 flex flex-col items-center justify-center gap-4"
                   >
-                    <Loader2 className="w-8 h-8 text-[#6c5ce7] animate-spin" />
+                    <Loader2 className="w-8 h-8 text-[#FF3CAC] animate-spin" />
                     <p className="text-sm font-semibold text-[#0a0a0f]">Adur is writing your ad copy...</p>
                     <p className="text-xs text-[#9ca3af]">Crafting 5 high-converting variants…</p>
                   </motion.div>
@@ -1055,7 +1128,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <button
                       onClick={generateAdCopy}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                      style={{ background: "#6c5ce7" }}
+                      style={{ background: "#FF3CAC" }}
                     >
                       <RefreshCw className="w-4 h-4" /> Try Again
                     </button>
@@ -1120,7 +1193,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
                           <p className="text-sm text-[#0a0a0f] leading-relaxed whitespace-pre-line">{v.primaryText}</p>
 
-                          <div className="px-3 py-2.5 rounded-xl bg-[#f8f8fc] border border-[#f0f0f5] space-y-1">
+                          <div className="px-3 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#f0f0f5] space-y-1">
                             <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9ca3af]">Headline</p>
                             <p className="text-base font-bold text-[#0a0a0f] leading-snug">{v.headline}</p>
                             {v.description && (
@@ -1133,9 +1206,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                             <span
                               className="px-3 py-1 rounded-full text-xs font-bold"
                               style={{
-                                background: "rgba(108,92,231,0.08)",
-                                color:      "#6c5ce7",
-                                border:     "1px solid rgba(108,92,231,0.15)",
+                                background: "rgba(255,60,172,0.08)",
+                                color:      "#FF3CAC",
+                                border:     "1px solid rgba(255,60,172,0.15)",
                               }}
                             >
                               {v.cta}

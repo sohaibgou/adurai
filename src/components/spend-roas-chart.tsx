@@ -12,7 +12,7 @@ interface SpendRoasChartProps {
   analysisMode?: "roas" | "traffic";
 }
 
-const PURPLE = "#6c5ce7";
+const PURPLE = "#FF3CAC";
 const TEAL = "#00cec9";
 
 function CustomTooltip({ active, payload, label }: {

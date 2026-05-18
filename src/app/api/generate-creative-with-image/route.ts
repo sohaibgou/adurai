@@ -1,38 +1,185 @@
-import { GoogleGenAI } from "@google/genai";
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
-import type { ArabicTextData } from "@/app/api/generate-creative/route";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
 
-interface CreativeBrief {
-  angle:           string;
-  prompt:          string;
-  headline:        string;
-  rationale:       string;
-  headline_ar?:    string;
-  subheadline_ar?: string;
-  cta_ar?:         string;
-}
+/* ── Nanobanana models (latest first) ── */
+const IMAGE_MODELS = [
+  "gemini-3-pro-image-preview",
+  "gemini-2.5-flash-image",
+];
 
-interface CreativeResult {
-  url:       string;
-  angle:     string;
-  headline:  string;
-  rationale: string;
-}
+/* ── Shared format spec injected into every prompt ── */
+const FORMAT_SPEC = `
+OUTPUT FORMAT — CRITICAL:
+- SQUARE 1:1 composition exactly — equal width and height, like a 1080×1080 pixel canvas
+- This is a Meta Feed static ad — square format is mandatory
+- Keep all critical content (product, text, CTA) within the safe zone: centered 80% of the canvas, away from edges
+- Mobile-first: text must be large enough to read on a 6-inch phone screen
+- Text coverage: ad copy should cover no more than 20% of the image area
+- No letterboxing, no widescreen cropping, no portrait/vertical format — SQUARE ONLY`;
 
-const NO_TEXT_INSTRUCTION =
-  "CRITICAL: The image must contain absolutely NO text, letters, words, numbers, Arabic script, or any written characters anywhere. Pure visual only — no captions, no headlines, no watermarks.";
+/* ── 4 high-converting Meta ad angles ── */
+const ANGLES = [
+  {
+    angle:     "Hero Product Shot",
+    headline:  "",
+    rationale: "Clean hero shots establish premium positioning and drive direct purchase intent.",
+    prompt:    (brief: string) => `You are a world-class Meta ads creative director who has produced winning campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands.
+
+Using the uploaded product image, produce a FINISHED, print-ready Meta Feed static ad creative.
+
+BRIEF: ${brief}
+
+CREATIVE ANGLE — HERO PRODUCT SHOT:
+The product is the undisputed star. Channel Apple product photography — pristine, dramatic, confidence-exuding. Background should be clean (pure white, deep black, or a single bold complementary color). Use professional studio lighting with subtle shadows that give the product depth and premium feel. Negative space is your friend. No clutter. No props. Just the product commanding attention.
+
+AD COPY TO RENDER ON THE IMAGE:
+- Main headline: bold, short (4–7 words), benefit-driven or identity-driven — rendered in large typography at top or bottom third
+- Subheadline: supporting line (8–12 words) — rendered smaller below headline
+- CTA button: pill-shaped button with 2–4 word CTA ("Shop Now", "Try Risk-Free", "Get Yours") — placed at bottom
+- Use high-contrast type (white on dark, or dark on white/light) — must be legible on mobile
+${FORMAT_SPEC}
+
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional.`,
+  },
+  {
+    angle:     "Lifestyle & Emotion",
+    headline:  "",
+    rationale: "Lifestyle creatives connect emotionally and drive aspiration-based purchases.",
+    prompt:    (brief: string) => `You are a world-class Meta ads creative director who has produced winning campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands.
+
+Using the uploaded product image, produce a FINISHED, print-ready Meta Feed static ad creative.
+
+BRIEF: ${brief}
+
+CREATIVE ANGLE — LIFESTYLE & EMOTION:
+Show the transformation — not the product, but what it DOES to someone's life. Integrate the product naturally into a scene featuring a real person experiencing the benefit or result. Capture the emotion: confidence, joy, relief, energy. Warm color grading. Golden hour or soft natural lighting. Feel editorial but authentic — like a magazine spread meets viral UGC. The product must be clearly visible and recognizable.
+
+AD COPY TO RENDER ON THE IMAGE:
+- Headline: emotionally-charged statement about the transformation or result (e.g. "Finally, skin you're proud of" / "More energy. Every morning.") — large, bold type
+- Subheadline: specific benefit or social proof line — smaller type
+- CTA button: action-oriented ("Start Today", "See Results", "Get Yours") — pill-shaped at bottom
+- Typography should feel premium: clean sans-serif, high contrast against the scene
+${FORMAT_SPEC}
+
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional.`,
+  },
+  {
+    angle:     "Social Proof",
+    headline:  "",
+    rationale: "Social proof creatives reduce purchase hesitation and build immediate trust.",
+    prompt:    (brief: string) => `You are a world-class Meta ads creative director who has produced winning campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands.
+
+Using the uploaded product image, produce a FINISHED, print-ready Meta Feed static ad creative.
+
+BRIEF: ${brief}
+
+CREATIVE ANGLE — SOCIAL PROOF / TRUST:
+Lead with credibility. Design around proof: star ratings, customer counts, press mentions, or before/after results. The product should be featured clearly but secondary to the proof elements. Design feel: raw, authentic, trustworthy — not over-polished. Think UGC that went viral, or a screenshot-style testimonial blown up as an ad. Bold numbers command attention ("50,000+ sold", "4.9★ from 12,400 reviews").
+
+AD COPY TO RENDER ON THE IMAGE:
+- Primary element: large bold proof statistic or star rating — the visual anchor
+- Testimonial line or headline: a specific, credible customer benefit statement in quotes
+- Product name or brand — clearly visible
+- CTA button: trust-reinforcing ("Join 50k+ Customers", "See All Reviews", "Try Risk-Free") — pill-shaped at bottom
+- Include visual star rating graphic (★★★★★) prominently
+${FORMAT_SPEC}
+
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional.`,
+  },
+  {
+    angle:     "Pattern Interrupt",
+    headline:  "",
+    rationale: "Unexpected creative stops the scroll and creates memorable brand moments.",
+    prompt:    (brief: string) => `You are a world-class Meta ads creative director who has produced winning campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands.
+
+Using the uploaded product image, produce a FINISHED, print-ready Meta Feed static ad creative.
+
+BRIEF: ${brief}
+
+CREATIVE ANGLE — PATTERN INTERRUPT:
+Break every category convention. Do something visually that makes someone stop mid-scroll and say "wait — what is that?". Could be: extreme macro close-up of product texture, bold graphic design with vibrant unexpected color palette, split-screen contrast (before/after or problem/solution), provocative minimalism, or a surreal conceptual scene. The composition should feel like it was created by a visionary creative director, not a template. Bold, disruptive, polarizing — in the best way.
+
+AD COPY TO RENDER ON THE IMAGE:
+- Headline: provocative, contrarian, or curiosity-gap driven (e.g. "Stop wasting money on this" / "The last [product] you'll ever buy") — extremely bold and large
+- Subheadline: delivers on the curiosity — clarifies the bold claim
+- CTA: matches the disruptive energy ("Find Out Why", "See The Proof", "Switch Now") — pill-shaped button
+- Typography should be oversized and dominant — type as design element
+${FORMAT_SPEC}
+
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional.`,
+  },
+];
+
+/* ── Raw REST call to Gemini (nanobanana approach) ── */
+async function generateAdImage(
+  apiKey:    string,
+  prompt:    string,
+  imageData: { mimeType: string; data: string },
+): Promise<{ data: string; mimeType: string } | null> {
+  for (const model of IMAGE_MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body:    JSON.stringify({
+            contents: [{
+              parts: [
+                { inlineData: { mimeType: imageData.mimeType, data: imageData.data } },
+                { text: prompt },
+              ],
+            }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`[cwi] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+        continue;
+      }
+
+      const json = await res.json() as {
+        candidates?: { content: { parts: { inlineData?: { data: string; mimeType: string }; text?: string }[] } }[];
+        error?:      { message: string };
+      };
+
+      if (json.error) {
+        console.error(`[cwi] ${model} error:`, json.error.message);
+        continue;
+      }
+
+      const parts   = json.candidates?.[0]?.content?.parts ?? [];
+      const imgPart = parts.find((p) => !!p.inlineData);
+      if (imgPart?.inlineData) {
+        console.log(`[cwi] ✓ ${model}`);
+        return { data: imgPart.inlineData.data, mimeType: imgPart.inlineData.mimeType || "image/jpeg" };
+      }
+
+      console.warn(`[cwi] ${model} returned no image`);
+    } catch (err) {
+      console.error(`[cwi] ${model} threw:`, err instanceof Error ? err.message.slice(0, 120) : err);
+    }
+  }
+  return null;
+}
 
 export async function POST(req: Request) {
   console.log("━━━ /api/generate-creative-with-image ━━━");
 
-  const formData  = await req.formData();
-  const imageFile = formData.get("image")    as File;
-  const prompt    = formData.get("prompt")   as string ?? "";
-  const isArabic  = formData.get("isArabic") === "true";
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
+  }
+
+  const imageFile = formData.get("image")   as File | null;
+  const prompt    = (formData.get("prompt") as string | null) ?? "";
 
   if (!imageFile || imageFile.size === 0) {
     return NextResponse.json({ error: "No image provided." }, { status: 400 });
@@ -41,152 +188,37 @@ export async function POST(req: Request) {
   const imageBytes  = await imageFile.arrayBuffer();
   const base64Image = Buffer.from(imageBytes).toString("base64");
   const mimeType    = imageFile.type || "image/jpeg";
+  const apiKey      = process.env.GOOGLE_AI_KEY!;
 
-  console.log("Image:", imageFile.name, imageFile.size, "bytes | Prompt:", prompt, "| Arabic:", isArabic);
+  console.log(`Image: ${imageFile.name} ${imageFile.size}b | prompt: "${prompt}"`);
 
-  /* ── Step 1: Claude generates 4 creative briefs ─────── */
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const t0 = Date.now();
 
-  console.log("[step1] Asking Claude for 4 creative briefs...");
-
-  const imagePromptInstruction = isArabic
-    ? `- Exact background description with colors\n- Product placement and size\n- Lighting style and mood\n- Color palette and style references\n- Composition details\n- ${NO_TEXT_INSTRUCTION}`
-    : `- Exact background description with colors\n- Product placement and size\n- Lighting style and mood\n- Text overlays with exact copy (headline, subheadline, CTA)\n- Color palette\n- Style references\n- Composition details`;
-
-  const arabicFieldsInstruction = isArabic
-    ? `\n- headline_ar: Arabic headline (5-8 words, bold and punchy)\n- subheadline_ar: Arabic subheadline (8-12 words, supporting the headline)\n- cta_ar: Arabic CTA button text (2-4 words)`
-    : "";
-
-  const briefResponse = await anthropic.messages.create({
-    model:      "claude-sonnet-4-5",
-    max_tokens: 2000,
-    messages: [{
-      role:    "user",
-      content: [{
-        type:   "image",
-        source: {
-          type:       "base64",
-          media_type: mimeType as "image/jpeg" | "image/png" | "image/webp",
-          data:       base64Image,
-        },
-      }, {
-        type: "text",
-        text: `You are the world's best e-commerce ad creative director. You have created winning static ads for brands like Gymshark, MVMT, Dollar Shave Club, Hims, Athletic Greens, and hundreds of 8-figure DTC brands.
-
-The user has uploaded a product image and this brief: "${prompt || "premium product ad creative"}"
-
-Generate 4 completely different Meta Ads static creative concepts using this product. Each must use a different angle:
-
-CONCEPT 1 — HERO PRODUCT SHOT:
-Product as the absolute hero. Clean premium background. Bold composition. Minimal clutter. Think Apple product photography.
-
-CONCEPT 2 — LIFESTYLE/EMOTION:
-Show the transformation or result. Lead with emotion and aspiration. Person using or benefiting from the product. Warm and relatable.
-
-CONCEPT 3 — SOCIAL PROOF/UGC STYLE:
-Raw and authentic feel. Before/after or testimonial style. Numbers and proof. "50,000+ customers" type angle. High trust.
-
-CONCEPT 4 — PATTERN INTERRUPT:
-Bold, unexpected, scroll-stopping. Contrarian headline. Humor or shock. Something nobody else in the niche is doing.
-
-For each concept write a detailed image generation prompt that incorporates the product. Include:
-${imagePromptInstruction}
-
-Return ONLY a valid JSON array with exactly 4 objects, no markdown, no explanation. Each object must have:
-- angle (short concept name, e.g. "Hero Product Shot")
-- prompt (detailed image generation prompt, 100-150 words)
-- headline (main ad headline in English, under 8 words)
-- rationale (one sentence on why this angle converts)${arabicFieldsInstruction}`,
-      }],
-    }],
-  });
-
-  const rawText = briefResponse.content[0].type === "text"
-    ? briefResponse.content[0].text.trim()
-    : "";
-  const cleaned = rawText
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-
-  let briefs: CreativeBrief[];
-  try {
-    briefs = JSON.parse(cleaned) as CreativeBrief[];
-    if (!Array.isArray(briefs) || briefs.length === 0) throw new Error("Not an array");
-    console.log(`[step1] Got ${briefs.length} briefs:`, briefs.map(b => b.angle));
-  } catch (e) {
-    console.error("[step1] Failed to parse Claude response:", e, rawText.slice(0, 200));
-    return NextResponse.json({ error: "Failed to generate creative briefs" }, { status: 500 });
-  }
-
-  /* ── Step 2: Generate 4 images in parallel (each with product image) ── */
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_KEY! });
-
-  console.log("[step2] Starting 4 parallel image generations...");
-  const t2 = Date.now();
-
-  const imagePromises = briefs.map(async (brief, i): Promise<CreativeResult | null> => {
-    const t = Date.now();
-    try {
-      const geminiInstruction = isArabic
-        ? `Create a premium high-converting Meta Ads static creative. Keep the product exactly as shown — do not redraw or modify it. Build a professional DTC advertising layout around the product. ${brief.prompt}. Style: premium brand advertising, scroll-stopping, high contrast, clean composition. ${NO_TEXT_INSTRUCTION}`
-        : `Create a premium high-converting Meta Ads static creative. Keep the product exactly as shown — do not redraw or modify it. Build a professional DTC advertising layout around the product. ${brief.prompt}. Style: premium brand advertising, scroll-stopping, high contrast, clean composition.`;
-
-      const response = await ai.models.generateContent({
-        model:    "gemini-3-pro-image-preview",
-        contents: [
-          { inlineData: { mimeType, data: base64Image } },
-          { text: geminiInstruction },
-        ],
-        config: {
-          responseModalities: ["TEXT", "IMAGE"],
-          imageConfig: { aspectRatio: "1:1" },
-        },
-      });
-
-      const parts     = response.candidates?.[0]?.content?.parts;
-      const imagePart = parts?.find((p) => !!p.inlineData);
-
-      if (!imagePart?.inlineData) {
-        console.log(`[step2][${i}] No image in response after ${Date.now() - t}ms`);
+  const results = await Promise.all(
+    ANGLES.map(async (a, i) => {
+      const t      = Date.now();
+      const brief  = prompt.trim() || "premium product ad";
+      const result = await generateAdImage(apiKey, a.prompt(brief), { mimeType, data: base64Image });
+      if (!result) {
+        console.log(`[cwi][${i}] ${a.angle} — no image after ${Date.now() - t}ms`);
         return null;
       }
-
-      console.log(`[step2][${i}] ✓ ${brief.angle} — ${Date.now() - t}ms`);
+      console.log(`[cwi][${i}] ✓ ${a.angle} — ${Date.now() - t}ms`);
       return {
-        url:       `data:${imagePart.inlineData.mimeType || "image/png"};base64,${imagePart.inlineData.data}`,
-        angle:     brief.angle,
-        headline:  brief.headline,
-        rationale: brief.rationale,
+        url:       `data:${result.mimeType};base64,${result.data}`,
+        angle:     a.angle,
+        headline:  a.headline,
+        rationale: a.rationale,
       };
-    } catch (err) {
-      console.error(`[step2][${i}] ${brief.angle} failed after ${Date.now() - t}ms:`,
-        err instanceof Error ? err.message.slice(0, 120) : err);
-      return null;
-    }
-  });
+    }),
+  );
 
-  const results = await Promise.all(imagePromises);
-  const images  = results.filter((r): r is CreativeResult => r !== null);
-
-  console.log(`[step2] Done in ${Date.now() - t2}ms — ${images.length}/4 images generated`);
+  const images = results.filter(Boolean);
+  console.log(`[cwi] Done in ${Date.now() - t0}ms — ${images.length}/4 images`);
 
   if (images.length === 0) {
-    return NextResponse.json({ error: "No images generated" }, { status: 500 });
+    return NextResponse.json({ error: "No images generated. Check GOOGLE_AI_KEY." }, { status: 500 });
   }
 
-  // Extract Arabic texts from briefs when in Arabic mode
-  const arabicTexts: ArabicTextData[] = isArabic
-    ? briefs.map(b => ({
-        headline:    b.headline_ar    ?? "",
-        subheadline: b.subheadline_ar ?? "",
-        cta:         b.cta_ar         ?? "",
-      }))
-    : [];
-
-  return NextResponse.json({
-    images,
-    briefs,
-    ...(isArabic ? { arabicTexts } : {}),
-  });
+  return NextResponse.json({ images, briefs: [] });
 }

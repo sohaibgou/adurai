@@ -1,34 +1,63 @@
-import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 export const dynamic    = "force-dynamic";
 
-const NO_TEXT_INSTRUCTION =
-  "CRITICAL: The image must contain absolutely NO text, letters, words, numbers, Arabic script, or any written characters anywhere. Pure visual only — no captions, no headlines, no watermarks.";
+/* ── Nanobanana models (latest first) ── */
+const IMAGE_MODELS = [
+  "gemini-3-pro-image-preview",
+  "gemini-2.5-flash-image",
+];
 
-// Single-image regeneration — takes a pre-built brief prompt, skips Claude step
+/* ── Single-image regeneration using nanobanana approach ── */
 export async function POST(req: Request) {
   const { prompt, isArabic } = await req.json() as { prompt: string; isArabic?: boolean };
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_KEY! });
+  const apiKey      = process.env.GOOGLE_AI_KEY!;
+  const finalPrompt = isArabic
+    ? `${prompt} CRITICAL: The image must contain absolutely NO text, letters, words, numbers, Arabic script, or any written characters anywhere. Pure visual only.`
+    : prompt;
 
-  const finalPrompt = isArabic ? `${prompt} ${NO_TEXT_INSTRUCTION}` : prompt;
+  for (const model of IMAGE_MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body:    JSON.stringify({
+            contents:         [{ parts: [{ text: finalPrompt }] }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+          }),
+        },
+      );
 
-  const response = await ai.models.generateContent({
-    model:    "gemini-3-pro-image-preview",
-    contents: finalPrompt,
-    config:   { responseModalities: ["TEXT", "IMAGE"] },
-  });
+      if (!res.ok) {
+        console.error(`[generate-one] ${model} HTTP ${res.status}`);
+        continue;
+      }
 
-  const parts     = response.candidates?.[0]?.content?.parts;
-  const imagePart = parts?.find((p) => !!p.inlineData);
+      const json = await res.json() as {
+        candidates?: { content: { parts: { inlineData?: { data: string; mimeType: string } }[] } }[];
+        error?:      { message: string };
+      };
 
-  if (!imagePart?.inlineData) {
-    return NextResponse.json({ error: "No image generated" }, { status: 500 });
+      if (json.error) {
+        console.error(`[generate-one] ${model} error:`, json.error.message);
+        continue;
+      }
+
+      const parts   = json.candidates?.[0]?.content?.parts ?? [];
+      const imgPart = parts.find((p) => !!p.inlineData);
+      if (imgPart?.inlineData) {
+        console.log(`[generate-one] ✓ ${model}`);
+        const { data, mimeType } = imgPart.inlineData;
+        return NextResponse.json({ url: `data:${mimeType || "image/jpeg"};base64,${data}` });
+      }
+    } catch (err) {
+      console.error(`[generate-one] ${model} threw:`, err instanceof Error ? err.message : err);
+    }
   }
 
-  const base64 = imagePart.inlineData.data;
-  const mime   = imagePart.inlineData.mimeType || "image/png";
-  return NextResponse.json({ url: `data:${mime};base64,${base64}` });
+  return NextResponse.json({ error: "No image generated." }, { status: 500 });
 }

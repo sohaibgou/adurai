@@ -52,8 +52,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               fontFamily:  "var(--font-inter)",
             }}
           >
-            Upload your Meta Ads CSV and get a complete diagnosis in 60 seconds —
-            what to kill, what to scale, and exactly why. No agency. No guesswork.
+            Upload your Meta Ads CSV and get a complete diagnosis in 60 seconds — what to kill, what to scale, and AI-generated creatives to replace them. No agency. No guesswork.
           </p>
         </FadeIn>
 

@@ -107,9 +107,9 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
             className="flex items-center justify-center font-bold text-white flex-shrink-0"
             style={{
               width: 38, height: 38, borderRadius: 11,
-              background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+              background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
               fontSize: 16,
-              boxShadow: "0 4px 18px rgba(108,92,231,0.40)",
+              boxShadow: "0 4px 18px rgba(255,60,172,0.40)",
             }}
           >
             A
@@ -120,7 +120,7 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
           >
             Adur
             <span style={{
-              background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+              background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -135,8 +135,8 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
           <svg width={160} height={160} viewBox="0 0 160 160" style={{ overflow: "visible" }}>
             <defs>
               <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#6c5ce7" />
-                <stop offset="100%" stopColor="#e040fb" />
+                <stop offset="0%" stopColor="#FF3CAC" />
+                <stop offset="100%" stopColor="#FF6B35" />
               </linearGradient>
               <filter id="ring-glow">
                 <feGaussianBlur stdDeviation="3" result="blur" />
@@ -150,7 +150,7 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
             <circle
               cx={CX} cy={CY} r={R}
               fill="none"
-              stroke="#f0f0f8"
+              stroke="#F0EDE8"
               strokeWidth={9}
             />
             {/* Progress ring */}
@@ -181,7 +181,7 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
                 letterSpacing: "-0.05em",
                 color: "#0d0d1a",
                 lineHeight: 1,
-                background: "linear-gradient(135deg, #6c5ce7, #e040fb)",
+                background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -215,17 +215,17 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
         </div>
 
         {/* ── Linear progress bar ── */}
-        <div style={{ width: "100%", height: 5, borderRadius: 100, background: "#f0f0f8", overflow: "hidden" }}>
+        <div style={{ width: "100%", height: 5, borderRadius: 100, background: "#F0EDE8", overflow: "hidden" }}>
           <div
             style={{
               height: "100%",
               borderRadius: 100,
               width: `${progress}%`,
-              background: "linear-gradient(90deg, #6c5ce7, #e040fb)",
+              background: "linear-gradient(90deg, #FF3CAC, #FF6B35)",
               transition: isCompleting
                 ? "width 0.75s cubic-bezier(0.22,1,0.36,1)"
                 : "width 0.12s linear",
-              boxShadow: "0 0 8px rgba(108,92,231,0.45)",
+              boxShadow: "0 0 8px rgba(255,60,172,0.45)",
             }}
           />
         </div>

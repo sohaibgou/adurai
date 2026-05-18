@@ -2,11 +2,12 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, BarChart3, Sparkles } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/landing/hero-section";
 import OnboardingForm from "@/components/onboarding-form";
+import CreativeStudio from "@/components/creative-studio";
 import SocialProof from "@/components/landing/social-proof";
 import DashboardPreview from "@/components/landing/dashboard-preview";
 import FeaturesSection from "@/components/landing/features-section";
@@ -17,7 +18,7 @@ import SiteFooter from "@/components/landing/site-footer";
 import PaywallModal from "@/components/paywall-modal";
 import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
-import type { OnboardingData } from "@/lib/types";
+import type { OnboardingData, AnalysisResult } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 
@@ -36,6 +37,8 @@ function incrementCount(): number {
   return next;
 }
 
+type ActiveMode = "analyze" | "creative";
+
 export default function Home() {
   const router = useRouter();
   const { user, session, loading: authLoading, signOut } = useAuth();
@@ -47,16 +50,22 @@ export default function Home() {
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan, setPaidPlan]       = useState(false);
   const [showLoader, setShowLoader]   = useState(false);
+  const [activeMode, setActiveMode]   = useState<ActiveMode>("analyze");
+  const [analysis, setAnalysis]       = useState<AnalysisResult | null>(null);
   const onboardingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.title = "Adur.ai — AI Meta Ads Analysis for E-commerce";
   }, []);
 
-  // Hydrate usage state from localStorage
+  // Hydrate usage state from localStorage + prior analysis from sessionStorage
   useEffect(() => {
     setAnalysisCount(getCount());
     setPaidPlan(isPaidPlan());
+    try {
+      const raw = sessionStorage.getItem("adur_results");
+      if (raw) setAnalysis(JSON.parse(raw) as AnalysisResult);
+    } catch { /* ignore */ }
   }, []);
 
   // Sync paid status from Supabase if logged in
@@ -344,26 +353,238 @@ export default function Home() {
 
         <HeroSection onCtaClick={scrollToOnboarding} />
 
-        {/* ── Onboarding form ── */}
+        {/* ── Form section ── */}
         <div ref={onboardingRef} id="onboarding-form">
-          <OnboardingForm
-            onComplete={setOnboarding}
-            onFileSelected={handleFileSelected}
-            isLoading={isLoading}
-            analysisCount={analysisCount}
-            isPaid={paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email))}
-            onUpgradeClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
-          />
-        </div>
 
-        {/* Error display */}
-        {error && (
-          <div className="max-w-lg mx-auto px-6 -mt-4 mb-8">
-            <div className="bg-red/10 border border-red/20 rounded-lg px-5 py-3 text-red text-sm text-center">
-              {error}
-            </div>
-          </div>
-        )}
+          {/* Switcher node — passed as prop so it renders inside each mode's own section */}
+          {(() => {
+            const isPaidUser = paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email));
+            const switcherNode = (
+              <div
+                className="inline-flex p-1.5 gap-1"
+                style={{
+                  background:   "#FFFFFF",
+                  border:       "1px solid #E8E5E0",
+                  borderRadius:  16,
+                  boxShadow:    "0 4px 20px rgba(0,0,0,0.07)",
+                }}
+              >
+                <button
+                  onClick={() => setActiveMode("analyze")}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold cursor-pointer transition-all"
+                  style={{
+                    borderRadius: 11,
+                    border:       "none",
+                    fontSize:     14,
+                    fontFamily:  "var(--font-inter)",
+                    background:   activeMode === "analyze"
+                      ? "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)"
+                      : "transparent",
+                    color:        activeMode === "analyze" ? "#fff" : "#6B6B72",
+                    boxShadow:    activeMode === "analyze"
+                      ? "0 4px 14px rgba(255,60,172,0.32)"
+                      : "none",
+                  }}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analyze Campaigns
+                </button>
+                <button
+                  onClick={() => setActiveMode("creative")}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold cursor-pointer transition-all"
+                  style={{
+                    borderRadius: 11,
+                    border:       "none",
+                    fontSize:     14,
+                    fontFamily:  "var(--font-inter)",
+                    background:   activeMode === "creative"
+                      ? "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)"
+                      : "transparent",
+                    color:        activeMode === "creative" ? "#fff" : "#6B6B72",
+                    boxShadow:    activeMode === "creative"
+                      ? "0 4px 14px rgba(255,60,172,0.32)"
+                      : "none",
+                  }}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Creative Studio
+                </button>
+              </div>
+            );
+
+            return (
+              <AnimatePresence mode="wait">
+                {activeMode === "analyze" ? (
+
+                  /* ─── Analyze mode — switcher lives inside OnboardingForm ─── */
+                  <motion.div
+                    key="analyze"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <OnboardingForm
+                      onComplete={setOnboarding}
+                      onFileSelected={handleFileSelected}
+                      isLoading={isLoading}
+                      analysisCount={analysisCount}
+                      isPaid={isPaidUser}
+                      onUpgradeClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
+                      modeSwitcher={switcherNode}
+                    />
+                    {error && (
+                      <div className="max-w-lg mx-auto px-6 -mt-4 mb-8">
+                        <div
+                          style={{
+                            background:   "rgba(225,112,85,0.08)",
+                            border:       "1px solid rgba(225,112,85,0.22)",
+                            borderRadius: 12,
+                            padding:      "12px 18px",
+                            fontSize:     13,
+                            color:        "#e17055",
+                            textAlign:    "center",
+                            fontFamily:   "var(--font-inter)",
+                          }}
+                        >
+                          {error}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+
+                ) : (
+
+                  /* ─── Creative Studio mode — same section bg as OnboardingForm ─── */
+                  <motion.div
+                    key="creative"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <section
+                      style={{
+                        background:      "#FFFFFF",
+                        backgroundImage: "linear-gradient(180deg, #FDF2F8 0px, #FFFFFF 120px)",
+                        paddingTop:       72,
+                        paddingBottom:    80,
+                      }}
+                    >
+                      <div className="px-4 sm:px-6" style={{ maxWidth: 900, margin: "0 auto" }}>
+
+                        {/* Switcher — centered, same slot as in analyze mode */}
+                        <div className="flex justify-center mb-8">
+                          {switcherNode}
+                        </div>
+
+                        {/* No-analysis banner */}
+                        {!analysis && (
+                          <div
+                            className="relative overflow-hidden rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6"
+                            style={{ background: "#0D0D12", border: "1px solid rgba(255,255,255,0.07)" }}
+                          >
+                            <div
+                              style={{
+                                position:     "absolute",
+                                top:          -50,
+                                right:        -20,
+                                width:        180,
+                                height:       180,
+                                borderRadius: "50%",
+                                background:   "radial-gradient(circle, rgba(255,60,172,0.32) 0%, transparent 70%)",
+                                pointerEvents: "none",
+                              }}
+                            />
+                            <div className="flex items-center gap-3 flex-1 min-w-0 relative">
+                              <div
+                                className="flex-shrink-0 flex items-center justify-center rounded-xl"
+                                style={{
+                                  width:      40,
+                                  height:     40,
+                                  background: "linear-gradient(135deg, rgba(255,60,172,0.20), rgba(255,107,53,0.12))",
+                                  border:     "1px solid rgba(255,60,172,0.28)",
+                                }}
+                              >
+                                <Sparkles className="w-4 h-4" style={{ color: "#FF3CAC" }} />
+                              </div>
+                              <div>
+                                <p style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>
+                                  Get better results with your campaign data
+                                </p>
+                                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.50)", fontFamily: "var(--font-inter)", marginTop: 3, lineHeight: 1.5 }}>
+                                  Analyze first — we&apos;ll tailor every creative to your actual winning campaigns.
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setActiveMode("analyze")}
+                              className="relative flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
+                              style={{
+                                background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                                color:      "#fff",
+                                border:     "none",
+                                boxShadow:  "0 4px 16px rgba(255,60,172,0.36)",
+                                fontFamily: "var(--font-inter)",
+                              }}
+                            >
+                              Analyze First
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Connected pill */}
+                        {analysis && (
+                          <div className="mb-6">
+                            <div
+                              className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                              style={{ background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.22)" }}
+                            >
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#16A34A", boxShadow: "0 0 6px rgba(22,163,74,0.55)" }} />
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#16A34A", fontFamily: "var(--font-inter)" }}>Connected to your analysis</span>
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(22,163,74,0.12)", color: "#16A34A", fontFamily: "var(--font-inter)" }}>
+                                Score {analysis.score}
+                              </span>
+                              <span style={{ color: "rgba(22,163,74,0.40)", fontSize: 14 }}>·</span>
+                              <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
+                                {analysis.summaries.length} campaign{analysis.summaries.length !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Creative Studio card */}
+                        <div
+                          style={{
+                            background:   "#FFFFFF",
+                            border:       "1px solid #E8E5E0",
+                            borderRadius: 20,
+                            overflow:     "hidden",
+                            boxShadow:    "0 4px 24px rgba(0,0,0,0.06)",
+                          }}
+                        >
+                          <CreativeStudio
+                            summaries={analysis?.summaries ?? []}
+                            winners={analysis?.winners}
+                            isPaid={isPaidUser}
+                            isAdmin={!!(user?.email && ADMIN_EMAILS.includes(user.email))}
+                            onPaywall={(reason) => {
+                              setPaywallReason(reason);
+                              setPaywallOpen(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </section>
+                  </motion.div>
+
+                )}
+              </AnimatePresence>
+            );
+          })()}
+
+        </div>
 
         <SocialProof />
         <DashboardPreview />

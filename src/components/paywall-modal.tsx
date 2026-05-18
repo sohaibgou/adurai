@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, Zap, CheckCircle, Lock } from "lucide-react";
+import { X, ArrowRight, CheckCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
 import { useAuth } from "@/context/auth-context";
 
 interface PaywallModalProps {
-  open: boolean;
-  onClose: () => void;
-  reason?: "analysis" | "image" | "copy";
+  open:     boolean;
+  onClose:  () => void;
+  reason?:  "analysis" | "image" | "copy";
 }
 
 const LIMIT_MESSAGES: Record<string, string> = {
@@ -37,7 +37,6 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
-  // When a hard limit is hit the modal cannot be dismissed
   const hardLimit = !!reason;
 
   async function handleUpgrade(e?: React.FormEvent) {
@@ -63,7 +62,7 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
       }
 
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email:   email.trim(),
         password,
         options: { emailRedirectTo: `${window.location.origin}/success` },
       });
@@ -78,9 +77,7 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
       const { data: signInData, error: signInError } =
         await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
-      if (signInError) {
-        throw new Error("Account created! If sign-in failed, try again in a moment.");
-      }
+      if (signInError) throw new Error("Account created! If sign-in failed, try again in a moment.");
 
       if (signInData.session?.access_token) {
         await redirectToCheckout(signInData.session.access_token);
@@ -92,7 +89,7 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
   }
 
   function handleClose() {
-    if (loading || hardLimit) return;
+    if (loading) return;
     setEmail("");
     setPassword("");
     setError(null);
@@ -103,7 +100,7 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop — not clickable when hard limit */}
+          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -111,67 +108,92 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-50"
-            style={{ background: "rgba(13,13,26,0.72)", backdropFilter: "blur(8px)" }}
-            onClick={hardLimit ? undefined : handleClose}
+            style={{ background: "rgba(13,13,18,0.60)", backdropFilter: "blur(10px)" }}
+            onClick={handleClose}
           />
 
           {/* Modal */}
           <motion.div
             key="modal"
-            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 24 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, scale: 0.94, y: 20 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
           >
             <div
-              className="relative w-full pointer-events-auto rounded-2xl overflow-hidden"
+              className="relative w-full pointer-events-auto"
               style={{
-                maxWidth: 460,
-                background: "#ffffff",
-                boxShadow: "0 32px 80px rgba(0,0,0,0.24), 0 0 0 1px rgba(108,92,231,0.18)",
+                maxWidth:     460,
+                background:   "#FFFFFF",
+                borderRadius:  24,
+                boxShadow:    "0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(232,229,224,1)",
+                overflow:     "hidden",
               }}
             >
               {/* Gradient top strip */}
-              <div style={{ height: 4, background: "linear-gradient(90deg, #6c5ce7, #e040fb)" }} />
+              <div style={{ height: 5, background: "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
 
-              {/* X button — hidden when hard limit */}
-              {!hardLimit && (
-                <button
-                  onClick={handleClose}
-                  disabled={loading}
-                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer disabled:opacity-40"
-                  style={{ color: "#9ca3af", background: "#f9f9fc" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#0d0d1a"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              {/* ── X close button — always visible ── */}
+              <button
+                onClick={handleClose}
+                disabled={loading}
+                className="absolute flex items-center justify-center cursor-pointer transition-all disabled:opacity-40"
+                style={{
+                  top:          16,
+                  right:        16,
+                  width:        34,
+                  height:       34,
+                  borderRadius: "50%",
+                  background:   "#F7F5F2",
+                  border:       "1px solid #E8E5E0",
+                  color:        "#A8A5A0",
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "#F0EDE8";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#0D0D12";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "#F7F5F2";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#A8A5A0";
+                }}
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-              <div className="px-8 py-8">
+              <div className="px-7 pt-7 pb-8">
+
                 {/* Icon */}
                 <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
-                  style={{ background: hardLimit ? "rgba(224,64,251,0.10)" : "rgba(108,92,231,0.10)" }}
+                  className="flex items-center justify-center mb-5"
+                  style={{
+                    width:        52,
+                    height:       52,
+                    borderRadius: 16,
+                    background:   "linear-gradient(135deg, rgba(255,60,172,0.12), rgba(255,107,53,0.10))",
+                    border:       "1px solid rgba(255,60,172,0.20)",
+                  }}
                 >
-                  {hardLimit ? (
-                    <Lock className="w-6 h-6" style={{ color: "#e040fb" }} />
-                  ) : (
-                    <Zap className="w-6 h-6" style={{ color: "#6c5ce7" }} />
-                  )}
+                  <Lock className="w-6 h-6" style={{ color: "#FF3CAC" }} />
                 </div>
 
                 {/* Heading */}
                 <h2
-                  className="font-heading font-bold mb-2"
-                  style={{ fontSize: 22, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.15 }}
+                  className="font-heading"
+                  style={{
+                    fontSize:      24,
+                    fontWeight:    900,
+                    letterSpacing: "-0.04em",
+                    color:         "#0D0D12",
+                    lineHeight:    1.1,
+                    marginBottom:   8,
+                  }}
                 >
                   {hardLimit
                     ? "You've hit your free limit"
                     : user ? "Upgrade to Starter" : "Create an account to upgrade"}
                 </h2>
-                <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, fontFamily: "var(--font-inter)", marginBottom: 18 }}>
+                <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.65, fontFamily: "var(--font-inter)", marginBottom: 20 }}>
                   {hardLimit
                     ? LIMIT_MESSAGES[reason!]
                     : user
@@ -181,26 +203,33 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
 
                 {/* Price pill */}
                 <div
-                  className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-5"
-                  style={{ background: "rgba(108,92,231,0.06)", border: "1px solid rgba(108,92,231,0.15)" }}
+                  className="flex items-center justify-between mb-5"
+                  style={{
+                    padding:      "14px 18px",
+                    borderRadius:  14,
+                    background:   "rgba(255,60,172,0.05)",
+                    border:       "1px solid rgba(255,60,172,0.18)",
+                  }}
                 >
                   <div>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "#6c5ce7", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Starter Plan</p>
-                    <p style={{ fontSize: 20, fontWeight: 700, color: "#0d0d1a", fontFamily: "var(--font-syne)", letterSpacing: "-0.02em" }}>
-                      $19<span style={{ fontSize: 13, fontWeight: 400, color: "#6b7280" }}>/month</span>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)", marginBottom: 3 }}>
+                      Starter Plan
+                    </p>
+                    <p className="font-heading" style={{ fontSize: 26, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                      $19<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
                     </p>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#00b894", background: "rgba(0,184,148,0.1)", padding: "4px 10px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#16A34A", background: "rgba(22,163,74,0.10)", padding: "5px 12px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
                     Cancel anytime
                   </span>
                 </div>
 
                 {/* Feature list */}
-                <ul className="space-y-2 mb-5">
+                <ul className="space-y-2.5 mb-6">
                   {FEATURES.map(f => (
-                    <li key={f} className="flex items-center gap-2.5">
-                      <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#6c5ce7" }} />
-                      <span style={{ fontSize: 13, color: "#374151", fontFamily: "var(--font-inter)" }}>{f}</span>
+                    <li key={f} className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#FF3CAC" }} />
+                      <span style={{ fontSize: 13, color: "#0D0D12", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -217,9 +246,17 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
                       required
                       disabled={loading}
                       className="w-full outline-none transition-all disabled:opacity-60"
-                      style={{ padding: "11px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, fontFamily: "var(--font-inter)", color: "#0d0d1a", background: "#fafafa" }}
-                      onFocus={e => { e.currentTarget.style.border = "1px solid #6c5ce7"; e.currentTarget.style.background = "#fff"; }}
-                      onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; }}
+                      style={{
+                        padding:      "12px 16px",
+                        borderRadius:  12,
+                        border:       "1.5px solid #E8E5E0",
+                        fontSize:      14,
+                        fontFamily:   "var(--font-inter)",
+                        color:        "#0D0D12",
+                        background:   "#F7F5F2",
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
                     />
                     <input
                       type="password"
@@ -230,30 +267,50 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
                       required
                       disabled={loading}
                       className="w-full outline-none transition-all disabled:opacity-60"
-                      style={{ padding: "11px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, fontFamily: "var(--font-inter)", color: "#0d0d1a", background: "#fafafa" }}
-                      onFocus={e => { e.currentTarget.style.border = "1px solid #6c5ce7"; e.currentTarget.style.background = "#fff"; }}
-                      onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; }}
+                      style={{
+                        padding:      "12px 16px",
+                        borderRadius:  12,
+                        border:       "1.5px solid #E8E5E0",
+                        fontSize:      14,
+                        fontFamily:   "var(--font-inter)",
+                        color:        "#0D0D12",
+                        background:   "#F7F5F2",
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
                     />
+
                     {error && (
-                      <p className="text-sm rounded-lg px-4 py-2.5 text-center" style={{ color: "#e17055", background: "rgba(225,112,85,0.08)", fontFamily: "var(--font-inter)" }}>
+                      <p style={{ fontSize: 13, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.18)", borderRadius: 10, padding: "10px 14px", fontFamily: "var(--font-inter)", textAlign: "center" }}>
                         {error}
                       </p>
                     )}
+
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full flex items-center justify-center gap-2 font-semibold text-white py-3.5 rounded-xl transition-all cursor-pointer disabled:opacity-70"
-                      style={{ background: loading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #e040fb)", fontSize: 15, fontFamily: "var(--font-inter)", boxShadow: loading ? "none" : "0 4px 20px rgba(108,92,231,0.38)", border: "none" }}
+                      className="w-full flex items-center justify-center gap-2 font-semibold text-white cursor-pointer transition-all disabled:opacity-60"
+                      style={{
+                        padding:      "15px",
+                        borderRadius:  100,
+                        background:    loading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                        fontSize:      15,
+                        fontFamily:   "var(--font-inter)",
+                        letterSpacing: "-0.01em",
+                        boxShadow:     loading ? "none" : "0 4px 20px rgba(255,60,172,0.35)",
+                        border:        "none",
+                      }}
+                      onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(255,60,172,0.48)"; } }}
+                      onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(255,60,172,0.35)"; }}
                     >
-                      {loading ? "Setting up your account…" : "Upgrade to Starter"}
-                      {!loading && <ArrowRight className="w-4 h-4" />}
+                      {loading ? "Setting up your account…" : "Upgrade to Starter →"}
                     </button>
                   </form>
                 )}
 
-                {/* Error for logged-in upgrade */}
+                {/* Error for logged-in users */}
                 {user && error && (
-                  <p className="text-sm rounded-lg px-4 py-2.5 text-center mb-3" style={{ color: "#e17055", background: "rgba(225,112,85,0.08)", fontFamily: "var(--font-inter)" }}>
+                  <p style={{ fontSize: 13, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.18)", borderRadius: 10, padding: "10px 14px", fontFamily: "var(--font-inter)", textAlign: "center", marginBottom: 12 }}>
                     {error}
                   </p>
                 )}
@@ -263,26 +320,37 @@ export default function PaywallModal({ open, onClose, reason }: PaywallModalProp
                   <button
                     onClick={() => handleUpgrade()}
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 font-semibold text-white py-3.5 rounded-xl transition-all cursor-pointer disabled:opacity-70 mb-4"
-                    style={{ background: loading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #e040fb)", fontSize: 15, fontFamily: "var(--font-inter)", boxShadow: loading ? "none" : "0 4px 20px rgba(108,92,231,0.38)", border: "none" }}
+                    className="w-full flex items-center justify-center gap-2 font-semibold text-white cursor-pointer transition-all disabled:opacity-60 mb-4"
+                    style={{
+                      padding:      "15px",
+                      borderRadius:  100,
+                      background:    loading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                      fontSize:      15,
+                      fontFamily:   "var(--font-inter)",
+                      letterSpacing: "-0.01em",
+                      boxShadow:     loading ? "none" : "0 4px 20px rgba(255,60,172,0.35)",
+                      border:        "none",
+                    }}
+                    onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(255,60,172,0.48)"; } }}
+                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(255,60,172,0.35)"; }}
                   >
-                    {loading ? "Redirecting…" : "Upgrade to Starter"}
-                    {!loading && <ArrowRight className="w-4 h-4" />}
+                    {loading ? "Redirecting…" : "Upgrade to Starter →"}
                   </button>
                 )}
 
-                {/* Footer — sign in link always visible */}
-                <p className="text-center" style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)" }}>
+                {/* Sign in link */}
+                <p className="text-center" style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
                   Already have an account?{" "}
                   <Link
                     href="/login?redirect=checkout"
-                    className="font-medium"
-                    style={{ color: "#6c5ce7" }}
-                    onClick={hardLimit ? undefined : handleClose}
+                    className="font-semibold"
+                    style={{ color: "#FF3CAC", textDecoration: "none" }}
+                    onClick={handleClose}
                   >
                     Sign in
                   </Link>
                 </p>
+
               </div>
             </div>
           </motion.div>

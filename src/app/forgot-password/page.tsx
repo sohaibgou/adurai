@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
         <div className="flex items-center gap-2 justify-center mb-8">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)" }}
+            style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)" }}
           >
             <span className="text-white font-bold text-base">A</span>
           </div>
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
             className="font-heading font-bold"
             style={{ fontSize: 20, color: "#0d0d1a", letterSpacing: "-0.025em" }}
           >
-            adur<span style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
+            adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
           </span>
         </div>
 
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
             >
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(108,92,231,0.10)" }}
+                style={{ background: "rgba(255,60,172,0.08)" }}
               >
                 <span style={{ fontSize: 28 }}>✉️</span>
               </div>
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
               <Link
                 href="/login"
                 className="text-sm font-semibold"
-                style={{ color: "#6c5ce7", fontFamily: "var(--font-inter)" }}
+                style={{ color: "#FF3CAC", fontFamily: "var(--font-inter)" }}
               >
                 Back to Sign In →
               </Link>
@@ -133,8 +133,8 @@ export default function ForgotPasswordPage() {
                       color: "#0d0d1a",
                       background: "#fafafa",
                     }}
-                    onFocus={e => { e.currentTarget.style.border = "1px solid #6c5ce7"; e.currentTarget.style.background = "#fff"; }}
-                    onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; }}
+                    onFocus={e => { e.currentTarget.style.border = "1px solid #FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,60,172,0.10)"; }}
+                    onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; e.currentTarget.style.boxShadow = "none"; }}
                   />
                 </div>
 
@@ -152,14 +152,14 @@ export default function ForgotPasswordPage() {
                   disabled={loading}
                   className="w-full font-semibold text-white py-3 rounded-xl transition-all cursor-pointer disabled:opacity-70 mt-1"
                   style={{
-                    background: loading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #e040fb)",
+                    background: loading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC, #FF6B35)",
                     fontSize: 15,
                     fontFamily: "var(--font-inter)",
-                    boxShadow: loading ? "none" : "0 4px 20px rgba(108,92,231,0.38)",
+                    boxShadow: loading ? "none" : "0 4px 20px rgba(255,60,172,0.35)",
                     border: "none",
                   }}
-                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(108,92,231,0.52)"; }}
-                  onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(108,92,231,0.38)"; }}
+                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(255,60,172,0.48)"; }}
+                  onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(255,60,172,0.35)"; }}
                 >
                   {loading ? "Sending…" : "Send Reset Link"}
                 </button>
@@ -173,7 +173,7 @@ export default function ForgotPasswordPage() {
                 <Link
                   href="/login"
                   className="font-semibold"
-                  style={{ color: "#6c5ce7" }}
+                  style={{ color: "#FF3CAC" }}
                 >
                   Sign In
                 </Link>

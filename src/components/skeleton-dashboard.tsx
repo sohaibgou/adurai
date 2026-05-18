@@ -84,12 +84,12 @@ export default function SkeletonDashboard() {
           <div className="relative flex items-center gap-3">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-              style={{ background: "linear-gradient(135deg, #6c5ce7, #a855f7)" }}
+              style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)" }}
             >
               A
             </div>
             <span className="text-2xl font-bold tracking-tight" style={{ color: "#0f172a" }}>
-              Adur<span style={{ color: "#6c5ce7" }}>.ai</span>
+              Adur<span style={{ color: "#FF3CAC" }}>.ai</span>
             </span>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function SkeletonDashboard() {
             <motion.div
               className="h-full rounded-full"
               style={{
-                background: "linear-gradient(90deg, #6c5ce7, #a855f7, #6c5ce7)",
+                background: "linear-gradient(90deg, #FF3CAC, #FF6B35, #FF3CAC)",
                 backgroundSize: "200% 100%",
               }}
               animate={{
@@ -151,7 +151,7 @@ export default function SkeletonDashboard() {
                 className="text-xs text-center leading-relaxed max-w-xs"
                 style={{ color: "#94a3b8" }}
               >
-                <span style={{ color: "#6c5ce7", fontWeight: 500 }}>Tip:</span> Adur is analyzing every campaign against your break-even ROAS. This takes 20–30 seconds for a thorough analysis.
+                <span style={{ color: "#FF3CAC", fontWeight: 500 }}>Tip:</span> Adur is analyzing every campaign against your break-even ROAS. This takes 20–30 seconds for a thorough analysis.
               </motion.p>
             )}
           </AnimatePresence>

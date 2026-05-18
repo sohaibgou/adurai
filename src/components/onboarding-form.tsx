@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag, Globe, Target, TrendingUp, Search, BarChart3,
-  ChevronRight, ChevronLeft, ChevronDown, Upload, FileText, AlertCircle, Check, Lock, Zap,
+  ChevronRight, ChevronLeft, ChevronDown, Upload, FileText, AlertCircle, Check,
 } from "lucide-react";
 import type { OnboardingData } from "@/lib/types";
 
@@ -99,6 +99,7 @@ interface OnboardingFormProps {
   analysisCount:   number;
   isPaid:          boolean;
   onUpgradeClick:  () => void;
+  modeSwitcher?:   React.ReactNode;
 }
 
 /* ── Input helpers ─────────────────────────────────────── */
@@ -130,7 +131,7 @@ function blurInput(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
 
 /* ── Component ─────────────────────────────────────────── */
 
-export default function OnboardingForm({ onComplete, onFileSelected, isLoading, analysisCount, isPaid, onUpgradeClick }: OnboardingFormProps) {
+export default function OnboardingForm({ onComplete, onFileSelected, isLoading, analysisCount, isPaid, onUpgradeClick, modeSwitcher }: OnboardingFormProps) {
   const [step, setStep] = useState(1);
 
   const [product,   setProduct]   = useState("");
@@ -212,6 +213,13 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
     >
       <div className="px-4 sm:px-6" style={{ maxWidth: 600, margin: "0 auto" }}>
 
+        {/* ── Mode switcher slot (injected from parent) ── */}
+        {modeSwitcher && (
+          <div className="flex justify-center mb-8">
+            {modeSwitcher}
+          </div>
+        )}
+
         {/* ── Header ── */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -267,71 +275,6 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
             </p>
           </motion.div>
         </AnimatePresence>
-
-        {/* ── Usage counter (always visible when not paid) ── */}
-        {!isPaid && (
-          <div
-            className="mb-5 rounded-2xl p-4"
-            style={{
-              background: analysisCount >= FREE_LIMIT
-                ? "rgba(225,112,85,0.06)"
-                : "rgba(255,60,172,0.05)",
-              border: `1px solid ${analysisCount >= FREE_LIMIT ? "rgba(225,112,85,0.22)" : "rgba(255,60,172,0.16)"}`,
-            }}
-          >
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="flex items-center gap-2">
-                {analysisCount >= FREE_LIMIT
-                  ? <Lock className="w-3.5 h-3.5" style={{ color: "#e17055" }} />
-                  : <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC" }} />
-                }
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--font-inter)", color: analysisCount >= FREE_LIMIT ? "#e17055" : "#FF3CAC" }}>
-                  {analysisCount >= FREE_LIMIT
-                    ? "Free limit reached"
-                    : `${FREE_LIMIT - analysisCount} free ${FREE_LIMIT - analysisCount === 1 ? "analysis" : "analyses"} remaining`}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={onUpgradeClick}
-                className="cursor-pointer transition-all"
-                style={{
-                  fontSize: 11, fontWeight: 700, fontFamily: "var(--font-inter)",
-                  background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-                  color: "#fff", border: "none", padding: "5px 12px", borderRadius: 100,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                Upgrade →
-              </button>
-            </div>
-            {/* Progress dots */}
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3].map(i => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1, height: 4, borderRadius: 100,
-                    background: i <= analysisCount
-                      ? analysisCount >= FREE_LIMIT
-                        ? "#e17055"
-                        : "linear-gradient(90deg, #FF3CAC, #FF6B35)"
-                      : "#E8E5E0",
-                    transition: "background 0.3s",
-                  }}
-                />
-              ))}
-            </div>
-            <div className="flex justify-between mt-1.5">
-              <span style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
-                {Math.min(analysisCount, FREE_LIMIT)} of {FREE_LIMIT} used
-              </span>
-              <span style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
-                Unlimited with Starter
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* ── Form card ── */}
         <AnimatePresence mode="wait">
@@ -578,63 +521,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
             )}
 
             {/* ── STEP 4: Upload ── */}
-            {step === 4 && !isPaid && analysisCount >= FREE_LIMIT && (
-              <div className="flex flex-col items-center text-center py-4">
-                {/* Lock icon */}
-                <div
-                  className="flex items-center justify-center mb-6"
-                  style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg, rgba(255,60,172,0.12), rgba(255,107,53,0.10))", border: "1px solid rgba(255,60,172,0.20)" }}
-                >
-                  <Lock className="w-8 h-8" style={{ color: "#FF3CAC" }} />
-                </div>
-
-                <h3 className="font-heading" style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12", marginBottom: 8 }}>
-                  You&apos;ve used all 3 free analyses
-                </h3>
-                <p style={{ fontSize: 14, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.6, maxWidth: 340, marginBottom: 24 }}>
-                  Upgrade to Starter for unlimited analyses, the 7-day Battle Plan, and the AI Creative Studio.
-                </p>
-
-                {/* Progress — all filled red */}
-                <div className="flex items-center gap-1.5 w-full mb-2" style={{ maxWidth: 280 }}>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} style={{ flex: 1, height: 5, borderRadius: 100, background: "#e17055" }} />
-                  ))}
-                </div>
-                <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", marginBottom: 28 }}>3 of 3 free analyses used</p>
-
-                {/* Upgrade CTA */}
-                <button
-                  type="button"
-                  onClick={onUpgradeClick}
-                  className="inline-flex items-center gap-2 cursor-pointer font-semibold text-white transition-all"
-                  style={{
-                    padding: "15px 40px", borderRadius: 100,
-                    background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
-                    fontSize: 16, fontFamily: "var(--font-inter)",
-                    boxShadow: "0 4px 24px rgba(255,60,172,0.36)", border: "none",
-                    letterSpacing: "-0.01em",
-                  }}
-                  onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-2px)"; b.style.boxShadow = "0 8px 32px rgba(255,60,172,0.48)"; }}
-                  onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 24px rgba(255,60,172,0.36)"; }}
-                >
-                  <Zap className="w-4 h-4" />
-                  Upgrade to Starter
-                </button>
-
-                {/* Benefits */}
-                <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 mt-6">
-                  {["Unlimited analyses", "7-Day Battle Plan", "AI Creative Studio", "Priority support"].map(f => (
-                    <span key={f} className="flex items-center gap-1.5" style={{ fontSize: 12, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
-                      <Check className="w-3 h-3" style={{ color: "#16A34A", flexShrink: 0 }} />
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {step === 4 && (isPaid || analysisCount < FREE_LIMIT) && (
+            {step === 4 && (
               <div>
                 {/* Summary */}
                 <div
@@ -793,6 +680,74 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
             </button>
           )}
         </div>
+
+        {/* ── Usage bar — always visible for free users ── */}
+        {!isPaid && (() => {
+          const used      = Math.min(analysisCount, FREE_LIMIT);
+          const remaining = FREE_LIMIT - used;
+          const exhausted = remaining <= 0;
+          const lastOne   = remaining === 1;
+          return (
+            <div
+              className="mt-4"
+              style={{
+                background:   exhausted ? "rgba(225,112,85,0.05)" : "rgba(255,60,172,0.04)",
+                border:       `1px solid ${exhausted ? "rgba(225,112,85,0.20)" : "rgba(255,60,172,0.15)"}`,
+                borderRadius: 14,
+                padding:      "12px 14px",
+              }}
+            >
+              {/* Top row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>
+                    {exhausted ? "🔒" : lastOne ? "⚡" : "📊"}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: exhausted ? "#e17055" : "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                    {exhausted
+                      ? "No free generations left"
+                      : `${remaining} free generation${remaining === 1 ? "" : "s"} remaining`}
+                  </span>
+                </div>
+                {lastOne && !exhausted && (
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FF3CAC", background: "rgba(255,60,172,0.10)", padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                    Last free
+                  </span>
+                )}
+                {exhausted && (
+                  <button
+                    onClick={onUpgradeClick}
+                    style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", padding: "4px 12px", borderRadius: 100, border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+                  >
+                    Upgrade →
+                  </button>
+                )}
+              </div>
+              {/* 3 pills */}
+              <div style={{ display: "flex", gap: 5 }}>
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex:         1,
+                      height:       6,
+                      borderRadius: 100,
+                      background:   i < used
+                        ? (exhausted ? "#e17055" : "linear-gradient(90deg,#FF3CAC,#FF6B35)")
+                        : "#E8E5E0",
+                      transition:   "background 0.35s ease",
+                    }}
+                  />
+                ))}
+              </div>
+              {!exhausted && (
+                <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
+                  {used} of {FREE_LIMIT} free uses · <button onClick={onUpgradeClick} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
       </div>
     </section>

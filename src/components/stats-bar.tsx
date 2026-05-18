@@ -140,7 +140,7 @@ export default function StatsBar({
   return (
     <div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Spend" icon={DollarSign} accentColor="#6c5ce7" delay={0}>
+        <StatCard label="Total Spend" icon={DollarSign} accentColor="#FF3CAC" delay={0}>
           <AnimatedCounter value={totalSpend} prefix="$" />
         </StatCard>
 
