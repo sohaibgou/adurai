@@ -3,9 +3,9 @@
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
+import AuthPanel from "@/components/auth-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,19 @@ export default function SignupPage() {
     </Suspense>
   );
 }
+
+const INPUT: React.CSSProperties = {
+  width: "100%",
+  padding: "13px 16px",
+  borderRadius: 12,
+  border: "1.5px solid #E8E5E0",
+  fontSize: 15,
+  fontFamily: "var(--font-inter)",
+  color: "#0D0D12",
+  background: "#F7F5F2",
+  outline: "none",
+  transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+};
 
 function SignupContent() {
   const searchParams = useSearchParams();
@@ -30,19 +43,10 @@ function SignupContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (!email.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-
+    if (!email.trim() || !password.trim()) { setError("Please fill in all fields."); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
 
-    // Sign up
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -52,109 +56,90 @@ function SignupContent() {
       },
     });
 
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
+    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
 
-    // Prefer session from signUp; fall back to immediate sign-in
     let token = data.session?.access_token;
-
     if (!token) {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) {
-        // Email confirmation is still enabled on Supabase — tell the user
-        setError("Account created! Check your email to verify, then sign in.");
-        setLoading(false);
-        return;
-      }
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) { setError("Account created! Check your email to verify, then sign in."); setLoading(false); return; }
       token = signInData.session?.access_token;
     }
 
-    // Checkout flow
     if (redirectTo === "checkout" && token) {
       try { await redirectToCheckout(token); return; } catch { /* fall through */ }
     }
 
-    // Free signup — go straight to /analyze
     router.push("/analyze");
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ background: "#ffffff" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full"
-        style={{ maxWidth: 420 }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)" }}
-          >
-            <span className="text-white font-bold text-base">A</span>
-          </div>
-          <span
-            className="font-heading font-bold"
-            style={{ fontSize: 20, color: "#0d0d1a", letterSpacing: "-0.025em" }}
-          >
-            adur<span style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-          </span>
-        </div>
+    <div className="flex min-h-screen">
 
-        {/* Card */}
-        <div
-          className="rounded-2xl px-8 py-8"
-          style={{
-            background: "#ffffff",
-            border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.07)",
-          }}
-        >
-          <h1
-            className="font-heading font-bold mb-1"
-            style={{ fontSize: 24, color: "#0d0d1a", letterSpacing: "-0.03em" }}
-          >
+      {/* ── Left: Form ── */}
+      <div
+        className="flex flex-col justify-center px-8 sm:px-12 w-full lg:w-[45%] xl:w-[40%] flex-shrink-0"
+        style={{ background: "#FFFFFF", minHeight: "100vh" }}
+      >
+        <div style={{ maxWidth: 400, width: "100%", margin: "0 auto" }}>
+
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 mb-10">
+            <div
+              style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255,60,172,0.30)", flexShrink: 0 }}
+            >
+              <span style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>A</span>
+            </div>
+            <span className="font-heading font-bold" style={{ fontSize: 20, color: "#0D0D12", letterSpacing: "-0.03em" }}>
+              Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="font-heading" style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 900, letterSpacing: "-0.04em", color: "#0D0D12", lineHeight: 1.1, marginBottom: 8 }}>
             Create your account
           </h1>
-          <p style={{ fontSize: 14, color: "#6b7280", fontFamily: "var(--font-inter)", marginBottom: 24 }}>
+          <p style={{ fontSize: 15, color: "#6B6B72", fontFamily: "var(--font-inter)", marginBottom: 32, lineHeight: 1.5 }}>
             {redirectTo === "checkout"
-              ? "One step away from Starter — fill in your details and go straight to payment."
-              : "Start analyzing your Meta Ads in seconds."}
+              ? "One step away — fill in your details and go straight to payment."
+              : "Start analyzing your Meta Ads in 60 seconds. Free."}
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Trust badges */}
+          <div className="flex flex-wrap gap-3 mb-8">
+            {[
+              { dot: "#16A34A", text: "No credit card" },
+              { dot: "#FF3CAC", text: "60-second setup" },
+              { dot: "#0984e3", text: "Data stays private" },
+            ].map(b => (
+              <div key={b.text} className="flex items-center gap-1.5" style={{ fontSize: 12, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: b.dot, flexShrink: 0 }} />
+                {b.text}
+              </div>
+            ))}
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
-              <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", fontFamily: "var(--font-inter)" }}>
-                Email
+              <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                Work Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="name@company.com"
                 autoComplete="email"
                 required
                 disabled={loading}
-                className="w-full outline-none transition-all disabled:opacity-60"
-                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, fontFamily: "var(--font-inter)", color: "#0d0d1a", background: "#fafafa" }}
-                onFocus={e => { e.currentTarget.style.border = "1px solid #6c5ce7"; e.currentTarget.style.background = "#fff"; }}
-                onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; }}
+                style={INPUT}
+                onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label style={{ fontSize: 13, fontWeight: 500, color: "#374151", fontFamily: "var(--font-inter)" }}>
+              <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#0D0D12", fontFamily: "var(--font-inter)" }}>
                 Password
               </label>
               <input
@@ -165,57 +150,66 @@ function SignupContent() {
                 autoComplete="new-password"
                 required
                 disabled={loading}
-                className="w-full outline-none transition-all disabled:opacity-60"
-                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 14, fontFamily: "var(--font-inter)", color: "#0d0d1a", background: "#fafafa" }}
-                onFocus={e => { e.currentTarget.style.border = "1px solid #6c5ce7"; e.currentTarget.style.background = "#fff"; }}
-                onBlur={e => { e.currentTarget.style.border = "1px solid #e5e7eb"; e.currentTarget.style.background = "#fafafa"; }}
+                style={INPUT}
+                onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </div>
 
             {error && (
-              <p
-                className="text-sm rounded-lg px-4 py-2.5 text-center"
-                style={{ color: "#e17055", background: "rgba(225,112,85,0.08)", fontFamily: "var(--font-inter)" }}
-              >
-                {error}
-              </p>
+              <div style={{ padding: "12px 16px", borderRadius: 10, background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.20)" }}>
+                <p style={{ fontSize: 13, color: "#e17055", fontFamily: "var(--font-inter)", textAlign: "center" }}>{error}</p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full font-semibold text-white py-3 rounded-xl transition-all cursor-pointer disabled:opacity-70 mt-1"
+              className="w-full font-semibold text-white cursor-pointer transition-all disabled:opacity-60"
               style={{
-                background: loading ? "#9ca3af" : "linear-gradient(135deg, #6c5ce7, #e040fb)",
-                fontSize: 15,
-                fontFamily: "var(--font-inter)",
-                boxShadow: loading ? "none" : "0 4px 20px rgba(108,92,231,0.38)",
-                border: "none",
+                padding:      "15px",
+                borderRadius:  100,
+                background:    loading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                fontSize:       16,
+                fontFamily:   "var(--font-inter)",
+                boxShadow:     loading ? "none" : "0 4px 20px rgba(255,60,172,0.32)",
+                border:        "none",
+                letterSpacing: "-0.01em",
+                marginTop:      4,
               }}
-              onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(108,92,231,0.52)"; }}
-              onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(108,92,231,0.38)"; }}
+              onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(255,60,172,0.44)"; } }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(255,60,172,0.32)"; }}
             >
               {loading
                 ? (redirectTo === "checkout" ? "Setting up your account…" : "Creating account…")
-                : (redirectTo === "checkout" ? "Continue to Payment →" : "Create Account")}
+                : (redirectTo === "checkout" ? "Continue to Payment →" : "Get Started →")}
             </button>
           </form>
 
-          <p
-            className="text-center mt-5"
-            style={{ fontSize: 13, color: "#6b7280", fontFamily: "var(--font-inter)" }}
-          >
-            Already have an account?{" "}
+          <p className="text-center mt-6" style={{ fontSize: 14, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
+            {"Already have an account? "}
             <Link
               href={redirectTo === "checkout" ? "/login?redirect=checkout" : "/login"}
-              className="font-semibold"
-              style={{ color: "#6c5ce7" }}
+              style={{ fontWeight: 700, color: "#0D0D12", textDecoration: "none" }}
             >
               Sign In
             </Link>
           </p>
+
+          {/* Footer */}
+          <div className="flex items-center justify-center gap-4 mt-12">
+            {["Privacy Policy", "Terms of Service"].map((t, i) => (
+              <span key={t} className="flex items-center gap-4">
+                {i > 0 && <span style={{ color: "#D4D0CA" }}>·</span>}
+                <span style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", cursor: "pointer" }}>{t}</span>
+              </span>
+            ))}
+          </div>
         </div>
-      </motion.div>
+      </div>
+
+      {/* ── Right: Visual panel ── */}
+      <AuthPanel />
     </div>
   );
 }
