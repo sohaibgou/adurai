@@ -205,17 +205,19 @@ export default function Home() {
         className="min-h-screen overflow-x-hidden"
         style={{ background: "#FAF8F5", backgroundImage: "radial-gradient(ellipse 80% 60% at 50% 10%, rgba(255, 100, 180, 0.09) 0%, transparent 65%)" }}
       >
-        {/* ── Nav ── */}
+        {/* ── Nav wrapper — sticky floating pill ── */}
+        <div className="sticky z-50 px-5" style={{ top: 12 }}>
         <nav
-          className="flex items-center justify-between sticky top-0 z-50"
+          className="flex items-center justify-between"
           style={{
-            height:       72,
-            background:   "rgba(255,255,255,0.96)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid #E8E5E0",
-            boxShadow:    "0 1px 3px rgba(0,0,0,0.04)",
-            padding:      "0 40px",
+            height:       68,
+            background:   "#FFFFFF",
+            borderRadius: 22,
+            border:       "1px solid #E8E5E0",
+            boxShadow:    "0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+            padding:      "0 28px",
+            maxWidth:     1200,
+            margin:       "0 auto",
           }}
         >
             {/* Logo */}
@@ -234,7 +236,7 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="hidden md:flex items-center gap-9">
+            <div className="hidden md:flex items-center gap-8">
               {[
                 { label: "HOW IT WORKS", id: "how-it-works" },
                 { label: "FEATURES",     id: "features" },
@@ -243,9 +245,9 @@ export default function Home() {
                 <span
                   key={label}
                   className="cursor-pointer"
-                  style={{ fontSize: 11, color: "#6B6B72", fontWeight: 600, fontFamily: "var(--font-inter)", letterSpacing: "0.08em", transition: "color 0.15s", whiteSpace: "nowrap" }}
+                  style={{ fontSize: 11, color: "#4B4B55", fontWeight: 700, fontFamily: "var(--font-inter)", letterSpacing: "0.09em", transition: "color 0.15s", whiteSpace: "nowrap" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0D0D12"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6B6B72"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#4B4B55"; }}
                   onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}
                 >
                   {label}
@@ -338,6 +340,7 @@ export default function Home() {
               )
             )}
         </nav>
+        </div>
 
         <HeroSection onCtaClick={scrollToOnboarding} />
 
