@@ -199,80 +199,16 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
   return (
     <section
       style={{
-        background:      "#FAF8F5",
-        backgroundImage: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,60,172,0.06) 0%, transparent 60%)",
-        minHeight:       "100vh",
-        paddingTop:       80,
-        paddingBottom:    80,
+        background:   "#FFFFFF",
+        borderTop:    "1px solid #E8E5E0",
+        paddingTop:    64,
+        paddingBottom: 80,
       }}
     >
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
+      {/* Subtle top gradient glow to separate from landing above */}
+      <div style={{ position: "absolute", left: 0, right: 0, height: 320, background: "radial-gradient(ellipse 60% 100% at 50% 0%, rgba(255,60,172,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        {/* ── Step tracker ── */}
-        <div className="flex items-start justify-center mb-12 gap-0">
-          {STEPS.map((s, idx) => {
-            const isActive = step === s.num;
-            const isDone   = step > s.num;
-            const isLast   = idx === STEPS.length - 1;
-            return (
-              <div key={s.num} className="flex items-start">
-                {/* Step dot + label */}
-                <div className="flex flex-col items-center" style={{ minWidth: 72 }}>
-                  <div
-                    className="flex items-center justify-center transition-all duration-300"
-                    style={{
-                      width:        36,
-                      height:       36,
-                      borderRadius: "50%",
-                      background:    isDone
-                        ? "#16A34A"
-                        : isActive
-                        ? "linear-gradient(135deg, #FF3CAC, #FF6B35)"
-                        : "#FFFFFF",
-                      border:        isDone || isActive ? "none" : "1.5px solid #D4D0CA",
-                      color:         isDone || isActive ? "#FFFFFF" : "#A8A5A0",
-                      fontSize:       13,
-                      fontWeight:     700,
-                      fontFamily:    "var(--font-inter)",
-                      boxShadow:     isActive ? "0 4px 16px rgba(255,60,172,0.28)" : "none",
-                    }}
-                  >
-                    {isDone ? <Check className="w-4 h-4" /> : s.num}
-                  </div>
-                  <span
-                    className="text-center mt-2 hidden sm:block"
-                    style={{
-                      fontSize:   11,
-                      fontWeight:  isActive ? 700 : 500,
-                      color:       isActive ? "#FF3CAC" : isDone ? "#6B6B72" : "#A8A5A0",
-                      fontFamily: "var(--font-inter)",
-                      lineHeight:  1.3,
-                      maxWidth:    68,
-                    }}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-
-                {/* Connector line */}
-                {!isLast && (
-                  <div
-                    style={{
-                      height:     1.5,
-                      width:      56,
-                      marginTop:  17,
-                      flexShrink: 0,
-                      background: isDone
-                        ? "linear-gradient(90deg, #FF3CAC, #FF6B35)"
-                        : "#E8E5E0",
-                      transition: "background 0.4s",
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
+      <div className="relative px-4 sm:px-6" style={{ maxWidth: 600, margin: "0 auto" }}>
 
         {/* ── Header ── */}
         <AnimatePresence mode="wait">
@@ -282,7 +218,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center mb-8"
+            className="text-center mb-6 sm:mb-8"
           >
             <div
               className="inline-flex items-center gap-1.5 mb-4"
@@ -338,11 +274,11 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -18 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="p-5 sm:p-8 md:p-10"
             style={{
               background:   "#FFFFFF",
               border:       "1px solid #E8E5E0",
-              borderRadius:  24,
-              padding:       40,
+              borderRadius:  20,
               boxShadow:    "0 8px 40px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
             }}
           >
@@ -673,7 +609,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
         </AnimatePresence>
 
         {/* ── Footer nav ── */}
-        <div className="flex items-center justify-between mt-6" style={{ maxWidth: 640 }}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-6">
           {step > 1 ? (
             <button
               type="button"
@@ -704,7 +640,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading }
               type="button"
               onClick={goNext}
               disabled={!stepValid}
-              className="inline-flex items-center gap-2 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed w-full sm:w-auto"
               style={{
                 padding:      "14px 36px",
                 borderRadius:  100,
