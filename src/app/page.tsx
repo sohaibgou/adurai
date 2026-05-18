@@ -209,36 +209,46 @@ export default function Home() {
         <nav
           className="flex items-center justify-between"
           style={{
-            height:       64,
+            height:       68,
             background:   "#FFFFFF",
-            borderRadius: 14,
+            borderRadius: 16,
             margin:       "16px 24px 0",
             border:       "1px solid #E8E5E0",
-            boxShadow:    "0 1px 3px rgba(0,0,0,0.06)",
-            padding:      "0 32px",
+            boxShadow:    "0 2px 8px rgba(0,0,0,0.06)",
+            padding:      "0 28px",
           }}
         >
-            <span
-              className="font-heading font-bold cursor-default select-none flex-shrink-0"
-              style={{ fontSize: 17, color: "#0d0d1a", letterSpacing: "-0.025em" }}
-            >
-              adur<span style={{ background: "linear-gradient(135deg, #6c5ce7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-            </span>
+            {/* Logo */}
+            <div className="flex items-center gap-2.5 cursor-default select-none flex-shrink-0">
+              <div
+                className="flex items-center justify-center font-bold text-white"
+                style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 13, flexShrink: 0 }}
+              >
+                A
+              </div>
+              <span
+                className="font-heading font-bold"
+                style={{ fontSize: 17, color: "#0d0d1a", letterSpacing: "-0.025em" }}
+              >
+                Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
+              </span>
+            </div>
 
-            <div className="hidden md:flex items-center gap-7">
-              {["How it works", "Pricing"].map((link) => (
+            <div className="hidden md:flex items-center gap-8">
+              {[
+                { label: "How it works", id: "how-it-works" },
+                { label: "Features",     id: "features" },
+                { label: "Pricing",      id: "pricing" },
+              ].map(({ label, id }) => (
                 <span
-                  key={link}
+                  key={label}
                   className="cursor-pointer"
-                  style={{ fontSize: 14, color: "#6B6B72", fontWeight: 500, fontFamily: "var(--font-inter)", transition: "color 0.15s" }}
+                  style={{ fontSize: 14, color: "#6B6B72", fontWeight: 500, fontFamily: "var(--font-inter)", transition: "color 0.15s", whiteSpace: "nowrap" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0D0D12"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#6B6B72"; }}
-                  onClick={() => {
-                    if (link === "How it works") document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-                    if (link === "Pricing")       document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
-                  }}
+                  onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}
                 >
-                  {link}
+                  {label}
                 </span>
               ))}
             </div>
@@ -250,7 +260,7 @@ export default function Home() {
                   <div className="hidden md:flex items-center gap-2 pr-2">
                     <div
                       className="flex-shrink-0 flex items-center justify-center rounded-full"
-                      style={{ width: 28, height: 28, background: "linear-gradient(135deg, #6c5ce7, #8b7cf7)", boxShadow: "0 2px 8px rgba(108,92,231,0.40)" }}
+                      style={{ width: 28, height: 28, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", boxShadow: "0 2px 8px rgba(255,60,172,0.35)" }}
                     >
                       <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", lineHeight: 1, fontFamily: "var(--font-inter)" }}>
                         {(user.email?.[0] ?? "U").toUpperCase()}
@@ -312,11 +322,12 @@ export default function Home() {
                       fontSize:      14,
                       background:   "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       border:       "none",
-                      padding:      "10px 22px",
-                      borderRadius:  10,
+                      padding:      "11px 26px",
+                      borderRadius:  100,
                       fontFamily:   "var(--font-inter)",
-                      boxShadow:    "0 2px 12px rgba(255, 60, 172, 0.25)",
+                      boxShadow:    "0 3px 16px rgba(255, 60, 172, 0.30)",
                       transition:   "opacity 0.15s, transform 0.15s",
+                      letterSpacing: "-0.01em",
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
@@ -351,9 +362,9 @@ export default function Home() {
                   <button
                     onClick={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
                     className="text-xs font-semibold cursor-pointer transition-colors"
-                    style={{ color: "#6c5ce7", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#e040fb"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6c5ce7"; }}
+                    style={{ color: "#FF3CAC", fontFamily: "var(--font-inter)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF6B35"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF3CAC"; }}
                   >
                     Upgrade for unlimited →
                   </button>
@@ -374,8 +385,8 @@ export default function Home() {
                     background: analysisCount >= FREE_LIMIT
                       ? "#e17055"
                       : analysisCount === FREE_LIMIT - 1
-                      ? "linear-gradient(90deg, #6c5ce7, #fdcb6e)"
-                      : "linear-gradient(90deg, #6c5ce7, #e040fb)",
+                      ? "linear-gradient(90deg, #FF3CAC, #FF6B35)"
+                      : "linear-gradient(90deg, #FF3CAC, #FF6B35)",
                   }}
                 />
               </div>

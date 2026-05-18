@@ -88,7 +88,7 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <section className="relative py-28 px-6 overflow-hidden" style={{ background: "#FAF8F5" }}>
+    <section id="features" className="relative py-28 px-6 overflow-hidden" style={{ background: "#FAF8F5" }}>
       <div className="relative z-10 max-w-6xl mx-auto">
         <FadeIn>
           <div className="text-center mb-20">
