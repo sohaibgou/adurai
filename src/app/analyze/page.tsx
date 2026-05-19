@@ -174,7 +174,7 @@ export default function AnalyzePage() {
 
           {/* Top bar */}
           <header
-            className="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 flex-shrink-0"
+            className="sticky top-0 z-20 flex items-center justify-between pl-14 pr-4 lg:px-8 flex-shrink-0"
             style={{ height: 64, background: "rgba(247,245,242,0.92)", backdropFilter: "blur(16px)", borderBottom: "1px solid #E8E5E0" }}
           >
             {/* Mobile logo */}

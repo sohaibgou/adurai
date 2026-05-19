@@ -327,6 +327,7 @@ export default function ResultsPage() {
 
           {/* ── Sticky top bar ── */}
           <header
+            className="pl-14 pr-4 lg:px-8"
             style={{
               height: 64,
               background: "rgba(247,245,242,0.85)",
@@ -339,7 +340,6 @@ export default function ResultsPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "0 24px",
             }}
           >
             {/* Left: mobile logo / desktop breadcrumb */}

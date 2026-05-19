@@ -397,7 +397,7 @@ export default function AutopilotPage() {
 
         {/* ── Top bar ── */}
         <header
-          className="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 flex-shrink-0"
+          className="sticky top-0 z-20 flex items-center justify-between pl-14 pr-4 lg:px-8 flex-shrink-0"
           style={{ height: 64, background: "rgba(247,245,242,0.90)", backdropFilter: "blur(16px)", borderBottom: "1px solid #E8E5E0" }}
         >
           <div className="flex items-center gap-3">
@@ -519,7 +519,7 @@ export default function AutopilotPage() {
                   accent="#7C3AED"
                 />
                 <div style={{ padding: "0 24px 24px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12, marginBottom: 20 }}>
                     {MODES.map((m) => {
                       const active = mode === m.id;
                       return (
@@ -947,7 +947,8 @@ export default function AutopilotPage() {
                     <>
                       {/* Table */}
                       <div style={{ overflowX: "auto" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
                           <thead>
                             <tr style={{ borderBottom: "1px solid #F0EDE8" }}>
                               {["Date/Time", "Campaign", "Action", "Reason", "Status", "Result"].map((col) => (
@@ -990,6 +991,7 @@ export default function AutopilotPage() {
                             })}
                           </tbody>
                         </table>
+                        </div>{/* /overflow-x-auto */}
                       </div>
 
                       {/* Pagination */}
