@@ -287,7 +287,7 @@ export default function Home() {
                   <div className="hidden md:block w-px h-4 mx-1" style={{ background: "rgba(0,0,0,0.10)" }} />
                   <button
                     onClick={() => router.push("/dashboard")}
-                    className="hidden md:inline-flex items-center cursor-pointer transition-colors"
+                    className="inline-flex items-center cursor-pointer transition-colors"
                     style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, fontFamily: "var(--font-inter)", background: "none", border: "none", padding: "6px 10px" }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#0d0d1a"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; }}
@@ -309,7 +309,7 @@ export default function Home() {
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                   <Link
                     href="/login"
-                    className="hidden md:inline-flex items-center font-semibold cursor-pointer"
+                    className="inline-flex items-center font-semibold cursor-pointer"
                     style={{
                       fontSize:      13,
                       color:         "#4B4B55",
@@ -333,12 +333,13 @@ export default function Home() {
                       fontSize:      14,
                       background:   "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       border:       "none",
-                      padding:      "11px 26px",
+                      padding:      "10px 18px",
                       borderRadius:  100,
                       fontFamily:   "var(--font-inter)",
                       boxShadow:    "0 3px 16px rgba(255, 60, 172, 0.30)",
                       transition:   "opacity 0.15s, transform 0.15s",
                       letterSpacing: "-0.01em",
+                      whiteSpace:   "nowrap",
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
