@@ -242,8 +242,8 @@ export default function HowItWorks() {
   const tabCfg = TAB_CONFIG.find(t => t.id === active)!;
 
   return (
-    <section id="how-it-works" style={{ background: "#ffffff", paddingTop: 96, paddingBottom: 96 }}>
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 24px" }}>
+    <section id="how-it-works" className="py-16 sm:py-24" style={{ background: "#ffffff" }}>
+      <div className="px-4 sm:px-6" style={{ maxWidth: 1040, margin: "0 auto" }}>
 
         {/* ── Header ── */}
         <FadeIn>
@@ -296,10 +296,10 @@ export default function HowItWorks() {
 
         {/* ── Tab switcher ── */}
         <FadeIn delay={0.08}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
+          <div className="flex justify-center mb-10 sm:mb-12">
             <div
+              className="flex w-full sm:w-auto"
               style={{
-                display: "inline-flex",
                 background: "#F7F5F2",
                 border: "1px solid #E8E5E0",
                 borderRadius: 100,
@@ -313,16 +313,18 @@ export default function HowItWorks() {
                   <button
                     key={tab.id}
                     onClick={() => setActive(tab.id)}
+                    className="flex-1 sm:flex-none"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 8,
-                      padding: "10px 22px",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "9px 14px",
                       borderRadius: 100,
                       border: "none",
                       cursor: "pointer",
                       fontFamily: "var(--font-inter)",
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: 600,
                       transition: "all 0.18s",
                       background: isActive ? "#ffffff" : "transparent",
@@ -362,8 +364,7 @@ export default function HowItWorks() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}
-            className="grid-cols-1 md:grid-cols-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
           >
             {steps.map((step, i) => {
               const Icon = step.icon;
@@ -463,15 +464,7 @@ export default function HowItWorks() {
 
         {/* ── Bottom CTA strip ── */}
         <FadeIn delay={0.2}>
-          <div
-            style={{
-              marginTop: 48,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
+          <div className="flex flex-col items-center text-center gap-3 mt-10 sm:mt-12">
             {active === "csv" ? (
               <>
                 <p style={{ fontSize: 14, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
