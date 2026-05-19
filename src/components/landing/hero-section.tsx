@@ -185,13 +185,10 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-            <div className="hidden sm:block" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 12, lineHeight: 1.5, textAlign: "center" }}>
               Built by media buyers who&apos;ve managed&nbsp;
               <strong style={{ fontWeight: 700, background: "linear-gradient(90deg,#FF3CAC,#FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>$70M+</strong>
               &nbsp;in ad spend
-            </div>
-            <div className="sm:hidden" style={{ textAlign: "center", lineHeight: 1.4 }}>
-              <div style={{ fontSize: 12 }}>Built by media buyers · <strong style={{ fontWeight: 700, background: "linear-gradient(90deg,#FF3CAC,#FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>$70M+</strong> managed</div>
             </div>
           </div>
         </FadeIn>
