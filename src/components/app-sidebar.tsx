@@ -31,7 +31,7 @@ const NAV_ITEMS = [
   { id: "analyze",         label: "New Analysis",    href: "/analyze",          icon: Upload          },
   { id: "results",         label: "Last Results",    href: "/results",          icon: FileText        },
   { id: "creative-studio", label: "Creative Studio", href: "/creative-studio",  icon: Palette         },
-  { id: "autopilot",       label: "Autopilot",       href: "/dashboard/autopilot", icon: Bot            },
+  { id: "autopilot",       label: "AI Manager",      href: "/dashboard/autopilot", icon: Bot            },
 ] as const;
 
 const FREE_LIMIT = 3;
