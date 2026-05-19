@@ -298,9 +298,9 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                 <p className="text-center" style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
                   Already have an account?{" "}
                   <Link
-                    href="/login?redirect=checkout"
+                    href={`/login?redirect=checkout&plan=${plan}`}
                     className="font-semibold"
-                    style={{ color: "#FF3CAC", textDecoration: "none" }}
+                    style={{ color: isPro ? "#6c5ce7" : "#FF3CAC", textDecoration: "none" }}
                     onClick={handleClose}
                   >
                     Sign in

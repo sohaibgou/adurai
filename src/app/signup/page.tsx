@@ -33,6 +33,7 @@ const INPUT: React.CSSProperties = {
 function SignupContent() {
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get("redirect");
+  const planParam    = searchParams.get("plan") === "pro" ? "pro" : "starter";
   const router       = useRouter();
 
   const [email,    setEmail]    = useState("");
@@ -66,7 +67,7 @@ function SignupContent() {
     }
 
     if (redirectTo === "checkout" && token) {
-      try { await redirectToCheckout(token); return; } catch { /* fall through */ }
+      try { await redirectToCheckout(token, planParam); return; } catch { /* fall through */ }
     }
 
     router.push("/analyze");

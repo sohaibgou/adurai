@@ -34,6 +34,7 @@ function LoginContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get("redirect");
+  const planParam    = searchParams.get("plan") === "pro" ? "pro" : "starter";
 
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +51,7 @@ function LoginContent() {
     if (error) { setError(error.message); setLoading(false); return; }
 
     if (redirectTo === "checkout") {
-      try { await redirectToCheckout(); } catch { router.push("/"); }
+      try { await redirectToCheckout(undefined, planParam); } catch { router.push("/"); }
     } else {
       router.push("/");
     }
