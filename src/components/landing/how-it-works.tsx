@@ -475,7 +475,7 @@ export default function HowItWorks() {
                   <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
                     Want full automation?{" "}
                     <button
-                      onClick={() => setActive("meta")}
+                      onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
                       style={{
                         background: "none",
                         border: "none",
@@ -504,7 +504,7 @@ export default function HowItWorks() {
                   <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
                     Not ready to connect?{" "}
                     <button
-                      onClick={() => setActive("csv")}
+                      onClick={() => document.getElementById("onboarding-form")?.scrollIntoView({ behavior: "smooth" })}
                       style={{
                         background: "none",
                         border: "none",
