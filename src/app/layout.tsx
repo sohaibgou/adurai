@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   title: "Adur.ai — AI Meta Ads Analysis for E-commerce",
   description:
     "Upload your Meta Ads Manager CSV and get instant AI-powered campaign analysis with actionable recommendations.",
+  other: {
+    "facebook-domain-verification": "j4aw10l2gpa6yxt2zyta5h7e1599l3",
+  },
 };
 
 export default function RootLayout({
