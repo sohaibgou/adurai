@@ -199,10 +199,13 @@ function SignupContent() {
 
           {/* Footer */}
           <div className="flex items-center justify-center gap-4 mt-12">
-            {["Privacy Policy", "Terms of Service"].map((t, i) => (
+            {([["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]] as const).map(([t, href], i) => (
               <span key={t} className="flex items-center gap-4">
                 {i > 0 && <span style={{ color: "#D4D0CA" }}>·</span>}
-                <span style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", cursor: "pointer" }}>{t}</span>
+                <Link href={href} style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D0D12"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#A8A5A0"; }}
+                >{t}</Link>
               </span>
             ))}
           </div>

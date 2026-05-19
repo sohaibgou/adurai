@@ -400,11 +400,14 @@ export default function AnalyzePage() {
 
           {/* Minimal footer */}
           <footer className="flex items-center justify-center gap-5 px-6 py-5" style={{ borderTop: "1px solid #E8E5E0" }}>
-            {["Privacy Policy", "Terms of Service"].map(t => (
-              <span key={t} style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", cursor: "pointer" }}>{t}</span>
+            {([["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]] as [string, string][]).map(([t, href]) => (
+              <a key={t} href={href} style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", textDecoration: "none" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D0D12"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#A8A5A0"; }}
+              >{t}</a>
             ))}
             <span style={{ color: "#D4D0CA" }}>·</span>
-            <span style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>© 2025 Adur.ai</span>
+            <span style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>© 2026 Adur.ai</span>
           </footer>
         </div>
       </div>
