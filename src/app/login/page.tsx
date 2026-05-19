@@ -51,9 +51,9 @@ function LoginContent() {
     if (error) { setError(error.message); setLoading(false); return; }
 
     if (redirectTo === "checkout") {
-      try { await redirectToCheckout(undefined, planParam); } catch { router.push("/"); }
+      try { await redirectToCheckout(undefined, planParam); } catch { router.push("/dashboard"); }
     } else {
-      router.push("/");
+      router.push("/dashboard");
     }
   }
 

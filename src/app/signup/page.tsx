@@ -70,7 +70,7 @@ function SignupContent() {
       try { await redirectToCheckout(token, planParam); return; } catch { /* fall through */ }
     }
 
-    router.push("/analyze");
+    router.push("/dashboard");
   }
 
   return (
