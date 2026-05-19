@@ -661,7 +661,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       </div>
                       {!exhausted && (
                         <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
-                          {used} of {CREATIVE_LIMIT} free uses · <button onClick={() => onPaywall?.("image")} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                          {used} of {CREATIVE_LIMIT} free uses
                         </p>
                       )}
                     </div>
@@ -1064,7 +1064,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       </div>
                       {!exhausted && (
                         <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
-                          {used} of {CREATIVE_LIMIT} free uses · <button onClick={() => onPaywall?.("copy")} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                          {used} of {CREATIVE_LIMIT} free uses
                         </p>
                       )}
                     </div>

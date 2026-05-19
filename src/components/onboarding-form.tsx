@@ -709,7 +709,7 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
               </div>
               {!exhausted && (
                 <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
-                  {used} of {FREE_LIMIT} free uses · <button onClick={onUpgradeClick} style={{ color: "#FF3CAC", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 11, fontFamily: "var(--font-inter)" }}>Upgrade for unlimited</button>
+                  {used} of {FREE_LIMIT} free uses
                 </p>
               )}
             </div>
