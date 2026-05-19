@@ -123,15 +123,17 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
     }
   }
 
-  // ── Run live analysis ─────────────────────────────────────────────────────
+  // ── Run live analysis via Claude + Meta MCP ──────────────────────────────
   async function handleAnalyzeLive() {
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      const res = await fetch("/api/meta/analyze-live", {
+      // Claude is the agent — all Meta operations go through /api/claude-meta
+      const res = await fetch("/api/claude-meta", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
+          action:        "analyze",
           aov:           parseFloat(form.aov)           || 100,
           cogs:          parseFloat(form.cogs)          || 30,
           breakEvenRoas: parseFloat(form.breakEvenRoas) || 2,

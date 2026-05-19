@@ -1,10 +1,12 @@
 /**
  * Core auto-actions engine.
- * Used by /api/monitor (cron), /api/meta/approve, and /api/meta/reject.
+ * Used by /api/monitor (cron), /api/meta/approve, /api/meta/approve-email, and /api/meta/reject.
+ *
+ * All Meta Ads execution goes through Claude + Meta MCP (invokeClaudeWithMeta).
+ * No direct Graph API calls here.
  */
-import { supabaseAdmin } from "./supabase-server";
-
-const GRAPH = "https://graph.facebook.com/v21.0";
+import { supabaseAdmin }          from "./supabase-server";
+import { invokeClaudeWithMeta }   from "./claude-meta";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -13,6 +15,7 @@ export type AutopilotMode = "confirm" | "auto" | "off";
 
 export interface ActionParams {
   userId:       string;
+  adAccountId:  string; // needed by Claude for MCP context
   campaignId:   string;
   campaignName: string;
   actionType:   ActionType;
@@ -21,36 +24,27 @@ export interface ActionParams {
   newBudget?:   number; // new daily budget in $ for 'scale'
 }
 
-// ── Execute action on Meta Graph API ─────────────────────────────────────────
+// ── Execute action via Claude + Meta MCP ──────────────────────────────────────
 
 export async function executeMetaAction(params: {
+  adAccountId: string;
   campaignId:  string;
   actionType:  ActionType;
   metaToken:   string;
   newBudget?:  number;
 }): Promise<void> {
-  if (params.actionType === "alert") return; // alerts never touch Meta API
+  // Alerts never touch Meta — they are informational only
+  if (params.actionType === "alert") return;
 
-  const body: Record<string, unknown> = { access_token: params.metaToken };
+  const action = params.actionType === "pause" ? "pause_campaign" : "scale_campaign";
 
-  if (params.actionType === "pause") {
-    body.status = "PAUSED";
-  } else if (params.actionType === "scale" && params.newBudget) {
-    body.daily_budget = params.newBudget * 100; // Meta uses cents
-  } else {
-    return; // nothing to do
-  }
-
-  const res  = await fetch(`${GRAPH}/${params.campaignId}`, {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify(body),
+  // Claude uses Meta MCP to perform the action on the live account
+  await invokeClaudeWithMeta({
+    accessToken: params.metaToken,
+    adAccountId: params.adAccountId,
+    action,
+    campaignId:  params.campaignId,
   });
-
-  if (!res.ok) {
-    const err = await res.json() as { error?: { message: string } };
-    throw new Error(`Meta API error: ${err.error?.message ?? res.statusText}`);
-  }
 }
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
@@ -191,14 +185,15 @@ export async function executeOrQueue(action: ActionParams): Promise<void> {
 
   const mode = (conn?.autopilot_mode ?? "confirm") as AutopilotMode;
 
-  // ── MODE: auto — execute immediately ─────────────────────────────────────
+  // ── MODE: auto — Claude executes immediately via MCP ─────────────────────
   if (mode === "auto") {
     try {
       await executeMetaAction({
-        campaignId: action.campaignId,
-        actionType: action.actionType,
-        metaToken:  action.metaToken,
-        newBudget:  action.newBudget,
+        adAccountId: action.adAccountId,
+        campaignId:  action.campaignId,
+        actionType:  action.actionType,
+        metaToken:   action.metaToken,
+        newBudget:   action.newBudget,
       });
       await supabaseAdmin.from("auto_actions").insert({
         user_id:       action.userId,
@@ -210,15 +205,14 @@ export async function executeOrQueue(action: ActionParams): Promise<void> {
         status:        "executed",
         executed_at:   new Date().toISOString(),
       });
-      await sendBriefingEmail(action.userId,
-        `Adur auto-executed: ${action.reason}`);
+      await sendBriefingEmail(action.userId, `Adur auto-executed: ${action.reason}`);
     } catch (err) {
       console.error("[executeOrQueue] auto-exec failed:", err);
-      // Fall back to confirm queue if execution fails
+      // Fall back to confirm queue if Claude execution fails
       await insertAndNotify(action);
     }
 
-  // ── MODE: confirm — queue for approval ───────────────────────────────────
+  // ── MODE: confirm — queue for user approval ───────────────────────────────
   } else if (mode === "confirm") {
     await insertAndNotify(action);
 

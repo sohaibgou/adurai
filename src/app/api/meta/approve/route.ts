@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
 
   if (!action) return NextResponse.json({ error: "Action not found or already processed" }, { status: 404 });
 
-  // Load user's Meta token
+  // Load user's Meta token + ad account
   const { data: conn } = await supabaseAdmin
     .from("meta_connections")
-    .select("access_token")
+    .select("access_token, ad_account_id")
     .eq("user_id", user.id)
     .single();
 
@@ -42,10 +42,11 @@ export async function POST(req: NextRequest) {
 
   try {
     await executeMetaAction({
-      campaignId: action.campaign_id,
-      actionType: action.action_type,
-      metaToken:  conn.access_token,
-      newBudget:  action.new_budget ?? undefined,
+      adAccountId: conn.ad_account_id,
+      campaignId:  action.campaign_id,
+      actionType:  action.action_type,
+      metaToken:   conn.access_token,
+      newBudget:   action.new_budget ?? undefined,
     });
 
     await supabaseAdmin

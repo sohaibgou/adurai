@@ -26,10 +26,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${BASE}/dashboard?action=already_processed`);
   }
 
-  // Load user's Meta token
+  // Load user's Meta token + ad account
   const { data: conn } = await supabaseAdmin
     .from("meta_connections")
-    .select("access_token")
+    .select("access_token, ad_account_id")
     .eq("user_id", action.user_id)
     .single();
 
@@ -37,10 +37,11 @@ export async function GET(req: NextRequest) {
 
   try {
     await executeMetaAction({
-      campaignId: action.campaign_id,
-      actionType: action.action_type,
-      metaToken:  conn.access_token,
-      newBudget:  action.new_budget ?? undefined,
+      adAccountId: conn.ad_account_id,
+      campaignId:  action.campaign_id,
+      actionType:  action.action_type,
+      metaToken:   conn.access_token,
+      newBudget:   action.new_budget ?? undefined,
     });
 
     await supabaseAdmin
