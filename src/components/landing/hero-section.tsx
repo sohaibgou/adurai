@@ -53,7 +53,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               fontFamily:   "var(--font-inter)",
             }}
           >
-            Analyze your campaigns instantly with a CSV upload — or connect your Meta account for full autonomous management. Your choice.
+            Upload your CSV or connect your Meta account. Adur tells you exactly what to kill, what to scale, generates your next winning ad creatives — and manages everything autonomously. No agency needed.
           </p>
         </FadeIn>
 
