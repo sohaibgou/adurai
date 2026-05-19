@@ -9,12 +9,13 @@ import {
   LogOut,
   Zap,
   Crown,
+  Bot,
 } from "lucide-react";
 
 /* ── Props ──────────────────────────────────────────────── */
 
 export interface AppSidebarProps {
-  activePage: "dashboard" | "analyze" | "results" | "creative-studio";
+  activePage: "dashboard" | "analyze" | "results" | "creative-studio" | "autopilot";
   isPaid?: boolean;
   subLoading?: boolean;
   user?: { email?: string } | null;
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { id: "analyze",         label: "New Analysis",    href: "/analyze",          icon: Upload          },
   { id: "results",         label: "Last Results",    href: "/results",          icon: FileText        },
   { id: "creative-studio", label: "Creative Studio", href: "/creative-studio",  icon: Palette         },
+  { id: "autopilot",       label: "Autopilot",       href: "/dashboard/autopilot", icon: Bot            },
 ] as const;
 
 const FREE_LIMIT = 3;

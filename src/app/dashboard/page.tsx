@@ -308,7 +308,23 @@ export default function DashboardPage() {
 
             {/* ══ Autopilot Settings ══ */}
             <motion.div {...fade(0.16)}>
-              <AutopilotSettings />
+              <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+                <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #F0EDE8" }}>
+                  <h2 className="font-heading" style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12" }}>Autopilot</h2>
+                  <Link
+                    href="/dashboard/autopilot"
+                    className="inline-flex items-center gap-1.5 font-semibold no-underline transition-colors"
+                    style={{ fontSize: 13, color: "#7C3AED", fontFamily: "var(--font-inter)", textDecoration: "none" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#6D28D9"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#7C3AED"; }}
+                  >
+                    Autopilot Settings <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+                <div className="px-6 py-5">
+                  <AutopilotSettings />
+                </div>
+              </div>
             </motion.div>
 
             {/* ══ Recent Analyses ══ */}
