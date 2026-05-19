@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const check = await requireEmailVerified(req);
+  if (check instanceof NextResponse) return check;
+
   const { prompt } = await req.json() as { prompt: string };
 
   if (!prompt?.trim()) {

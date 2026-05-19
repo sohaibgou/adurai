@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const maxDuration = 60;
 export const dynamic    = "force-dynamic";
@@ -10,7 +11,10 @@ const IMAGE_MODELS = [
 ];
 
 /* ── Single-image regeneration using nanobanana approach ── */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const check = await requireEmailVerified(req);
+  if (check instanceof NextResponse) return check;
+
   const { prompt, isArabic } = await req.json() as { prompt: string; isArabic?: boolean };
 
   const apiKey      = process.env.GOOGLE_AI_KEY!;

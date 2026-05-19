@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
@@ -11,7 +12,10 @@ interface AdCopyVariant {
   cta:         string;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const check = await requireEmailVerified(req);
+  if (check instanceof NextResponse) return check;
+
   const { productDescription, targetAudience, mainBenefit, language } = await req.json() as {
     productDescription: string;
     targetAudience:     string;

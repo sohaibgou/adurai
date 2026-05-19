@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -143,7 +144,10 @@ Return ONLY a valid JSON array with exactly 4 objects. No markdown, no explanati
 }
 
 /* ── POST ── */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const check = await requireEmailVerified(req);
+  if (check instanceof NextResponse) return check;
+
   const { prompt, isArabic } = await req.json() as { prompt: string; isArabic?: boolean };
 
   const apiKey = process.env.GOOGLE_AI_KEY!;

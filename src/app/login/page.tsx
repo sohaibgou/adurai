@@ -48,7 +48,21 @@ function LoginContent() {
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) { setError(error.message); setLoading(false); return; }
+
+    if (error) {
+      // Email not confirmed → bypass so user can log in; generation will be gated separately
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        await fetch("/api/auth/auto-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const { error: retryErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (retryErr) { setError(retryErr.message); setLoading(false); return; }
+      } else {
+        setError(error.message); setLoading(false); return;
+      }
+    }
 
     if (redirectTo === "checkout") {
       try { await redirectToCheckout(undefined, planParam); } catch { router.push("/dashboard"); }

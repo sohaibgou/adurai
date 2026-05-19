@@ -52,17 +52,25 @@ function SignupContent() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { email_confirmed: true },
+        // Redirect to our confirm handler so we can mark email_link_verified = true
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
 
     if (signUpError) { setError(signUpError.message); setLoading(false); return; }
 
+    // Bypass email confirmation so user can log in immediately;
+    // generation features are gated on email_link_verified (set via /auth/confirm).
+    await fetch("/api/auth/auto-confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+
     let token = data.session?.access_token;
     if (!token) {
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (signInError) { setError("Account created! Check your email to verify, then sign in."); setLoading(false); return; }
+      if (signInError) { setError(signInError.message); setLoading(false); return; }
       token = signInData.session?.access_token;
     }
 

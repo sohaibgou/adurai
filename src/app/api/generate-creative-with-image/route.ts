@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -168,8 +169,10 @@ async function generateAdImage(
   return null;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   console.log("━━━ /api/generate-creative-with-image ━━━");
+  const check = await requireEmailVerified(req);
+  if (check instanceof NextResponse) return check;
 
   let formData: FormData;
   try {

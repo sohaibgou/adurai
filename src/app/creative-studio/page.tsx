@@ -9,6 +9,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import CreativeStudio from "@/components/creative-studio";
 import PaywallModal from "@/components/paywall-modal";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import type { AnalysisResult } from "@/lib/types";
@@ -88,8 +89,14 @@ export default function CreativeStudioPage() {
     );
   }
 
+  const needsEmailVerify = user?.app_metadata?.email_link_verified === false;
+
   return (
-    <div className="flex min-h-screen" style={{ background: "#F7F5F2" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#F7F5F2" }}>
+
+      {needsEmailVerify && <EmailVerifyBanner email={user?.email} />}
+
+      <div className="flex flex-1 min-h-0">
 
       {/* ═══════════════════════════════════════════════════════
           SIDEBAR
@@ -374,6 +381,7 @@ export default function CreativeStudioPage() {
         onClose={() => setPaywallOpen(false)}
         reason={paywallReason}
       />
+      </div>
     </div>
   );
 }
