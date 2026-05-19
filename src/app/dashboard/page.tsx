@@ -10,6 +10,8 @@ import {
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
 import MetaPanel from "@/components/meta-panel";
+import PendingActions from "@/components/pending-actions";
+import AutopilotSettings from "@/components/autopilot-settings";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -56,8 +58,9 @@ function getGreeting() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const metaParam = searchParams.get("meta");
+  const searchParams  = useSearchParams();
+  const metaParam     = searchParams.get("meta");
+  const actionParam   = searchParams.get("action"); // from approve-email / reject-email
   const { user, loading: authLoading, signOut } = useAuth();
   const [subscription,     setSubscription]     = useState<Subscription | null>(null);
   const [subLoading,       setSubLoading]       = useState(true);
@@ -295,7 +298,17 @@ export default function DashboardPage() {
 
             {/* ══ Meta Integration ══ */}
             <motion.div {...fade(0.12)}>
-              <MetaPanel flashParam={metaParam} />
+              <MetaPanel flashParam={metaParam ?? actionParam} />
+            </motion.div>
+
+            {/* ══ Pending Actions ══ */}
+            <motion.div {...fade(0.14)}>
+              <PendingActions />
+            </motion.div>
+
+            {/* ══ Autopilot Settings ══ */}
+            <motion.div {...fade(0.16)}>
+              <AutopilotSettings />
             </motion.div>
 
             {/* ══ Recent Analyses ══ */}

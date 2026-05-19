@@ -1,196 +1,253 @@
+/**
+ * Vercel Cron — runs every 6 hours (see vercel.json)
+ * 1. Fetches all active Meta connections
+ * 2. Pulls campaign metrics via Graph API
+ * 3. Runs detection rules
+ * 4. Calls executeOrQueue for each triggered rule
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-server";
-import type { AnalysisResult } from "@/lib/types";
+import { executeOrQueue } from "@/lib/meta-actions";
 
 export const dynamic = "force-dynamic";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
-// ── Security: verify Vercel cron secret ────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 function isAuthorized(req: NextRequest): boolean {
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return true; // skip in dev if not set
-  return authHeader === `Bearer ${cronSecret}`;
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return true; // dev: no secret required
+  return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-// ── Fetch campaigns for an account ─────────────────────────────────────────
-async function fetchCampaigns(adAccountId: string, token: string) {
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function isoDate(d: Date): string { return d.toISOString().split("T")[0]; }
+
+function prevWeekRange(): { since: string; until: string } {
+  const today = new Date();
+  const until = new Date(today); until.setDate(until.getDate() - 7);
+  const since = new Date(today); since.setDate(since.getDate() - 14);
+  return { since: isoDate(since), until: isoDate(until) };
+}
+
+// ── Fetch campaign insights ───────────────────────────────────────────────────
+interface InsightRow {
+  campaign_id:       string;
+  campaign_name:     string;
+  spend:             number;
+  impressions:       number;
+  clicks:            number;
+  ctr:               number;
+  cost_per_result:   number;
+  roas:              number;
+  daily_budget:      number; // in $ (raw from campaign, not insights)
+}
+
+function parseRoas(purchase_roas?: Array<{ value: string }>): number {
+  const v = purchase_roas?.[0]?.value;
+  return v ? parseFloat(v) : 0;
+}
+
+function parseCostPerResult(actions?: Array<{ action_type: string; value: string }>): number {
+  const cpr = actions?.find((a) => a.action_type === "offsite_conversion.fb_pixel_purchase")?.value
+           ?? actions?.[0]?.value;
+  return cpr ? parseFloat(cpr) : 0;
+}
+
+async function fetchInsights(
+  adAccountId: string,
+  token: string,
+  datePreset: string | null,
+  customRange?: { since: string; until: string }
+): Promise<InsightRow[]> {
+  const url = new URL(`${GRAPH}/act_${adAccountId}/insights`);
+  url.searchParams.set("access_token", token);
+  url.searchParams.set("level", "campaign");
+  url.searchParams.set("fields", [
+    "campaign_id",
+    "campaign_name",
+    "spend",
+    "impressions",
+    "clicks",
+    "ctr",
+    "cost_per_result",
+    "purchase_roas",
+  ].join(","));
+  url.searchParams.set("limit", "50");
+
+  if (datePreset) {
+    url.searchParams.set("date_preset", datePreset);
+  } else if (customRange) {
+    url.searchParams.set("time_range", JSON.stringify(customRange));
+  }
+
+  const res  = await fetch(url.toString());
+  const data = await res.json() as {
+    data?:  Array<Record<string, unknown>>;
+    error?: { message: string };
+  };
+
+  if (!res.ok || data.error) throw new Error(data.error?.message ?? "Insights fetch failed");
+
+  return (data.data ?? []).map((row) => ({
+    campaign_id:     String(row.campaign_id ?? ""),
+    campaign_name:   String(row.campaign_name ?? ""),
+    spend:           parseFloat(String(row.spend ?? "0")),
+    impressions:     parseInt(String(row.impressions ?? "0"), 10),
+    clicks:          parseInt(String(row.clicks ?? "0"), 10),
+    ctr:             parseFloat(String(row.ctr ?? "0")),
+    cost_per_result: parseCostPerResult(row.cost_per_result as undefined),
+    roas:            parseRoas(row.purchase_roas as undefined),
+    daily_budget:    0, // filled from campaign list below
+  }));
+}
+
+async function fetchCampaignBudgets(adAccountId: string, token: string): Promise<Map<string, number>> {
   const url = new URL(`${GRAPH}/act_${adAccountId}/campaigns`);
   url.searchParams.set("access_token", token);
-  url.searchParams.set("fields", [
-    "id", "name", "effective_status",
-    "insights.date_preset(last_7d){spend,impressions,clicks,ctr,cpm,cpc,actions,action_values}",
-  ].join(","));
-  url.searchParams.set("limit", "30");
+  url.searchParams.set("fields", "id,daily_budget,effective_status");
+  url.searchParams.set("limit", "50");
+
   const res  = await fetch(url.toString());
-  const data = await res.json() as { data?: unknown[]; error?: { message: string } };
-  if (!res.ok) throw new Error(data.error?.message ?? "Graph error");
-  return data.data ?? [];
-}
-
-// ── Run Claude MCP analysis for a single user ───────────────────────────────
-async function runAnalysis(token: string, adAccountId: string): Promise<{ analysis: AnalysisResult; hasIssues: boolean }> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:  "POST",
-    headers: {
-      "Content-Type":    "application/json",
-      "x-api-key":       process.env.ANTHROPIC_API_KEY!,
-      "anthropic-version": "2023-06-01",
-      "anthropic-beta":  "mcp-client-2025-04-04",
-    },
-    body: JSON.stringify({
-      model:      "claude-opus-4-5",
-      max_tokens: 4000,
-      mcp_servers: [{
-        type:                "url",
-        url:                 "https://mcp.meta.com/ads",
-        name:                "meta-ads",
-        authorization_token: token,
-      }],
-      messages: [{
-        role:    "user",
-        content: `You are an expert media buyer running an automated account health check.
-
-Using your Meta Ads MCP tools, pull the last 7 days of performance for ad account act_${adAccountId}.
-
-Return a JSON object with exactly these fields:
-{
-  "summaries": [],
-  "summary": "string",
-  "score": number,
-  "winners": [],
-  "killers": [],
-  "recommendations": [],
-  "battlePlan": [],
-  "insights": [],
-  "totalSpend": number,
-  "totalRevenue": number,
-  "convResults": number,
-  "convAvgCPR": number,
-  "convBestRoas": number,
-  "analysisMode": "roas"
-}`,
-      }],
-    }),
-  });
-
   const data = await res.json() as {
-    content?: Array<{ type: string; text?: string }>;
-    error?:   { message: string };
+    data?: Array<{ id: string; daily_budget?: string; effective_status: string }>;
   };
-  if (data.error) throw new Error(data.error.message);
 
-  const text = (data.content ?? [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text ?? "")
-    .join("\n");
-
-  const jsonMatch = text.match(/```json\s*([\s\S]+?)\s*```/) ?? text.match(/(\{[\s\S]+\})/);
-  const analysis  = JSON.parse(jsonMatch?.[1] ?? text) as AnalysisResult;
-  const hasIssues = analysis.score < 60 || analysis.killers.length > 0;
-
-  return { analysis, hasIssues };
-}
-
-// ── Send alert email via Resend (if configured) ────────────────────────────
-async function sendAlertEmail(userEmail: string, score: number, killers: string[], adAccountName: string) {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) return; // Resend not configured — skip silently
-
-  await fetch("https://api.resend.com/emails", {
-    method:  "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${resendKey}`,
-    },
-    body: JSON.stringify({
-      from:    "Adur.ai <alerts@adur.ai>",
-      to:      [userEmail],
-      subject: `⚠️ Meta Ads Alert — Account score dropped to ${score}/100`,
-      html: `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-          <h2 style="color:#0D0D12">Autopilot Alert: ${adAccountName}</h2>
-          <p>Your account health score dropped to <strong>${score}/100</strong>.</p>
-          ${killers.length > 0 ? `
-            <h3 style="color:#e17055">Budget Killers Detected</h3>
-            <ul>
-              ${killers.map((k) => `<li>${k}</li>`).join("")}
-            </ul>
-          ` : ""}
-          <a href="https://adur.ai/dashboard" style="display:inline-block;padding:12px 24px;background:linear-gradient(135deg,#FF3CAC,#FF6B35);color:#fff;text-decoration:none;border-radius:100px;font-weight:700;margin-top:16px">
-            View Dashboard →
-          </a>
-          <p style="color:#A8A5A0;font-size:12px;margin-top:24px">
-            Adur.ai Autopilot · <a href="https://adur.ai/dashboard">Manage alerts</a>
-          </p>
-        </div>
-      `,
-    }),
-  });
-}
-
-// ── GET /api/monitor (Vercel Cron — every 6 hours) ─────────────────────────
-export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const map = new Map<string, number>();
+  for (const c of data.data ?? []) {
+    map.set(c.id, c.daily_budget ? parseInt(c.daily_budget, 10) / 100 : 0); // cents → $
   }
+  return map;
+}
+
+// ── Run detection rules for one user ─────────────────────────────────────────
+async function runDetection(params: {
+  userId:        string;
+  adAccountId:   string;
+  metaToken:     string;
+  targetCpa:     number;
+  breakEvenRoas: number;
+}): Promise<number> {
+  const { userId, adAccountId, metaToken, targetCpa, breakEvenRoas } = params;
+
+  // Current 7-day insights
+  const current = await fetchInsights(adAccountId, metaToken, "last_7d");
+  // Previous 7-day insights (days 8-14 ago) for CTR comparison
+  const prev    = await fetchInsights(adAccountId, metaToken, null, prevWeekRange());
+  // Daily budgets per campaign
+  const budgets = await fetchCampaignBudgets(adAccountId, metaToken);
+
+  const totalSpend = current.reduce((s, c) => s + c.spend, 0);
+  const prevMap    = new Map(prev.map((c) => [c.campaign_id, c.ctr]));
+  let   triggered  = 0;
+
+  for (const campaign of current) {
+    const dailyBudget  = budgets.get(campaign.campaign_id) ?? 0;
+    const budgetShare  = totalSpend > 0 ? campaign.spend / totalSpend : 0;
+    const prevCtr      = prevMap.get(campaign.campaign_id) ?? 0;
+    const ctrChange    = prevCtr > 0 ? ((campaign.ctr - prevCtr) / prevCtr) * 100 : 0;
+
+    // ── Rule 1: CPA > target * 1.2 (pause) ────────────────────────────────
+    if (campaign.cost_per_result > 0 && campaign.cost_per_result > targetCpa * 1.2) {
+      const excess = Math.round((campaign.cost_per_result / targetCpa - 1) * 100);
+      await executeOrQueue({
+        userId,
+        campaignId:   campaign.campaign_id,
+        campaignName: campaign.campaign_name,
+        actionType:   "pause",
+        reason:       `CPA $${campaign.cost_per_result.toFixed(2)} exceeds your $${targetCpa} target by ${excess}% over the last 7 days`,
+        metaToken,
+      });
+      triggered++;
+    }
+
+    // ── Rule 2: ROAS > break-even * 2 (scale by 20%) ──────────────────────
+    if (campaign.roas > 0 && campaign.roas > breakEvenRoas * 2 && dailyBudget > 0) {
+      const newBudget    = Math.round(dailyBudget * 1.2);
+      const roasMultiple = Math.round(campaign.roas / breakEvenRoas);
+      await executeOrQueue({
+        userId,
+        campaignId:   campaign.campaign_id,
+        campaignName: campaign.campaign_name,
+        actionType:   "scale",
+        reason:       `ROAS ${campaign.roas.toFixed(2)}x is ${roasMultiple}× your break-even — scaling daily budget 20% to $${newBudget}/day`,
+        metaToken,
+        newBudget,
+      });
+      triggered++;
+    }
+
+    // ── Rule 3: CTR dropped 40%+ in 7 days (alert) ────────────────────────
+    if (prevCtr > 0 && ctrChange < -40) {
+      await executeOrQueue({
+        userId,
+        campaignId:   campaign.campaign_id,
+        campaignName: campaign.campaign_name,
+        actionType:   "alert",
+        reason:       `CTR dropped ${Math.abs(Math.round(ctrChange))}% in 7 days (${prevCtr.toFixed(2)}% → ${campaign.ctr.toFixed(2)}%) — creative fatigue detected on "${campaign.campaign_name}"`,
+        metaToken,
+      });
+      triggered++;
+    }
+
+    // ── Rule 4: Budget concentration > 80% (alert) ────────────────────────
+    if (budgetShare > 0.8 && totalSpend > 10) {
+      await executeOrQueue({
+        userId,
+        campaignId:   campaign.campaign_id,
+        campaignName: campaign.campaign_name,
+        actionType:   "alert",
+        reason:       `"${campaign.campaign_name}" is consuming ${Math.round(budgetShare * 100)}% of total spend ($${campaign.spend.toFixed(0)} of $${totalSpend.toFixed(0)}) — rebalancing recommended`,
+        metaToken,
+      });
+      triggered++;
+    }
+  }
+
+  return triggered;
+}
+
+// ── GET /api/monitor ──────────────────────────────────────────────────────────
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const startedAt = Date.now();
-  const results: Array<{ userId: string; score?: number; error?: string }> = [];
+  const results: Array<{ userId: string; triggered?: number; error?: string }> = [];
 
-  // Get all active Meta connections
   const { data: connections, error: dbErr } = await supabaseAdmin
     .from("meta_connections")
-    .select("user_id, access_token, ad_account_id, ad_account_name, autopilot_enabled, status")
+    .select("user_id, access_token, ad_account_id, target_cpa, break_even_roas, status")
     .eq("status", "active");
 
-  if (dbErr) {
-    console.error("[monitor] DB error:", dbErr);
-    return NextResponse.json({ error: dbErr.message }, { status: 500 });
-  }
-
-  console.log(`[monitor] Running for ${connections?.length ?? 0} connections`);
+  if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
 
   for (const conn of connections ?? []) {
     try {
-      const { analysis, hasIssues } = await runAnalysis(conn.access_token, conn.ad_account_id);
+      const triggered = await runDetection({
+        userId:        conn.user_id,
+        adAccountId:   conn.ad_account_id,
+        metaToken:     conn.access_token,
+        targetCpa:     conn.target_cpa    ?? 50,
+        breakEvenRoas: conn.break_even_roas ?? 2,
+      });
 
-      // Update last_synced_at
       await supabaseAdmin
         .from("meta_connections")
         .update({ last_synced_at: new Date().toISOString() })
         .eq("user_id", conn.user_id);
 
-      // Send alert email if autopilot is on and issues found
-      if (conn.autopilot_enabled && hasIssues) {
-        // Get user email from auth
-        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(conn.user_id);
-        if (authUser?.user?.email) {
-          await sendAlertEmail(
-            authUser.user.email,
-            analysis.score,
-            analysis.killers,
-            conn.ad_account_name
-          );
-        }
-      }
-
-      results.push({ userId: conn.user_id, score: analysis.score });
+      results.push({ userId: conn.user_id, triggered });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "unknown error";
-      console.error(`[monitor] user=${conn.user_id} error:`, msg);
+      const msg = err instanceof Error ? err.message : "unknown";
+      console.error(`[monitor] user=${conn.user_id}`, msg);
       results.push({ userId: conn.user_id, error: msg });
     }
   }
 
-  const elapsed = Date.now() - startedAt;
-  console.log(`[monitor] Done in ${elapsed}ms — ${results.length} processed`);
-
   return NextResponse.json({
-    ok:        true,
+    ok: true,
     processed: results.length,
-    elapsed:   `${elapsed}ms`,
+    elapsed:   `${Date.now() - startedAt}ms`,
     results,
   });
 }
