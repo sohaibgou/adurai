@@ -55,12 +55,17 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
   const [proCheckoutOpen,     setProCheckoutOpen]     = useState(false);
   const [starterLoading,      setStarterLoading]      = useState(false);
   const [proLoading,          setProLoading]          = useState(false);
+  const [starterError,        setStarterError]        = useState<string | null>(null);
+  const [proError,            setProError]            = useState<string | null>(null);
 
   async function onGetStarter() {
     setStarterLoading(true);
+    setStarterError(null);
     try {
       const loggedIn = await handleGetStarted("starter");
       if (!loggedIn) setStarterCheckoutOpen(true);
+    } catch (err) {
+      setStarterError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setStarterLoading(false);
     }
@@ -68,9 +73,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
 
   async function onGetPro() {
     setProLoading(true);
+    setProError(null);
     try {
       const loggedIn = await handleGetStarted("pro");
       if (!loggedIn) setProCheckoutOpen(true);
+    } catch (err) {
+      setProError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setProLoading(false);
     }
@@ -253,6 +261,9 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               >
                 {starterLoading ? "Checking…" : "Get Started"}
               </button>
+              {starterError && (
+                <p className="mt-2 text-xs text-center" style={{ color: "#e17055" }}>{starterError}</p>
+              )}
             </motion.div>
           </FadeIn>
 
@@ -322,6 +333,9 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               >
                 {proLoading ? "Checking…" : <>Get Pro <ArrowRight className="w-3.5 h-3.5" /></>}
               </button>
+              {proError && (
+                <p className="mt-2 text-xs text-center" style={{ color: "#e17055" }}>{proError}</p>
+              )}
             </motion.div>
           </FadeIn>
         </div>
