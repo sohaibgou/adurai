@@ -57,10 +57,6 @@ const GOALS = [
   { value: "Understand my overall performance",  icon: Target,     color: "#0984e3" },
 ];
 
-const NICHE_CHIPS = [
-  "👗 Fashion", "💄 Beauty", "🏠 Home & Living",
-  "📱 Electronics", "🍎 Food & Health", "📚 Courses", "Other",
-];
 
 const STEPS = [
   { num: 1, label: "Your Business",   desc: "What you sell & your market" },
@@ -310,35 +306,6 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
                     onBlur={blurInput}
                   />
                 </div>
-                <div className="flex flex-wrap gap-2 mb-7">
-                  {NICHE_CHIPS.map((chip) => {
-                    const selected = product === chip;
-                    return (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => setProduct(chip)}
-                        className="cursor-pointer transition-all"
-                        style={{
-                          padding:    "7px 15px",
-                          borderRadius: 100,
-                          border:      selected ? "1.5px solid #FF3CAC" : "1.5px solid #E8E5E0",
-                          background:  selected ? "rgba(255,60,172,0.08)" : "#F7F5F2",
-                          color:       selected ? "#FF3CAC" : "#6B6B72",
-                          fontSize:    13,
-                          fontWeight:  selected ? 600 : 500,
-                          fontFamily: "var(--font-inter)",
-                          transition: "all 0.15s",
-                        }}
-                        onMouseEnter={(e) => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = "#FF3CAC"; (e.currentTarget as HTMLButtonElement).style.color = "#FF3CAC"; } }}
-                        onMouseLeave={(e) => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = "#E8E5E0"; (e.currentTarget as HTMLButtonElement).style.color = "#6B6B72"; } }}
-                      >
-                        {chip}
-                      </button>
-                    );
-                  })}
-                </div>
-
                 <div style={{ height: 1, background: "#F0EDE8", margin: "0 0 24px" }} />
 
                 <FieldLabel>Target Market</FieldLabel>
