@@ -18,18 +18,20 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from("meta_connections")
-    .select("meta_ad_account_id, meta_ad_account_name, meta_user_id, connected_at, token_expires_at")
+    .select("ad_account_id, ad_account_name, meta_user_id, connected_at, last_synced_at, autopilot_enabled, status")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!data) return NextResponse.json({ connected: false });
 
   return NextResponse.json({
-    connected:       true,
-    adAccountId:     data.meta_ad_account_id,
-    adAccountName:   data.meta_ad_account_name,
-    metaUserId:      data.meta_user_id,
-    connectedAt:     data.connected_at,
-    tokenExpiresAt:  data.token_expires_at,
+    connected:        true,
+    adAccountId:      data.ad_account_id,
+    adAccountName:    data.ad_account_name,
+    metaUserId:       data.meta_user_id,
+    connectedAt:      data.connected_at,
+    lastSyncedAt:     data.last_synced_at,
+    autopilotEnabled: data.autopilot_enabled,
+    status:           data.status,
   });
 }

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
-import MetaConnect from "@/components/meta-connect";
+import MetaPanel from "@/components/meta-panel";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -293,11 +293,9 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* ══ Integrations ══ */}
+            {/* ══ Meta Integration ══ */}
             <motion.div {...fade(0.12)}>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <MetaConnect flashParam={metaParam} />
-              </div>
+              <MetaPanel flashParam={metaParam} />
             </motion.div>
 
             {/* ══ Recent Analyses ══ */}
