@@ -42,13 +42,16 @@ export async function POST(req: NextRequest) {
         ? session.customer
         : session.customer?.id ?? null;
 
+    // Resolve plan from Stripe session metadata (fallback: starter)
+    const plan = (session.metadata?.plan === "pro") ? "pro" : "starter";
+
     // Upsert subscription record
     const { error: dbError } = await supabaseAdmin.from("subscriptions").upsert(
       {
         user_id: user.id,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
-        plan: "starter",
+        plan,
         status: "active",
         updated_at: new Date().toISOString(),
       },

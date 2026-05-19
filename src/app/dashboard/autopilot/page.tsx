@@ -12,6 +12,7 @@ import AppSidebar from "@/components/app-sidebar";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
+import ProUpgradeModal from "@/components/pro-upgrade-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -175,6 +176,8 @@ export default function AutopilotPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [subLoading,       setSubLoading]       = useState(true);
   const [isPaid,           setIsPaid]           = useState(false);
+  const [isPro,            setIsPro]            = useState(false);
+  const [upgradeOpen,      setUpgradeOpen]      = useState(false);
   const [checkoutLoading,  setCheckoutLoading]  = useState(false);
   const [connected,        setConnected]        = useState<boolean | null>(null);
 
@@ -215,8 +218,13 @@ export default function AutopilotPage() {
   // Subscription
   useEffect(() => {
     if (!user) return;
-    supabase.from("subscriptions").select("status").eq("user_id", user.id).eq("status", "active").maybeSingle()
-      .then(({ data }) => { setIsPaid(!!data); setSubLoading(false); });
+    supabase.from("subscriptions").select("status, plan").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => {
+        const active = data?.status === "active";
+        setIsPaid(active);
+        setIsPro(active && data?.plan === "pro");
+        setSubLoading(false);
+      });
   }, [user]);
 
   // Load settings
@@ -383,6 +391,8 @@ export default function AutopilotPage() {
         onUpgrade={async () => { setCheckoutLoading(true); try { await redirectToCheckout(); } finally { setCheckoutLoading(false); } }}
       />
 
+      <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+
       <div className="flex-1 lg:ml-60 min-w-0 flex flex-col">
 
         {/* ── Top bar ── */}
@@ -414,6 +424,74 @@ export default function AutopilotPage() {
         {/* ── Page content ── */}
         <main className="flex-1 px-6 lg:px-8 py-8">
           <div className="max-w-4xl space-y-6">
+
+            {/* ── Pro lock overlay ── */}
+            {!subLoading && !isPro && (
+              <motion.div {...fade(0)}>
+                <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: 420 }}>
+                  {/* Blurred preview */}
+                  <div style={{ filter: "blur(6px)", opacity: 0.35, pointerEvents: "none", userSelect: "none" }}>
+                    <div style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 20, padding: 24, marginBottom: 16 }}>
+                      <div style={{ height: 16, background: "#F0EDE8", borderRadius: 8, width: "60%", marginBottom: 12 }} />
+                      <div style={{ display: "flex", gap: 10 }}>
+                        {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 80, background: "#F7F5F2", borderRadius: 12 }} />)}
+                      </div>
+                    </div>
+                    <div style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 20, padding: 24 }}>
+                      <div style={{ height: 16, background: "#F0EDE8", borderRadius: 8, width: "40%", marginBottom: 16 }} />
+                      {[1,2,3,4,5].map(i => <div key={i} style={{ height: 12, background: "#F7F5F2", borderRadius: 6, marginBottom: 10, width: `${70 + (i * 5) % 25}%` }} />)}
+                    </div>
+                  </div>
+
+                  {/* Lock overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(247,245,242,0.70)", backdropFilter: "blur(2px)" }}>
+                    <div style={{
+                      background: "#ffffff", borderRadius: 24,
+                      border: "1.5px solid rgba(108,92,231,0.25)",
+                      boxShadow: "0 20px 60px rgba(108,92,231,0.12)",
+                      padding: "40px 44px", textAlign: "center", maxWidth: 400,
+                    }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: 16, margin: "0 auto 20px",
+                        background: "rgba(108,92,231,0.10)", border: "1px solid rgba(108,92,231,0.22)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Bot style={{ width: 26, height: 26, color: "#6c5ce7" }} />
+                      </div>
+                      <h2 className="font-heading" style={{ fontSize: 20, fontWeight: 900, color: "#0a0a0f", letterSpacing: "-0.03em", marginBottom: 10 }}>
+                        AI Manager is a Pro feature
+                      </h2>
+                      <p style={{ fontSize: 14, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.6, marginBottom: 24 }}>
+                        Upgrade to Pro to unlock 24/7 monitoring, autopilot actions, and daily briefings.
+                      </p>
+                      <button
+                        onClick={() => setUpgradeOpen(true)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 8,
+                          padding: "13px 28px", borderRadius: 100,
+                          background: "#6c5ce7", color: "#fff",
+                          fontSize: 14, fontWeight: 700,
+                          fontFamily: "var(--font-inter)",
+                          boxShadow: "0 4px 20px rgba(108,92,231,0.32)",
+                          border: "none", cursor: "pointer",
+                          letterSpacing: "-0.01em",
+                        }}
+                        onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(108,92,231,0.44)"; }}
+                        onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(108,92,231,0.32)"; }}
+                      >
+                        Upgrade to Pro →
+                      </button>
+                      <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)", marginTop: 12 }}>
+                        $99/month · Cancel anytime
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Pro-gated content ── */}
+            {(subLoading || isPro) && <>
 
             {/* Not connected banner */}
             {connected === false && (
@@ -955,6 +1033,7 @@ export default function AutopilotPage() {
             </motion.div>
 
             <div className="pb-8" />
+            </> /* end isPro gate */}
           </div>
         </main>
       </div>

@@ -6,8 +6,13 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+const PRICES: Record<string, string | undefined> = {
+  starter: process.env.STRIPE_STARTER_PRICE_ID,
+  pro:     process.env.STRIPE_PRO_PRICE_ID,
+};
+
 export async function POST(req: NextRequest) {
-  // ── 1. Try reading session from cookies (works for logged-in users) ──
+  // ── 1. Try reading session from cookies ──────────────────────────────────
   let userId: string | undefined;
   let userEmail: string | undefined;
 
@@ -19,16 +24,16 @@ export async function POST(req: NextRequest) {
       { cookies: { getAll: () => cookieStore.getAll() } }
     );
     const { data: { session } } = await supabase.auth.getSession();
-    userId = session?.user?.id;
+    userId    = session?.user?.id;
     userEmail = session?.user?.email;
-  } catch { /* cookie read failed — fall through to header check */ }
+  } catch { /* fall through */ }
 
-  // ── 2. Fall back to Authorization header (used right after signup) ──
+  // ── 2. Fall back to Authorization header ─────────────────────────────────
   if (!userId) {
     const token = req.headers.get("Authorization")?.replace("Bearer ", "").trim();
     if (token) {
       const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      userId = user?.id;
+      userId    = user?.id;
       userEmail = user?.email;
     }
   }
@@ -37,15 +42,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized", requiresAuth: true }, { status: 401 });
   }
 
+  // ── 3. Resolve plan ───────────────────────────────────────────────────────
+  const body = await req.json().catch(() => ({})) as { plan?: string };
+  const plan    = body.plan && PRICES[body.plan] ? body.plan : "starter";
+  const priceId = PRICES[plan];
+
+  if (!priceId) {
+    return NextResponse.json({ error: `Price ID not configured for plan: ${plan}` }, { status: 500 });
+  }
+
+  // ── 4. Create Stripe session ──────────────────────────────────────────────
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: "subscription",
+      mode:                 "subscription",
       ...(userEmail ? { customer_email: userEmail } : {}),
-      line_items: [{ price: process.env.STRIPE_STARTER_PRICE_ID!, quantity: 1 }],
-      metadata: { user_id: userId },
-      success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/#pricing`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata:   { user_id: userId, plan },
+      success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
+      cancel_url:  `${process.env.NEXT_PUBLIC_URL}/#pricing`,
     });
 
     return NextResponse.json({ url: session.url });

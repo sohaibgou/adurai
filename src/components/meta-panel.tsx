@@ -8,6 +8,7 @@ import {
   Zap, Clock,
 } from "lucide-react";
 import type { AnalysisResult, OnboardingData } from "@/lib/types";
+import ProUpgradeModal from "@/components/pro-upgrade-modal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ interface AnalyzeForm {
 
 interface MetaPanelProps {
   flashParam?: string | null;
+  isPro?:      boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,9 +59,10 @@ const inputStyle: React.CSSProperties = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function MetaPanel({ flashParam }: MetaPanelProps) {
+export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps) {
   const router = useRouter();
 
+  const [upgradeOpen,   setUpgradeOpen]   = useState(false);
   const [status,        setStatus]        = useState<MetaStatus | null>(null);
   const [loading,       setLoading]       = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -176,6 +179,8 @@ export default function MetaPanel({ flashParam }: MetaPanelProps) {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
+    <>
+    <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     <div
       style={{
         background:   "#ffffff",
@@ -506,31 +511,54 @@ export default function MetaPanel({ flashParam }: MetaPanelProps) {
           </div>
 
           {/* CTA button */}
-          <a
-            href="/api/meta/connect"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "13px 28px", borderRadius: 100,
-              background: "#6c5ce7",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              textDecoration: "none",
-              boxShadow: "0 4px 20px rgba(108,92,231,0.32)",
-              fontFamily: "var(--font-inter)", transition: "all 0.15s",
-              letterSpacing: "-0.01em",
-              marginBottom: 12,
-            }}
-            onMouseEnter={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(-1px)"; a.style.boxShadow = "0 8px 28px rgba(108,92,231,0.44)"; }}
-            onMouseLeave={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(0)"; a.style.boxShadow = "0 4px 20px rgba(108,92,231,0.32)"; }}
-          >
-            Connect Meta Account →
-          </a>
+          {isPro ? (
+            <a
+              href="/api/meta/connect"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "13px 28px", borderRadius: 100,
+                background: "#6c5ce7",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                textDecoration: "none",
+                boxShadow: "0 4px 20px rgba(108,92,231,0.32)",
+                fontFamily: "var(--font-inter)", transition: "all 0.15s",
+                letterSpacing: "-0.01em",
+                marginBottom: 12,
+              }}
+              onMouseEnter={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(-1px)"; a.style.boxShadow = "0 8px 28px rgba(108,92,231,0.44)"; }}
+              onMouseLeave={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(0)"; a.style.boxShadow = "0 4px 20px rgba(108,92,231,0.32)"; }}
+            >
+              Connect Meta Account →
+            </a>
+          ) : (
+            <button
+              onClick={() => setUpgradeOpen(true)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "13px 28px", borderRadius: 100,
+                background: "#6c5ce7",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                boxShadow: "0 4px 20px rgba(108,92,231,0.32)",
+                fontFamily: "var(--font-inter)", transition: "all 0.15s",
+                letterSpacing: "-0.01em",
+                marginBottom: 12, border: "none", cursor: "pointer",
+              }}
+              onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(108,92,231,0.44)"; }}
+              onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(108,92,231,0.32)"; }}
+            >
+              Connect Meta Account →
+            </button>
+          )}
 
           {/* Disclaimer */}
           <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
-            Read-only access by default. You approve all changes.
+            {isPro
+              ? "Read-only access by default. You approve all changes."
+              : "Available on Pro plan · $99/month"}
           </p>
         </>
       )}
     </div>
+    </>
   );
 }

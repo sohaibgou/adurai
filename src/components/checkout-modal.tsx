@@ -5,14 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Zap, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { redirectToCheckout } from "@/lib/checkout";
+import { redirectToCheckout, type CheckoutPlan } from "@/lib/checkout";
 
 interface CheckoutModalProps {
-  open: boolean;
+  open:    boolean;
   onClose: () => void;
+  plan?:   CheckoutPlan;
 }
 
-const FEATURES = [
+const STARTER_FEATURES = [
   "Unlimited campaign analyses",
   "Full 7-Day Battle Plan",
   "Profit Leak calculator",
@@ -20,7 +21,20 @@ const FEATURES = [
   "PDF report export",
 ];
 
-export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
+const PRO_FEATURES = [
+  "Everything in Starter",
+  "Connect Meta Ad Account",
+  "AI Manager & Autopilot",
+  "24/7 campaign monitoring",
+  "Auto budget optimization",
+  "Daily AI briefings",
+];
+
+export default function CheckoutModal({ open, onClose, plan = "starter" }: CheckoutModalProps) {
+  const isPro     = plan === "pro";
+  const FEATURES  = isPro ? PRO_FEATURES : STARTER_FEATURES;
+  const planLabel = isPro ? "Pro Plan" : "Starter Plan";
+  const price     = isPro ? "$99" : "$19";
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -50,7 +64,7 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
       if (signUpError) throw signUpError;
 
       if (data.session?.access_token) {
-        await redirectToCheckout(data.session.access_token);
+        await redirectToCheckout(data.session.access_token, plan);
         return;
       }
 
@@ -64,7 +78,7 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
       }
 
       if (signInData.session?.access_token) {
-        await redirectToCheckout(signInData.session.access_token);
+        await redirectToCheckout(signInData.session.access_token, plan);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -116,7 +130,7 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
               }}
             >
               {/* Gradient top strip */}
-              <div style={{ height: 5, background: "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
+              <div style={{ height: 5, background: isPro ? "linear-gradient(90deg, #6c5ce7, #a29bfe)" : "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
 
               {/* Close */}
               <button
@@ -169,7 +183,7 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
                     marginBottom: 8,
                   }}
                 >
-                  Upgrade to Starter
+                  {isPro ? "Upgrade to Pro" : "Upgrade to Starter"}
                 </h2>
                 <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.65, fontFamily: "var(--font-inter)", marginBottom: 20 }}>
                   Create your account and go straight to payment — done in 60 seconds.
@@ -181,16 +195,16 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
                   style={{
                     padding: "14px 18px",
                     borderRadius: 14,
-                    background: "rgba(255,60,172,0.05)",
-                    border: "1px solid rgba(255,60,172,0.18)",
+                    background: isPro ? "rgba(108,92,231,0.06)" : "rgba(255,60,172,0.05)",
+                    border: isPro ? "1px solid rgba(108,92,231,0.20)" : "1px solid rgba(255,60,172,0.18)",
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)", marginBottom: 3 }}>
-                      Starter Plan
+                    <p style={{ fontSize: 11, fontWeight: 700, color: isPro ? "#6c5ce7" : "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)", marginBottom: 3 }}>
+                      {planLabel}
                     </p>
                     <p className="font-heading" style={{ fontSize: 26, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                      $19<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
+                      {price}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
                     </p>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#16A34A", background: "rgba(22,163,74,0.10)", padding: "5px 12px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
@@ -266,15 +280,15 @@ export default function CheckoutModal({ open, onClose }: CheckoutModalProps) {
                     style={{
                       padding: "15px",
                       borderRadius: 100,
-                      background: loading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                      background: loading ? "#9ca3af" : isPro ? "#6c5ce7" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
                       fontSize: 15,
                       fontFamily: "var(--font-inter)",
                       letterSpacing: "-0.01em",
-                      boxShadow: loading ? "none" : "0 4px 20px rgba(255,60,172,0.35)",
+                      boxShadow: loading ? "none" : isPro ? "0 4px 20px rgba(108,92,231,0.35)" : "0 4px 20px rgba(255,60,172,0.35)",
                       border: "none",
                     }}
-                    onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(255,60,172,0.48)"; } }}
-                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(255,60,172,0.35)"; }}
+                    onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = isPro ? "0 8px 28px rgba(108,92,231,0.48)" : "0 8px 28px rgba(255,60,172,0.48)"; } }}
+                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = isPro ? "0 4px 20px rgba(108,92,231,0.35)" : "0 4px 20px rgba(255,60,172,0.35)"; }}
                   >
                     {loading ? "Setting up your account…" : "Continue to Payment"}
                     {!loading && <ArrowRight className="w-4 h-4" />}

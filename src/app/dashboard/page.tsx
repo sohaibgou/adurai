@@ -19,7 +19,7 @@ import { redirectToCheckout } from "@/lib/checkout";
 export const dynamic = "force-dynamic";
 
 interface Subscription {
-  plan:               string;
+  plan:               "starter" | "pro" | string;
   status:             string;
   stripe_customer_id: string | null;
 }
@@ -94,6 +94,7 @@ export default function DashboardPage() {
   }
 
   const isPaid       = subscription?.status === "active";
+  const isPro        = isPaid && subscription?.plan === "pro";
   const FREE_LIMIT   = 3;
   const remaining    = Math.max(0, FREE_LIMIT - analysisCount);
   const firstName    = user.email?.split("@")[0] ?? "there";
@@ -298,7 +299,7 @@ export default function DashboardPage() {
 
             {/* ══ Meta Integration ══ */}
             <motion.div {...fade(0.12)}>
-              <MetaPanel flashParam={metaParam ?? actionParam} />
+              <MetaPanel flashParam={metaParam ?? actionParam} isPro={isPro} />
             </motion.div>
 
             {/* ══ Pending Actions ══ */}
