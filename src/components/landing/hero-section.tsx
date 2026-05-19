@@ -143,21 +143,20 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             <span style={{ fontSize: 12, fontWeight: 600, color: "#A8A5A0", fontFamily: "var(--font-inter)", flexShrink: 0 }}>or</span>
 
             {/* Pill 2 — Meta / Pro */}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 text-left"
+            <button
+              onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+              className="flex items-center gap-3 text-left cursor-pointer"
               style={{
-                flex:           1,
-                minWidth:       220,
-                padding:        "12px 18px",
-                borderRadius:    14,
-                background:     "rgba(108,92,231,0.06)",
-                border:         "1.5px solid rgba(108,92,231,0.22)",
-                textDecoration: "none",
-                transition:     "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+                flex:       1,
+                minWidth:   220,
+                padding:    "12px 18px",
+                borderRadius: 14,
+                background: "rgba(108,92,231,0.06)",
+                border:     "1.5px solid rgba(108,92,231,0.22)",
+                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
               }}
-              onMouseEnter={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = "#6c5ce7"; a.style.background = "rgba(108,92,231,0.10)"; a.style.boxShadow = "0 4px 16px rgba(108,92,231,0.18)"; }}
-              onMouseLeave={(e) => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = "rgba(108,92,231,0.22)"; a.style.background = "rgba(108,92,231,0.06)"; a.style.boxShadow = "none"; }}
+              onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#6c5ce7"; b.style.background = "rgba(108,92,231,0.10)"; b.style.boxShadow = "0 4px 16px rgba(108,92,231,0.18)"; }}
+              onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "rgba(108,92,231,0.22)"; b.style.background = "rgba(108,92,231,0.06)"; b.style.boxShadow = "none"; }}
             >
               <span style={{ fontSize: 22, lineHeight: 1 }}>🤖</span>
               <div style={{ flex: 1 }}>
@@ -174,7 +173,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 </div>
               </div>
               <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#6c5ce7" }} />
-            </Link>
+            </button>
           </div>
         </FadeIn>
 
