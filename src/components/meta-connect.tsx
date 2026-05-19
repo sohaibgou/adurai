@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Link2, Link2Off, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Link2, Link2Off, CheckCircle2, AlertCircle, BarChart3, RefreshCw } from "lucide-react";
 
 interface MetaStatus {
-  connected:       boolean;
-  adAccountId?:    string;
-  adAccountName?:  string;
-  connectedAt?:    string;
+  connected:        boolean;
+  adAccountId?:     string;
+  adAccountName?:   string;
+  connectedAt?:     string;
+  tokenExpiresAt?:  string;
+}
+
+interface CampaignSummary {
+  total:         number;
+  adAccountName: string;
 }
 
 interface MetaConnectProps {
@@ -16,14 +22,17 @@ interface MetaConnectProps {
 }
 
 export default function MetaConnect({ flashParam }: MetaConnectProps) {
-  const [status,     setStatus]     = useState<MetaStatus | null>(null);
-  const [loading,    setLoading]    = useState(true);
+  const [status,        setStatus]        = useState<MetaStatus | null>(null);
+  const [loading,       setLoading]       = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [flash,      setFlash]      = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [campaigns,     setCampaigns]     = useState<CampaignSummary | null>(null);
+  const [campsLoading,  setCampsLoading]  = useState(false);
+  const [flash,         setFlash]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
+  // ── Flash from URL param ─────────────────────────────────────────────────
   useEffect(() => {
     if (flashParam === "connected") {
-      setFlash({ type: "success", msg: "Meta account connected successfully!" });
+      setFlash({ type: "success", msg: "Meta Ads connected successfully!" });
     } else if (flashParam === "denied") {
       setFlash({ type: "error", msg: "Connection cancelled." });
     } else if (flashParam === "no_accounts") {
@@ -32,13 +41,13 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
       setFlash({ type: "error", msg: "Something went wrong. Please try again." });
     }
     if (flashParam) {
-      // Clear param from URL without reload
       const url = new URL(window.location.href);
       url.searchParams.delete("meta");
       window.history.replaceState({}, "", url.toString());
     }
   }, [flashParam]);
 
+  // ── Load connection status ────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/meta/status")
       .then((r) => r.json())
@@ -47,12 +56,29 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Load campaign count when connected ───────────────────────────────────
+  useEffect(() => {
+    if (!status?.connected) return;
+    setCampsLoading(true);
+    fetch("/api/meta/campaigns")
+      .then((r) => r.json())
+      .then((d: { total?: number; adAccountName?: string; error?: string }) => {
+        if (d.total !== undefined) {
+          setCampaigns({ total: d.total, adAccountName: d.adAccountName ?? "" });
+        }
+      })
+      .catch(() => {/* non-fatal */})
+      .finally(() => setCampsLoading(false));
+  }, [status?.connected]);
+
+  // ── Disconnect ───────────────────────────────────────────────────────────
   async function handleDisconnect() {
     if (!confirm("Disconnect your Meta Ads account?")) return;
     setDisconnecting(true);
     try {
       await fetch("/api/meta/disconnect", { method: "POST" });
       setStatus({ connected: false });
+      setCampaigns(null);
       setFlash({ type: "success", msg: "Meta account disconnected." });
     } catch {
       setFlash({ type: "error", msg: "Failed to disconnect. Please try again." });
@@ -71,19 +97,18 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
         boxShadow:    "0 2px 12px rgba(0,0,0,0.04)",
       }}
     >
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        {/* Meta logo mark */}
         <div
           style={{
-            width:        42,
-            height:       42,
-            borderRadius: 12,
-            background:   "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
-            display:      "flex",
-            alignItems:   "center",
+            width:          42,
+            height:         42,
+            borderRadius:   12,
+            background:     "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
+            display:        "flex",
+            alignItems:     "center",
             justifyContent: "center",
-            flexShrink:   0,
+            flexShrink:     0,
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -95,12 +120,12 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
             Meta Ads
           </p>
           <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
-            Connect to auto-import your campaigns
+            {status?.connected ? "Connected via Meta MCP" : "Connect to auto-import campaigns"}
           </p>
         </div>
       </div>
 
-      {/* Flash message */}
+      {/* ── Flash ──────────────────────────────────────────────────────── */}
       {flash && (
         <div
           style={{
@@ -124,15 +149,16 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
         </div>
       )}
 
-      {/* Body */}
+      {/* ── Body ───────────────────────────────────────────────────────── */}
       {loading ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0" }}>
           <Loader2 style={{ width: 16, height: 16, color: "#A8A5A0", animation: "spin 1s linear infinite" }} />
           <span style={{ fontSize: 13, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>Checking connection…</span>
         </div>
+
       ) : status?.connected ? (
         <>
-          {/* Connected state */}
+          {/* Connected pill */}
           <div
             style={{
               display:      "flex",
@@ -142,7 +168,7 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
               borderRadius: 12,
               background:   "rgba(22,163,74,0.06)",
               border:       "1px solid rgba(22,163,74,0.20)",
-              marginBottom: 14,
+              marginBottom: 12,
             }}
           >
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#16A34A", flexShrink: 0, boxShadow: "0 0 6px rgba(22,163,74,0.55)" }} />
@@ -159,6 +185,34 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
             </div>
           </div>
 
+          {/* Campaign count */}
+          <div
+            style={{
+              display:      "flex",
+              alignItems:   "center",
+              gap:          8,
+              padding:      "10px 14px",
+              borderRadius: 12,
+              background:   "rgba(8,102,255,0.05)",
+              border:       "1px solid rgba(8,102,255,0.14)",
+              marginBottom: 14,
+            }}
+          >
+            {campsLoading
+              ? <Loader2 style={{ width: 14, height: 14, color: "#0866FF", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+              : <BarChart3 style={{ width: 14, height: 14, color: "#0866FF", flexShrink: 0 }} />
+            }
+            <span style={{ fontSize: 13, color: "#0866FF", fontFamily: "var(--font-inter)", fontWeight: 500 }}>
+              {campsLoading
+                ? "Loading campaigns…"
+                : campaigns !== null
+                  ? `${campaigns.total} campaign${campaigns.total !== 1 ? "s" : ""} imported`
+                  : "Ready to import campaigns"
+              }
+            </span>
+          </div>
+
+          {/* Disconnect button */}
           <button
             onClick={handleDisconnect}
             disabled={disconnecting}
@@ -188,11 +242,12 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
             {disconnecting ? "Disconnecting…" : "Disconnect"}
           </button>
         </>
+
       ) : (
         <>
           {/* Disconnected state */}
           <p style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.55, marginBottom: 16 }}>
-            Connect your Meta Ads account to automatically import campaigns — no CSV needed.
+            Connect via Meta&apos;s official MCP — pre-approved, no app review needed. Campaigns auto-import after connecting.
           </p>
 
           <a

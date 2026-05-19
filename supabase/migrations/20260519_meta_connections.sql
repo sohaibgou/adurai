@@ -6,6 +6,7 @@ create table if not exists public.meta_connections (
   meta_access_token    text not null,
   meta_ad_account_id   text not null,
   meta_ad_account_name text,
+  token_expires_at     timestamptz,
   connected_at         timestamptz not null default now(),
   updated_at           timestamptz not null default now(),
   unique (user_id)
