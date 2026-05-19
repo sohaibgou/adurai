@@ -18,6 +18,8 @@ import { redirectToCheckout } from "@/lib/checkout";
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+
 interface Subscription {
   plan:               "starter" | "pro" | string;
   status:             string;
@@ -101,8 +103,9 @@ function DashboardContent() {
     );
   }
 
-  const isPaid       = subscription?.status === "active";
-  const isPro        = isPaid && subscription?.plan === "pro";
+  const isAdmin      = !!(user?.email && ADMIN_EMAILS.includes(user.email));
+  const isPaid       = isAdmin || subscription?.status === "active";
+  const isPro        = isAdmin || (isPaid && subscription?.plan === "pro");
   const FREE_LIMIT   = 3;
   const remaining    = Math.max(0, FREE_LIMIT - analysisCount);
   const firstName    = user.email?.split("@")[0] ?? "there";

@@ -218,6 +218,13 @@ export default function AutopilotPage() {
   // Subscription
   useEffect(() => {
     if (!user) return;
+    const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+    if (user.email && ADMIN_EMAILS.includes(user.email)) {
+      setIsPaid(true);
+      setIsPro(true);
+      setSubLoading(false);
+      return;
+    }
     supabase.from("subscriptions").select("status, plan").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
         const active = data?.status === "active";
