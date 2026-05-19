@@ -18,23 +18,6 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
         style={{ maxWidth: 960, paddingTop: 96, paddingBottom: 56 }}
       >
 
-        {/* Badge */}
-        <FadeIn delay={0.0}>
-          <div
-            className="inline-flex items-center gap-2 mb-7"
-            style={{
-              background:   "rgba(108,92,231,0.08)",
-              border:       "1px solid rgba(108,92,231,0.20)",
-              borderRadius:  100,
-              padding:      "7px 16px",
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6c5ce7", fontFamily: "var(--font-inter)" }}>
-              🤖 AI-Powered · CSV + Live Account
-            </span>
-          </div>
-        </FadeIn>
-
         {/* Headline */}
         <FadeIn delay={0.05}>
           <h1
