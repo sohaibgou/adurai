@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, Crown, Zap, Upload, Sparkles,
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
+import MetaConnect from "@/components/meta-connect";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -55,6 +56,8 @@ function getGreeting() {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const metaParam = searchParams.get("meta");
   const { user, loading: authLoading, signOut } = useAuth();
   const [subscription,     setSubscription]     = useState<Subscription | null>(null);
   const [subLoading,       setSubLoading]       = useState(true);
@@ -287,6 +290,13 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            {/* ══ Integrations ══ */}
+            <motion.div {...fade(0.12)}>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <MetaConnect flashParam={metaParam} />
               </div>
             </motion.div>
 
