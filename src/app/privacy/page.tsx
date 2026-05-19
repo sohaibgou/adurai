@@ -127,6 +127,15 @@ export default function PrivacyPage() {
         </ul>
         <p style={P}>Your Meta access token is stored encrypted at rest in our database (Supabase). It is never logged in plain text and never exposed to the browser after initial submission.</p>
         <p style={P}>You can disconnect your Meta account at any time from the dashboard. Upon disconnection your access token is deleted from our systems within 24 hours.</p>
+        <p id="data-deletion" style={{ ...P, scrollMarginTop: 80 }}>
+          <strong>Data deletion requests.</strong> If you used Facebook Login or connected a Meta account, you can request deletion of your Meta-related data by visiting{" "}
+          <a href="https://www.facebook.com/settings?tab=applications" target="_blank" rel="noopener noreferrer" style={{ color: "#FF3CAC", textDecoration: "none" }}>
+            Facebook → Settings → Apps and Websites
+          </a>
+          {" "}and removing Adur.ai, or by emailing{" "}
+          <a href="mailto:privacy@adur.ai" style={{ color: "#FF3CAC", textDecoration: "none" }}>privacy@adur.ai</a>.
+          We will delete all associated campaign data and access tokens within 24 hours and confirm with a deletion code.
+        </p>
 
         {/* 4 */}
         <h2 className="font-heading" style={H2}>4. Third-Party Services</h2>
