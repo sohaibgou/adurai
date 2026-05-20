@@ -111,14 +111,14 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
 
         {/* ── Two-path pills ── */}
         <FadeIn delay={0.30}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full" style={{ maxWidth: 600 }}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full" style={{ maxWidth: 620 }}>
 
             {/* Pill 1 — CSV */}
             <button
               onClick={onCtaClick}
               className="flex items-center gap-3 text-left cursor-pointer group"
               style={{
-                flex:         1,
+                flex:         1.2,
                 minWidth:     220,
                 padding:      "12px 18px",
                 borderRadius:  14,
@@ -131,8 +131,11 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             >
               <span style={{ fontSize: 22, lineHeight: 1 }}>📊</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                  Upload CSV
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
+                    Upload CSV
+                  </span>
+                  <span style={{ background: "#DCFCE7", color: "#14532D", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 100 }}>Free</span>
                 </div>
                 <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
                   Free · instant analysis
@@ -141,15 +144,12 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               <ArrowDown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#A8A5A0" }} />
             </button>
 
-            {/* Or divider */}
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#A8A5A0", fontFamily: "var(--font-inter)", flexShrink: 0 }}>or</span>
-
             {/* Pill 2 — Meta / Pro */}
             <button
               onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
               className="flex items-center gap-3 text-left cursor-pointer"
               style={{
-                flex:       1,
+                flex:       0.8,
                 minWidth:   220,
                 padding:    "12px 18px",
                 borderRadius: 14,
