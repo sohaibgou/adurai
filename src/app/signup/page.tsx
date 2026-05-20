@@ -91,16 +91,25 @@ function SignupContent() {
       >
         <div style={{ maxWidth: 400, width: "100%", margin: "0 auto" }}>
 
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 mb-10">
-            <div
-              style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255,60,172,0.30)", flexShrink: 0 }}
+          {/* Logo + back link */}
+          <div className="flex items-center justify-between mb-10">
+            <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+              <div
+                style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255,60,172,0.30)", flexShrink: 0 }}
+              >
+                <span style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>A</span>
+              </div>
+              <span className="font-heading font-bold" style={{ fontSize: 20, color: "#0D0D12", letterSpacing: "-0.03em" }}>
+                Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
+              </span>
+            </Link>
+            <Link
+              href="/"
+              className="lg:hidden"
+              style={{ fontSize: 13, fontWeight: 500, color: "#6B6B72", fontFamily: "var(--font-inter)", textDecoration: "none" }}
             >
-              <span style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>A</span>
-            </div>
-            <span className="font-heading font-bold" style={{ fontSize: 20, color: "#0D0D12", letterSpacing: "-0.03em" }}>
-              Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-            </span>
+              ← Home
+            </Link>
           </div>
 
           {/* Headline */}
