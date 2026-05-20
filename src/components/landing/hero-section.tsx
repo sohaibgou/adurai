@@ -111,71 +111,81 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
 
         {/* ── Two-path pills ── */}
         <FadeIn delay={0.30}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full" style={{ maxWidth: 620 }}>
+          <div style={{ maxWidth: 560, width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "stretch", gap: 0, background: "#fff", border: "1px solid #E8E5E0", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
 
-            {/* Pill 1 — CSV */}
-            <button
-              onClick={onCtaClick}
-              className="flex items-center gap-3 text-left cursor-pointer group"
-              style={{
-                flex:         1.2,
-                minWidth:     220,
-                padding:      "12px 18px",
-                borderRadius:  14,
-                background:   "#F7F5F2",
-                border:       "1.5px solid #E8E5E0",
-                transition:   "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-              }}
-              onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#FF3CAC"; b.style.background = "#fff"; b.style.boxShadow = "0 4px 16px rgba(255,60,172,0.12)"; }}
-              onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#E8E5E0"; b.style.background = "#F7F5F2"; b.style.boxShadow = "none"; }}
-            >
-              <span style={{ fontSize: 22, lineHeight: 1 }}>📊</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                    Upload CSV
-                  </span>
-                  <span style={{ background: "#DCFCE7", color: "#14532D", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 100 }}>Free</span>
+              {/* Pill 1 — CSV */}
+              <button
+                onClick={onCtaClick}
+                className="text-left cursor-pointer"
+                style={{
+                  flex:       1,
+                  padding:    "16px 20px",
+                  display:    "flex",
+                  alignItems: "center",
+                  gap:         12,
+                  transition: "background 0.15s",
+                  background: "transparent",
+                  border:     "none",
+                  borderRadius: 0,
+                }}
+                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "#F7F5F2"; }}
+                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 22, lineHeight: 1 }}>📊</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
+                      Upload CSV
+                    </span>
+                    <span style={{ background: "#DCFCE7", color: "#14532D", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 100 }}>Free</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
+                    Free · instant analysis
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
-                  Free · instant analysis
-                </div>
-              </div>
-              <ArrowDown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#A8A5A0" }} />
-            </button>
+                <ArrowDown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#A8A5A0" }} />
+              </button>
 
-            {/* Pill 2 — Meta / Pro */}
-            <button
-              onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
-              className="flex items-center gap-3 text-left cursor-pointer"
-              style={{
-                flex:       0.8,
-                minWidth:   220,
-                padding:    "12px 18px",
-                borderRadius: 14,
-                background: "rgba(108,92,231,0.06)",
-                border:     "1.5px solid rgba(108,92,231,0.22)",
-                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-              }}
-              onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#6c5ce7"; b.style.background = "rgba(108,92,231,0.10)"; b.style.boxShadow = "0 4px 16px rgba(108,92,231,0.18)"; }}
-              onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "rgba(108,92,231,0.22)"; b.style.background = "rgba(108,92,231,0.06)"; b.style.boxShadow = "none"; }}
-            >
-              <span style={{ fontSize: 22, lineHeight: 1 }}>🤖</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                    Connect Meta Account
-                  </span>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: "#6c5ce7", background: "rgba(108,92,231,0.12)", padding: "2px 7px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                    Pro
-                  </span>
+              {/* Divider */}
+              <div style={{ width: 1, background: "#E8E5E0", alignSelf: "stretch" }} />
+
+              {/* Pill 2 — Meta / Pro */}
+              <button
+                onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-left cursor-pointer"
+                style={{
+                  flex:       1,
+                  padding:    "16px 20px",
+                  display:    "flex",
+                  alignItems: "center",
+                  gap:         12,
+                  transition: "background 0.15s",
+                  background: "transparent",
+                  border:     "none",
+                  borderRadius: 0,
+                }}
+                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(108,92,231,0.06)"; }}
+                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 22, lineHeight: 1 }}>🤖</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
+                      Connect Meta Account
+                    </span>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: "#6c5ce7", background: "rgba(108,92,231,0.12)", padding: "2px 7px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      Pro
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
+                    Full autopilot · AI Manager
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
-                  Full autopilot · AI Manager
-                </div>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#6c5ce7" }} />
-            </button>
+                <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#6c5ce7" }} />
+              </button>
+
+            </div>
           </div>
         </FadeIn>
 
