@@ -257,7 +257,10 @@ export default function Home() {
                   style={{ fontSize: 11, color: "#4B4B55", fontWeight: 700, fontFamily: "var(--font-inter)", letterSpacing: "0.09em", transition: "color 0.15s", whiteSpace: "nowrap" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#0D0D12"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#4B4B55"; }}
-                  onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => {
+                    const el = document.getElementById(id);
+                    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+                  }}
                 >
                   {label}
                 </span>
