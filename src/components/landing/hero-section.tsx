@@ -53,7 +53,9 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               fontFamily:   "var(--font-inter)",
             }}
           >
-            Upload your CSV or connect your Meta account. Adur tells you exactly what to kill, what to scale, generates your next winning ad creatives — and manages everything autonomously. No agency needed.
+            Upload your CSV or connect your Meta account. Adur tells you exactly what to kill, what to scale, generates your next winning ad creatives — and manages everything autonomously.{" "}
+            <br className="hidden sm:block" />
+            No agency needed.
           </p>
         </FadeIn>
 
