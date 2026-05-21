@@ -140,18 +140,21 @@ export default function AboutPage() {
             One person. One obsession. Built from scratch.
           </p>
 
-          <div style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, overflow: "hidden" }}>
+          <div className="flex flex-col lg:flex-row" style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, overflow: "hidden" }}>
 
-            {/* Photo — top, full width */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/founder2.jpg"
-              alt="Souhaib Gouaalla"
-              style={{ width: "100%", height: "auto", display: "block" }}
-            />
+            {/* Photo — full width on mobile / fixed square on desktop */}
+            <div className="w-full lg:w-[340px] lg:flex-shrink-0" style={{ overflow: "hidden" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/founder2.jpg"
+                alt="Souhaib Gouaalla"
+                className="w-full lg:h-full"
+                style={{ display: "block", objectFit: "cover", objectPosition: "center top", height: "auto" }}
+              />
+            </div>
 
-            {/* Info — below the photo */}
-            <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* Info — below on mobile, right column on desktop */}
+            <div className="flex flex-col justify-center" style={{ padding: "32px 36px", gap: 18, display: "flex", flexDirection: "column" }}>
 
               {/* Name + tags */}
               <div>
