@@ -44,22 +44,10 @@ function SidebarInner({
   return (
     <>
       {/* ── Logo ── */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0, boxShadow: "0 4px 12px rgba(255,60,172,0.28)",
-        }}>
-          <span style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>A</span>
-        </div>
-        <Link href="/" onClick={onLinkClick} style={{ textDecoration: "none" }}>
-          <span className="font-heading font-bold" style={{ fontSize: 18, color: "#0D0D12", letterSpacing: "-0.03em" }}>
-            Adur
-            <span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              .ai
-            </span>
-          </span>
+      <div className="flex items-center px-5 py-5">
+        <Link href="/" onClick={onLinkClick} style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
         </Link>
       </div>
 

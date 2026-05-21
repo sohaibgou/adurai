@@ -7,13 +7,9 @@ export const metadata: Metadata = {
 };
 
 const NAV_LOGO = (
-  <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-    <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>A</span>
-    </div>
-    <span className="font-heading" style={{ fontSize: 17, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.03em" }}>
-      Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-    </span>
+  <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
   </Link>
 );
 

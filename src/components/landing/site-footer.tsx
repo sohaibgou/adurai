@@ -92,16 +92,9 @@ export default function SiteFooter() {
 
           {/* Brand column */}
           <div className="md:col-span-1">
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none", marginBottom: 16 }}>
-              <div
-                className="flex items-center justify-center font-bold text-white flex-shrink-0"
-                style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 14, boxShadow: "0 4px 14px rgba(255,60,172,0.35)" }}
-              >
-                A
-              </div>
-              <span className="font-heading font-bold" style={{ fontSize: 18, color: "#ffffff", letterSpacing: "-0.03em" }}>
-                Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-              </span>
+            <Link href="/" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none", marginBottom: 20 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logomark-white-clean.svg" alt="Adur.ai" style={{ height: 72, width: "auto" }} />
             </Link>
 
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.40)", fontFamily: "var(--font-inter)", lineHeight: 1.65, maxWidth: 220, marginBottom: 24 }}>

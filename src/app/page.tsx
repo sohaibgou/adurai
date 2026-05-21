@@ -231,19 +231,9 @@ export default function Home() {
           }}
         >
             {/* Logo */}
-            <div className="flex items-center gap-2.5 cursor-default select-none flex-shrink-0">
-              <div
-                className="flex items-center justify-center font-bold text-white"
-                style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", fontSize: 14, flexShrink: 0, boxShadow: "0 2px 8px rgba(255,60,172,0.30)" }}
-              >
-                A
-              </div>
-              <span
-                className="font-heading font-bold"
-                style={{ fontSize: 18, color: "#0d0d1a", letterSpacing: "-0.03em" }}
-              >
-                Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-              </span>
+            <div className="flex items-center flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
             </div>
 
             <div className="hidden md:flex items-center gap-8">

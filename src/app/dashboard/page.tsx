@@ -152,11 +152,9 @@ function DashboardContent() {
           style={{ height: 64, background: "rgba(247,245,242,0.90)", backdropFilter: "blur(16px)", borderBottom: "1px solid #E8E5E0" }}
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2.5">
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "#fff", fontWeight: 900, fontSize: 12 }}>A</span>
-            </div>
-            <span className="font-heading font-bold" style={{ fontSize: 16, color: "#0D0D12", letterSpacing: "-0.03em" }}>Adur.ai</span>
+          <div className="lg:hidden flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
           </div>
 
           {/* Desktop greeting */}

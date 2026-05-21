@@ -303,10 +303,9 @@ export default function ResultsPage() {
               <ChevronRight style={{ width: 13, height: 13, color: "#C8C5C0" }} />
               <span style={{ fontSize: 13, color: "#0D0D12", fontWeight: 600 }}>Last Results</span>
             </div>
-            <div className="flex lg:hidden items-center gap-2">
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>A</span>
-              </div>
+            <div className="flex lg:hidden items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
             </div>
             {!authLoading && user && (
               <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 10px rgba(255,60,172,0.26)", flexShrink: 0 }} title={user.email ?? ""}>
@@ -450,39 +449,9 @@ export default function ResultsPage() {
             {/* Left: mobile logo / desktop breadcrumb */}
             <div>
               {/* Mobile logo */}
-              <div
-                className="flex lg:hidden items-center gap-2"
-              >
-                <div
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 9,
-                    background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 3px 10px rgba(255,60,172,0.28)",
-                  }}
-                >
-                  <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>A</span>
-                </div>
-                <span
-                  className="font-heading"
-                  style={{ fontSize: 17, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em" }}
-                >
-                  Adur
-                  <span
-                    style={{
-                      background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    .ai
-                  </span>
-                </span>
+              <div className="flex lg:hidden items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
               </div>
 
               {/* Desktop breadcrumb */}

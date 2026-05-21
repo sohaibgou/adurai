@@ -178,14 +178,10 @@ export default function AnalyzePage() {
             style={{ height: 64, background: "rgba(247,245,242,0.92)", backdropFilter: "blur(16px)", borderBottom: "1px solid #E8E5E0" }}
           >
             {/* Mobile logo */}
-            <div className="lg:hidden flex items-center gap-2.5">
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "#fff", fontWeight: 900, fontSize: 12 }}>A</span>
-              </div>
-              <Link href="/" style={{ textDecoration: "none" }}>
-                <span className="font-heading font-bold" style={{ fontSize: 16, color: "#0D0D12", letterSpacing: "-0.03em" }}>
-                  Adur<span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>.ai</span>
-                </span>
+            <div className="lg:hidden flex items-center">
+              <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
               </Link>
             </div>
 
