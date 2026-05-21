@@ -85,8 +85,8 @@ export default function SocialProof() {
             </p>
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
               <h2 className="font-heading" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.05, maxWidth: 560 }}>
-                Performance advertising<br />is{" "}
-                <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>broken.</span>
+                Your Meta Ads are bleeding<br />money right now.{" "}
+                <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Here&apos;s proof.</span>
               </h2>
               <p style={{ fontSize: 16, color: "#6b7280", lineHeight: 1.65, maxWidth: 360, fontFamily: "var(--font-inter)" }}>
                 Every day, e-commerce brands waste thousands of dollars on underperforming campaigns — not because they don&apos;t care, but because no tool has ever told them exactly what to do. Until now.

@@ -647,9 +647,10 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
           )}
         </div>
 
-        {/* ── Usage bar — always visible for free users ── */}
+        {/* ── Usage bar — only shown after first analysis ── */}
         {!isPaid && (() => {
           const used      = Math.min(analysisCount, FREE_LIMIT);
+          if (used === 0) return null;
           const remaining = FREE_LIMIT - used;
           const exhausted = remaining <= 0;
           const lastOne   = remaining === 1;

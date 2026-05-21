@@ -60,7 +60,7 @@ export default function CtaSection({ onCtaClick }: CtaSectionProps) {
 
         <FadeIn delay={0.22}>
           <div className="flex flex-wrap items-center justify-center gap-10 mt-16" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 32 }}>
-            {[{ val: "500+", label: "Media buyers" }, { val: "Free", label: "Forever" }, { val: "60s", label: "Time to insight" }].map(s => (
+            {[{ val: "500+", label: "DTC brands" }, { val: "Free", label: "Forever" }, { val: "60s", label: "Time to insight" }].map(s => (
               <div key={s.label} className="text-center">
                 <p className="font-heading font-bold" style={{ fontSize: 30, letterSpacing: "-0.03em", color: "#ffffff" }}>{s.val}</p>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4, fontFamily: "var(--font-inter)" }}>{s.label}</p>
