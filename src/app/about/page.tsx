@@ -145,7 +145,7 @@ export default function AboutPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/souhaib.jpg"
+                src="/founder.jpg"
                 alt="Souhaib Gouaalla"
                 style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
               />
