@@ -471,9 +471,9 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
     };
     // Increment DB usage for authenticated free users
     if (authedUserId && !serverPaid && !serverAdmin) {
-      await supabaseAdmin
-        .rpc("increment_user_analysis", { p_user_id: authedUserId })
-        .catch(() => { /* non-fatal — count will be checked next request */ });
+      try {
+        await supabaseAdmin.rpc("increment_user_analysis", { p_user_id: authedUserId });
+      } catch { /* non-fatal — count will be checked next request */ }
     }
 
     console.log("[analyze] Analysis complete, sending response");
