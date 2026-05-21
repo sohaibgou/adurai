@@ -227,38 +227,6 @@ export default function AnalyzePage() {
           {/* ── Content ── */}
           <main className="flex-1 px-6 lg:px-8 py-8">
 
-            {/* ── Mode switcher ── */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="mb-8">
-              <div
-                className="inline-flex p-1.5 gap-1"
-                style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-              >
-                {/* Active: Analyze */}
-                <div
-                  className="inline-flex items-center gap-2 px-5 py-2.5"
-                  style={{ borderRadius: 11, background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", boxShadow: "0 3px 14px rgba(255,60,172,0.30)" }}
-                >
-                  <BarChart3 className="w-4 h-4" style={{ color: "#fff", flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                    Analyze Campaigns
-                  </span>
-                </div>
-
-                {/* Inactive: Creative Studio */}
-                <button
-                  onClick={() => router.push("/creative-studio")}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 cursor-pointer transition-all rounded-xl"
-                  style={{ background: "transparent", border: "none" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F7F5F2"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                >
-                  <Palette className="w-4 h-4" style={{ color: "#A8A5A0", flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#6B6B72", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                    Creative Studio
-                  </span>
-                </button>
-              </div>
-            </motion.div>
 
             {/* ── Hero intro ── */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.04 }} className="mb-8">
