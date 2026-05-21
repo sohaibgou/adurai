@@ -85,9 +85,9 @@ export default function AboutPage() {
         </div>
 
         <h1 className="font-heading" style={{ fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.04em", color: "#0D0D12", marginBottom: 24 }}>
-          Built by buyers.<br />
+          Built by media buyers.<br />
           <span style={{ background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            For buyers.
+            For media buyers.
           </span>
         </h1>
 
