@@ -12,24 +12,16 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
   return (
     <section style={{ background: "transparent", position: "relative" }}>
 
-      {/* ── Ambient background ── */}
+      {/* ── Subtle grid overlay ── */}
       <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: [
-          "radial-gradient(ellipse 60% 40% at 75% 10%, rgba(255,60,172,0.08) 0%, transparent 60%)",
-          "radial-gradient(ellipse 50% 35% at 15% 30%, rgba(255,107,53,0.06) 0%, transparent 60%)",
-          "radial-gradient(ellipse 40% 30% at 90% 70%, rgba(124,58,237,0.05) 0%, transparent 60%)",
-        ].join(", "),
-      }} />
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.4,
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.35,
         backgroundImage: [
           "linear-gradient(rgba(13,13,18,0.025) 1px, transparent 1px)",
           "linear-gradient(90deg, rgba(13,13,18,0.025) 1px, transparent 1px)",
         ].join(", "),
         backgroundSize: "64px 64px",
-        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 20%, black 0%, transparent 75%)",
-        maskImage:       "radial-gradient(ellipse 80% 60% at 50% 20%, black 0%, transparent 75%)",
+        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 10%, black 0%, transparent 75%)",
+        maskImage:       "radial-gradient(ellipse 80% 60% at 50% 10%, black 0%, transparent 75%)",
       }} />
 
       {/* ── Hero copy ── */}

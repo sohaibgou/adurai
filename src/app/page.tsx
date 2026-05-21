@@ -212,7 +212,7 @@ export default function Home() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="min-h-screen overflow-x-hidden"
-        style={{ background: "#FAF8F5", backgroundImage: "radial-gradient(ellipse 80% 60% at 50% 10%, rgba(255, 100, 180, 0.09) 0%, transparent 65%)" }}
+        style={{ background: "#FAF8F5" }}
       >
         {/* ── Nav wrapper — sticky floating pill ── */}
         <div className="sticky z-50 px-5" style={{ top: 12 }}>
