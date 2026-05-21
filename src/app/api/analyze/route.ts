@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-server";
 import type { CampaignSummary } from "@/lib/types";
 
 // Allow up to 120 seconds for the Claude API call
@@ -177,8 +178,9 @@ export async function POST(request: NextRequest) {
     const { summaries, onboarding, sessionToken, plan, analysisCount: clientCount } = body;
 
     // ── Server-side limit enforcement ─────────────────────────────────────────
-    let serverPaid  = false;
-    let serverAdmin = false;
+    let serverPaid    = false;
+    let serverAdmin   = false;
+    let authedUserId: string | undefined;
 
     if (sessionToken) {
       try {
@@ -189,9 +191,10 @@ export async function POST(request: NextRequest) {
         );
         const { data: { user } } = await sb.auth.getUser();
         if (user?.email) {
-          serverAdmin = ADMIN_EMAILS.includes(user.email);
+          authedUserId = user.id;
+          serverAdmin  = ADMIN_EMAILS.includes(user.email);
           if (!serverAdmin) {
-            const { data: sub } = await sb
+            const { data: sub } = await supabaseAdmin
               .from("subscriptions")
               .select("status")
               .eq("user_id", user.id)
@@ -200,17 +203,33 @@ export async function POST(request: NextRequest) {
             serverPaid = !!sub;
           }
         }
-      } catch { /* fall through to client-count check */ }
+      } catch { /* fall through */ }
     }
 
     if (!serverAdmin && !serverPaid) {
-      const count       = typeof clientCount === "number" ? clientCount : 0;
-      const clientPlan  = typeof plan === "string" ? plan : "free";
-      if (clientPlan === "free" && count >= FREE_LIMIT) {
-        return NextResponse.json(
-          { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
-          { status: 403 }
-        );
+      if (authedUserId) {
+        // Authenticated free user — enforce via DB count (authoritative)
+        const { data: usageRow } = await supabaseAdmin
+          .from("user_usage")
+          .select("analysis_count")
+          .eq("user_id", authedUserId)
+          .maybeSingle();
+        const dbCount = usageRow?.analysis_count ?? 0;
+        if (dbCount >= FREE_LIMIT) {
+          return NextResponse.json(
+            { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
+            { status: 403 }
+          );
+        }
+      } else {
+        // Guest user — fall back to client-reported count
+        const count = typeof clientCount === "number" ? clientCount : 0;
+        if (count >= FREE_LIMIT) {
+          return NextResponse.json(
+            { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
+            { status: 403 }
+          );
+        }
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -450,6 +469,13 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       convBestRoas,
       analysisMode,
     };
+    // Increment DB usage for authenticated free users
+    if (authedUserId && !serverPaid && !serverAdmin) {
+      await supabaseAdmin
+        .rpc("increment_user_analysis", { p_user_id: authedUserId })
+        .catch(() => { /* non-fatal — count will be checked next request */ });
+    }
+
     console.log("[analyze] Analysis complete, sending response");
     return NextResponse.json(responsePayload);
   } catch (error) {

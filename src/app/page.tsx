@@ -68,22 +68,23 @@ export default function Home() {
     } catch { /* ignore */ }
   }, []);
 
-  // Sync paid status from Supabase if logged in
+  // Sync real usage + paid status from server when logged in
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("subscriptions")
-      .select("status")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
+    if (!user || !session) return;
+    fetch("/api/usage", { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { analysisCount: number; isPaid: boolean; isAdmin: boolean } | null) => {
+        if (!data) return;
+        if (data.isPaid || data.isAdmin) {
           setPaidPlan(true);
           try { localStorage.setItem("adur_plan", "starter"); } catch { /* noop */ }
         }
-      });
-  }, [user]);
+        // Override localStorage count with authoritative server count
+        setAnalysisCount(data.analysisCount);
+        try { localStorage.setItem("adur_analysis_count", String(data.analysisCount)); } catch { /* noop */ }
+      })
+      .catch(() => { /* non-fatal, falls back to localStorage */ });
+  }, [user, session]);
 
   async function handleFileSelected(file: File) {
     const currentCount = getCount();
