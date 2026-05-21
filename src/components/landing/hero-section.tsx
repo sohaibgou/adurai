@@ -226,11 +226,13 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           </div>
 
           {/* Product frame */}
-          <div style={{
-            background: "#fff", borderRadius: 18, border: "1px solid #E8E5E0", overflow: "hidden",
-            boxShadow: "0 40px 80px -20px rgba(13,13,18,0.18), 0 24px 48px -16px rgba(255,60,172,0.08), 0 0 0 1px rgba(13,13,18,0.04)",
-            transform: "rotateY(-3deg) rotateX(2deg)", transformStyle: "preserve-3d",
-          }}>
+          <div
+            className="md:[transform:rotateY(-3deg)_rotateX(2deg)] md:[transform-style:preserve-3d]"
+            style={{
+              background: "#fff", borderRadius: 18, border: "1px solid #E8E5E0", overflow: "hidden",
+              boxShadow: "0 40px 80px -20px rgba(13,13,18,0.18), 0 24px 48px -16px rgba(255,60,172,0.08), 0 0 0 1px rgba(13,13,18,0.04)",
+            }}
+          >
             {/* Browser chrome */}
             <div style={{ background: "#F7F5F2", height: 36, display: "flex", alignItems: "center", padding: "0 14px", borderBottom: "1px solid #E8E5E0", gap: 14 }}>
               <div style={{ display: "flex", gap: 6 }}>
@@ -245,10 +247,10 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             </div>
 
             {/* Product body */}
-            <div style={{ background: "#FAF8F5", display: "grid", gridTemplateColumns: "200px 1fr", minHeight: 480 }}>
+            <div className="flex flex-col md:flex-row" style={{ background: "#FAF8F5" }}>
 
-              {/* Sidebar */}
-              <aside style={{ background: "#fff", borderRight: "1px solid #E8E5E0", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+              {/* Sidebar — hidden on mobile */}
+              <aside className="hidden md:flex flex-col" style={{ width: 200, flexShrink: 0, background: "#fff", borderRight: "1px solid #E8E5E0", padding: "20px 14px", gap: 4 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A8A5A0", padding: "8px 10px 4px" }}>Account</div>
                 {[
                   { icon: "◐", label: "Diagnose",   count: "12", active: true  },
@@ -279,7 +281,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               </aside>
 
               {/* Main panel */}
-              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="flex flex-col p-4 md:p-5" style={{ gap: 16, flex: 1, minWidth: 0 }}>
                 {/* Panel header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
@@ -297,7 +299,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 </div>
 
                 {/* KPI row */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 10 }}>
                   {[
                     { label: "Spend (30d)", val: "$4,820",  suffix: null,  delta: "↓ 12%",   type: "down"  },
                     { label: "ROAS",        val: "3.2×",    suffix: null,  delta: "↑ 0.8×",  type: "up"    },
