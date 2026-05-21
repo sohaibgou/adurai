@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FadeIn from "@/components/fade-in";
-import { ArrowRight, Upload, BarChart3, Link2, Bot, Zap } from "lucide-react";
+import { ArrowRight, Upload, BarChart3, Link2, Zap } from "lucide-react";
 
 type Flow = "csv" | "meta";
 
@@ -97,12 +97,12 @@ const MetaStep1Mockup = () => (
         <div style={{ fontSize: 10, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>Connect your Meta account</div>
       </div>
     </div>
-    <button style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 12px", borderRadius: 10, background: "rgba(108,92,231,0.08)", border: "1.5px solid rgba(108,92,231,0.28)", cursor: "pointer" }}>
-      <div style={{ width: 16, height: 16, borderRadius: 4, background: "#6c5ce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Bot style={{ width: 10, height: 10, color: "#fff" }} />
-      </div>
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#6c5ce7", fontFamily: "var(--font-inter)" }}>Connect Meta Account</span>
-      <ArrowRight style={{ width: 10, height: 10, color: "#6c5ce7" }} />
+    <button style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 12px", borderRadius: 10, background: "rgba(24,119,242,0.08)", border: "1.5px solid rgba(24,119,242,0.28)", cursor: "pointer" }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#1877f2" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.413c0-3.025 1.791-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+      </svg>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#1877f2", fontFamily: "var(--font-inter)" }}>Connect Meta Account</span>
+      <ArrowRight style={{ width: 10, height: 10, color: "#1877f2" }} />
     </button>
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div style={{ flex: 1, height: 1, background: "#E8E5E0" }} />
@@ -120,7 +120,9 @@ const MetaStep2Mockup = () => (
   <div style={{ padding: 14, background: "#F7F5F2", borderRadius: 12, border: "1px solid #E8E5E0" }}>
     <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #E8E5E0", padding: "14px 14px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
       <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1877f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "#fff", fontWeight: 900, fontSize: 18, fontFamily: "Georgia, serif", lineHeight: 1 }}>f</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.413c0-3.025 1.791-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+        </svg>
       </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: "#0D0D12", fontFamily: "var(--font-inter)" }}>Log in with Facebook</div>
       <div style={{ width: "100%", height: 24, borderRadius: 6, background: "#1877f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -200,7 +202,7 @@ const META_STEPS = [
     mockup: <MetaStep1Mockup />,
   },
   {
-    icon: Bot,
+    icon: Link2,
     step: "02",
     title: "Log in with Facebook — 10 seconds",
     body: "Adur validates your token and ad account ID against Meta's API. No manual API setup required.",

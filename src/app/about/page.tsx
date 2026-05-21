@@ -131,66 +131,104 @@ export default function AboutPage() {
       </section>
 
       {/* ── Founder ── */}
-      <section style={{ background: "#fff", borderTop: "1px solid #E8E5E0", borderBottom: "1px solid #E8E5E0", padding: "80px 24px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <h2 className="font-heading" style={{ fontSize: "clamp(26px, 3.5vw, 36px)", fontWeight: 900, letterSpacing: "-0.04em", color: "#0D0D12", marginBottom: 8 }}>
-            The founder
-          </h2>
-          <p style={{ fontSize: 15, color: "#6B6B72", fontFamily: "var(--font-inter)", marginBottom: 48 }}>
-            One person. One obsession. Built from scratch.
+      <section style={{ background: "#FAF8F5", borderTop: "1px solid #E8E5E0", borderBottom: "1px solid #E8E5E0", padding: "80px 24px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+
+          {/* Section label */}
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF3CAC", marginBottom: 8, fontFamily: "var(--font-inter)" }}>
+            The Founder
           </p>
+          <h2 className="font-heading" style={{ fontSize: "clamp(26px, 3.5vw, 36px)", fontWeight: 900, letterSpacing: "-0.04em", color: "#0D0D12", marginBottom: 36 }}>
+            One person. One obsession.
+          </h2>
 
-          <div className="flex flex-col lg:flex-row" style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, overflow: "hidden" }}>
+          {/* Card */}
+          <div className="flex flex-col md:flex-row" style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 22, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
 
-            {/* Photo — full width on mobile / fixed square on desktop */}
-            <div className="w-full lg:w-[340px] lg:flex-shrink-0" style={{ overflow: "hidden" }}>
+            {/* ── Photo panel ── */}
+            <div className="relative md:w-[360px] md:flex-shrink-0" style={{ background: "#F7F5F2" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/founder2.jpg"
                 alt="Souhaib Gouaalla"
-                className="w-full lg:h-full"
-                style={{ display: "block", objectFit: "cover", objectPosition: "center top", height: "auto" }}
+                className="w-full"
+                style={{
+                  display: "block",
+                  objectFit: "cover",
+                  objectPosition: "center 10%",
+                  aspectRatio: "3/4",
+                  minHeight: 320,
+                }}
               />
-            </div>
-
-            {/* Info — below on mobile, right column on desktop */}
-            <div className="flex flex-col justify-center" style={{ padding: "32px 36px", gap: 18, display: "flex", flexDirection: "column" }}>
-
-              {/* Name + tags */}
-              <div>
-                <div className="font-heading" style={{ fontSize: 24, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 10 }}>
+              {/* Gradient overlay at bottom of photo */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "45%",
+                background: "linear-gradient(to top, rgba(13,13,18,0.82) 0%, transparent 100%)",
+                pointerEvents: "none",
+              }} />
+              {/* Name badge pinned at bottom of image */}
+              <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
+                <div className="font-heading" style={{ fontSize: "clamp(20px, 2.5vw, 26px)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
                   Souhaib Gouaalla
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {["Founder & CEO", "Agency Owner", "23 y/o"].map(tag => (
-                    <span key={tag} style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", background: "rgba(255,60,172,0.08)", padding: "4px 12px", borderRadius: 100, fontFamily: "var(--font-inter)", letterSpacing: "0.04em" }}>
-                      {tag}
-                    </span>
-                  ))}
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-inter)", marginTop: 4, fontWeight: 500 }}>
+                  Founder &amp; CEO · Adur.ai
                 </div>
               </div>
+            </div>
 
-              {/* Bio */}
-              <p style={{ fontSize: 15, color: "#4B4B55", lineHeight: 1.75, fontFamily: "var(--font-inter)", margin: 0 }}>
-                I&apos;m Souhaib — a media buyer and agency owner who managed over $70M in Meta ad spend across 200+ DTC brands. I built Adur.ai entirely by myself because I was tired of doing manually what AI could do in seconds. No co-founders, no dev team, no VC money. Just the conviction that every brand deserves a senior media buyer on call — at a price anyone can afford.
+            {/* ── Content panel ── */}
+            <div style={{ flex: 1, padding: "36px 36px", display: "flex", flexDirection: "column", gap: 24 }}>
+
+              {/* Tags */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Founder & CEO", "Agency Owner", "Media Buyer", "23 y/o"].map(tag => (
+                  <span key={tag} style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: "0.04em",
+                    color: "#FF3CAC",
+                    background: "rgba(255,60,172,0.08)",
+                    padding: "4px 12px", borderRadius: 100,
+                    fontFamily: "var(--font-inter)",
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Pull quote */}
+              <div style={{ borderLeft: "3px solid", borderImage: "linear-gradient(180deg, #FF3CAC, #FF6B35) 1", paddingLeft: 16 }}>
+                <p style={{ fontSize: "clamp(14px, 1.6vw, 16px)", color: "#4B4B55", lineHeight: 1.8, fontFamily: "var(--font-inter)", margin: 0 }}>
+                  I managed over <span style={{ color: "#0D0D12", fontWeight: 600 }}>$70M in Meta ad spend</span> across 200+ DTC brands and saw the same problem everywhere: the data was there, but no tool told you what to actually <em>do</em> about it.
+                </p>
+              </div>
+
+              <p style={{ fontSize: "clamp(13px, 1.4vw, 14px)", color: "#6b7280", lineHeight: 1.75, fontFamily: "var(--font-inter)", margin: 0 }}>
+                No co-founders. No dev team. No VC money. I built Adur.ai alone because I was tired of doing manually what AI could do in 60 seconds.
               </p>
 
-              {/* Stats row */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 24, paddingTop: 16, borderTop: "1px solid #E8E5E0" }}>
+              {/* Stats grid */}
+              <div style={{ borderTop: "1px solid #E8E5E0", paddingTop: 24, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px 24px", marginTop: "auto" }}>
                 {[
                   { value: "$70M+", label: "Ad spend managed" },
-                  { value: "200+",  label: "DTC brands" },
+                  { value: "200+",  label: "DTC brands served" },
                   { value: "30+",   label: "Countries" },
-                  { value: "Solo",  label: "Built it alone" },
+                  { value: "Solo",  label: "Built entirely alone" },
                 ].map(s => (
                   <div key={s.value}>
-                    <div className="font-heading" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                    <div className="font-heading" style={{
+                      fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em",
+                      background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                    }}>
                       {s.value}
                     </div>
-                    <div style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{s.label}</div>
+                    <div style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", fontWeight: 500, marginTop: 2 }}>
+                      {s.label}
+                    </div>
                   </div>
                 ))}
               </div>
+
             </div>
           </div>
         </div>

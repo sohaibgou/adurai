@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const NAV_COLUMNS = [
   {
@@ -55,6 +56,7 @@ const SOCIALS = [
 ];
 
 function FooterLink({ label, href, scrollTo }: { label: string; href?: string; scrollTo?: string }) {
+  const pathname = usePathname();
   const base: React.CSSProperties = {
     fontSize: 14,
     color: "rgba(255,255,255,0.45)",
@@ -71,12 +73,25 @@ function FooterLink({ label, href, scrollTo }: { label: string; href?: string; s
   if (href) {
     return <Link href={href} style={base} onMouseEnter={enter} onMouseLeave={leave}>{label}</Link>;
   }
-  return (
-    <span style={base} onMouseEnter={enter} onMouseLeave={leave}
-      onClick={() => document.getElementById(scrollTo!)?.scrollIntoView({ behavior: "smooth" })}>
-      {label}
-    </span>
-  );
+
+  // If already on homepage, smooth-scroll. Otherwise navigate to /#section.
+  if (scrollTo) {
+    if (pathname === "/") {
+      return (
+        <span style={base} onMouseEnter={enter} onMouseLeave={leave}
+          onClick={() => document.getElementById(scrollTo)?.scrollIntoView({ behavior: "smooth" })}>
+          {label}
+        </span>
+      );
+    }
+    return (
+      <Link href={`/#${scrollTo}`} style={base} onMouseEnter={enter} onMouseLeave={leave}>
+        {label}
+      </Link>
+    );
+  }
+
+  return null;
 }
 
 export default function SiteFooter() {

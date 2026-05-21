@@ -75,7 +75,7 @@ export default function InvestorsPage() {
       }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/logo-white.svg" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
+          <img src="/logos/logo-white.png" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <Link href="/about" style={{ fontSize: 14, color: "rgba(255,255,255,0.50)", fontFamily: "var(--font-inter)", textDecoration: "none", fontWeight: 500 }}>About</Link>
