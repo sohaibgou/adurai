@@ -73,7 +73,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           >
             Upload your Meta Ads CSV or connect your account.{" "}
             <strong style={{ color: "#0D0D12", fontWeight: 600 }}>Adur tells you what to kill, what to scale, generates your next winning creatives</strong>
-            {" "}— and runs everything autonomously while you sleep.
+{" "}and runs everything autonomously<br />while you sleep.
           </p>
         </FadeIn>
 
@@ -174,7 +174,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               <div style={{ color: "#F59E0B", fontSize: 14, marginBottom: 4, letterSpacing: 2 }}>★ ★ ★ ★ ★</div>
               <div style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>
                 Trusted by <strong style={{ color: "#0D0D12", fontWeight: 700 }}>1,240+ DTC brands</strong>
-                {" · "}Built by buyers who managed{" "}
+                {" · "}Built by media buyers who managed{" "}
                 <strong style={{ color: "#0D0D12", fontWeight: 700 }}>$70M+ in ad spend</strong>
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             className="md:[transform:rotateY(-3deg)_rotateX(2deg)] md:[transform-style:preserve-3d]"
             style={{
               background: "#fff", borderRadius: 18, border: "1px solid #E8E5E0", overflow: "hidden",
-              boxShadow: "0 40px 80px -20px rgba(13,13,18,0.18), 0 24px 48px -16px rgba(255,60,172,0.08), 0 0 0 1px rgba(13,13,18,0.04)",
+              boxShadow: "0 40px 80px -20px rgba(13,13,18,0.18), 0 0 0 1px rgba(13,13,18,0.04)",
             }}
           >
             {/* Browser chrome */}

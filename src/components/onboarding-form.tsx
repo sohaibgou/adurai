@@ -202,7 +202,6 @@ export default function OnboardingForm({ onComplete, onFileSelected, isLoading, 
     <section
       style={{
         background:      "#FFFFFF",
-        backgroundImage: "linear-gradient(180deg, #FDF2F8 0px, #FFFFFF 120px)",
         paddingTop:       72,
         paddingBottom:    80,
       }}
