@@ -66,6 +66,8 @@ function LoginContent() {
 
     if (redirectTo === "checkout") {
       try { await redirectToCheckout(undefined, planParam); } catch { router.push("/dashboard"); }
+    } else if (redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login") {
+      router.push(redirectTo);
     } else {
       router.push("/dashboard");
     }
