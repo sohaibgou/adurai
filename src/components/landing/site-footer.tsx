@@ -19,7 +19,7 @@ const NAV_COLUMNS = [
     links: [
       { label: "About us",  href: "/about" },
       { label: "Join us",   href: "/join" },
-      { label: "Investors", href: "/investors" },
+      { label: "Investor Programme", href: "/investors" },
     ],
   },
   {
