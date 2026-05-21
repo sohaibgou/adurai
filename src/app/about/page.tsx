@@ -147,7 +147,7 @@ export default function AboutPage() {
             <img
               src="/founder2.jpg"
               alt="Souhaib Gouaalla"
-              style={{ width: "100%", height: 340, objectFit: "cover", objectPosition: "center top", display: "block" }}
+              style={{ width: "100%", height: "auto", display: "block" }}
             />
 
             {/* Info — below the photo */}
