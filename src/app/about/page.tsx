@@ -140,49 +140,54 @@ export default function AboutPage() {
             One person. One obsession. Built from scratch.
           </p>
 
-          <div style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, padding: "36px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Avatar + name row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/founder.jpg"
-                alt="Souhaib Gouaalla"
-                style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
-              />
+          <div style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, overflow: "hidden" }}>
+
+            {/* Photo — top, full width */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/founder2.jpg"
+              alt="Souhaib Gouaalla"
+              style={{ width: "100%", height: 340, objectFit: "cover", objectPosition: "center top", display: "block" }}
+            />
+
+            {/* Info — below the photo */}
+            <div style={{ padding: "28px 32px", display: "flex", flexDirection: "column", gap: 18 }}>
+
+              {/* Name + tags */}
               <div>
-                <div className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 4 }}>
+                <div className="font-heading" style={{ fontSize: 24, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 10 }}>
                   Souhaib Gouaalla
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {["Founder & CEO", "Agency Owner", "23 y/o"].map(tag => (
-                    <span key={tag} style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", background: "rgba(255,60,172,0.08)", padding: "3px 10px", borderRadius: 100, fontFamily: "var(--font-inter)", letterSpacing: "0.04em" }}>
+                    <span key={tag} style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", background: "rgba(255,60,172,0.08)", padding: "4px 12px", borderRadius: 100, fontFamily: "var(--font-inter)", letterSpacing: "0.04em" }}>
                       {tag}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
 
-            {/* Bio */}
-            <p style={{ fontSize: 15, color: "#4B4B55", lineHeight: 1.75, fontFamily: "var(--font-inter)", margin: 0 }}>
-              I&apos;m Souhaib — a media buyer and agency owner who managed over $70M in Meta ad spend across 200+ DTC brands. I built Adur.ai entirely by myself because I was tired of doing manually what AI could do in seconds. No co-founders, no dev team, no VC money. Just the conviction that every brand deserves a senior media buyer on call — at a price anyone can afford.
-            </p>
+              {/* Bio */}
+              <p style={{ fontSize: 15, color: "#4B4B55", lineHeight: 1.75, fontFamily: "var(--font-inter)", margin: 0 }}>
+                I&apos;m Souhaib — a media buyer and agency owner who managed over $70M in Meta ad spend across 200+ DTC brands. I built Adur.ai entirely by myself because I was tired of doing manually what AI could do in seconds. No co-founders, no dev team, no VC money. Just the conviction that every brand deserves a senior media buyer on call — at a price anyone can afford.
+              </p>
 
-            {/* Stats row */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, paddingTop: 8, borderTop: "1px solid #E8E5E0" }}>
-              {[
-                { value: "$70M+", label: "Ad spend managed" },
-                { value: "200+",  label: "DTC brands" },
-                { value: "30+",   label: "Countries" },
-                { value: "Solo",  label: "Built it alone" },
-              ].map(s => (
-                <div key={s.value}>
-                  <div className="font-heading" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                    {s.value}
+              {/* Stats row */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 24, paddingTop: 16, borderTop: "1px solid #E8E5E0" }}>
+                {[
+                  { value: "$70M+", label: "Ad spend managed" },
+                  { value: "200+",  label: "DTC brands" },
+                  { value: "30+",   label: "Countries" },
+                  { value: "Solo",  label: "Built it alone" },
+                ].map(s => (
+                  <div key={s.value}>
+                    <div className="font-heading" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                      {s.value}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{s.label}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{s.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
