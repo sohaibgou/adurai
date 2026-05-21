@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowDown, LayoutDashboard } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import FadeIn from "@/components/fade-in";
 
@@ -10,12 +10,32 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onCtaClick }: HeroSectionProps) {
   return (
-    <section style={{ background: "transparent" }}>
+    <section style={{ background: "transparent", position: "relative" }}>
+
+      {/* ── Ambient background ── */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: [
+          "radial-gradient(ellipse 60% 40% at 75% 10%, rgba(255,60,172,0.08) 0%, transparent 60%)",
+          "radial-gradient(ellipse 50% 35% at 15% 30%, rgba(255,107,53,0.06) 0%, transparent 60%)",
+          "radial-gradient(ellipse 40% 30% at 90% 70%, rgba(124,58,237,0.05) 0%, transparent 60%)",
+        ].join(", "),
+      }} />
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.4,
+        backgroundImage: [
+          "linear-gradient(rgba(13,13,18,0.025) 1px, transparent 1px)",
+          "linear-gradient(90deg, rgba(13,13,18,0.025) 1px, transparent 1px)",
+        ].join(", "),
+        backgroundSize: "64px 64px",
+        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 20%, black 0%, transparent 75%)",
+        maskImage:       "radial-gradient(ellipse 80% 60% at 50% 20%, black 0%, transparent 75%)",
+      }} />
 
       {/* ── Hero copy ── */}
       <div
         className="flex flex-col items-center text-center mx-auto px-6"
-        style={{ maxWidth: 960, paddingTop: 96, paddingBottom: 56 }}
+        style={{ maxWidth: 960, paddingTop: 96, paddingBottom: 56, position: "relative", zIndex: 1 }}
       >
 
         {/* Headline */}
@@ -35,7 +55,13 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           >
             The AI That Runs
             <br />
-            Your Meta Ads.
+            Your{" "}
+            <span style={{
+              background:              "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+              WebkitBackgroundClip:    "text",
+              WebkitTextFillColor:     "transparent",
+              backgroundClip:          "text",
+            }}>Meta Ads</span>.
           </h1>
         </FadeIn>
 
@@ -53,9 +79,9 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
               fontFamily:   "var(--font-inter)",
             }}
           >
-            Upload your CSV or connect your Meta account. Adur tells you exactly what to kill, what to scale, generates your next winning ad creatives — and manages everything autonomously.{" "}
-            <br className="hidden sm:block" />
-            No agency needed.
+            Upload your Meta Ads CSV or connect your account.{" "}
+            <strong style={{ color: "#0D0D12", fontWeight: 600 }}>Adur tells you what to kill, what to scale, generates your next winning creatives</strong>
+            {" "}— and runs everything autonomously while you sleep.
           </p>
         </FadeIn>
 
@@ -109,145 +135,216 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           </div>
         </FadeIn>
 
-        {/* ── Two-path pills ── */}
+        {/* ── Trust badges ── */}
         <FadeIn delay={0.30}>
-          <div style={{ maxWidth: 560, width: "100%" }}>
-            <div style={{ display: "flex", alignItems: "stretch", gap: 0, background: "#fff", border: "1px solid #E8E5E0", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-
-              {/* Pill 1 — CSV */}
-              <button
-                onClick={onCtaClick}
-                className="text-left cursor-pointer"
-                style={{
-                  flex:       1,
-                  padding:    "16px 20px",
-                  display:    "flex",
-                  alignItems: "center",
-                  gap:         12,
-                  transition: "background 0.15s",
-                  background: "transparent",
-                  border:     "none",
-                  borderRadius: 0,
-                }}
-                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "#F7F5F2"; }}
-                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; }}
-              >
-                <span style={{ fontSize: 22, lineHeight: 1 }}>📊</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                      Upload CSV
-                    </span>
-                    <span style={{ background: "#DCFCE7", color: "#14532D", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 100 }}>Free</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
-                    Free · instant analysis
-                  </div>
-                </div>
-                <ArrowDown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#A8A5A0" }} />
-              </button>
-
-              {/* Divider */}
-              <div style={{ width: 1, background: "#E8E5E0", alignSelf: "stretch" }} />
-
-              {/* Pill 2 — Meta / Pro */}
-              <button
-                onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-left cursor-pointer"
-                style={{
-                  flex:       1,
-                  padding:    "16px 20px",
-                  display:    "flex",
-                  alignItems: "center",
-                  gap:         12,
-                  transition: "background 0.15s",
-                  background: "transparent",
-                  border:     "none",
-                  borderRadius: 0,
-                }}
-                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(108,92,231,0.06)"; }}
-                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; }}
-              >
-                <span style={{ fontSize: 22, lineHeight: 1 }}>🤖</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-                      Connect Meta Account
-                    </span>
-                    <span style={{ fontSize: 9, fontWeight: 800, color: "#6c5ce7", background: "rgba(108,92,231,0.12)", padding: "2px 7px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                      Pro
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
-                    Full autopilot · AI Manager
-                  </div>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#6c5ce7" }} />
-              </button>
-
-            </div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 0 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", fontWeight: 500 }}>
+              <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#DCFCE7", color: "#16A34A", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, flexShrink: 0 }}>✓</span>
+              Free analysis
+            </span>
+            <span style={{ margin: "0 12px", color: "#D4D0CA" }}>·</span>
+            <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", fontWeight: 500 }}>No credit card</span>
+            <span style={{ margin: "0 12px", color: "#D4D0CA" }}>·</span>
+            <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", fontWeight: 500 }}>60-second setup</span>
           </div>
         </FadeIn>
 
-        {/* Trust pill */}
+        {/* ── Social proof ── */}
         <FadeIn delay={0.38}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "#0D0D12", color: "#fff", borderRadius: 20, padding: "10px 18px", marginTop: 28 }}>
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.6, flexShrink: 0 }}>
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <div style={{ fontSize: 12, lineHeight: 1.5, textAlign: "center" }}>
-              Built by media buyers who&apos;ve managed&nbsp;
-              <strong style={{ fontWeight: 700, background: "linear-gradient(90deg,#FF3CAC,#FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>$70M+</strong>
-              &nbsp;in ad spend
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
+            marginTop: 32, paddingTop: 28, borderTop: "1px solid #E8E5E0", flexWrap: "wrap",
+          }}>
+            {/* Avatars */}
+            <div style={{ display: "flex" }}>
+              {[
+                { initials: "MK", bg: "linear-gradient(135deg, #FF3CAC, #FF6B35)" },
+                { initials: "JR", bg: "linear-gradient(135deg, #2A6FA3, #6BAEDB)" },
+                { initials: "SH", bg: "linear-gradient(135deg, #16A34A, #84CC16)" },
+                { initials: "DP", bg: "linear-gradient(135deg, #7C3AED, #C084FC)" },
+                { initials: "+",  bg: "#0D0D12" },
+              ].map((a, i) => (
+                <div key={a.initials} style={{
+                  width: 36, height: 36, borderRadius: "50%",
+                  border: "2.5px solid #FAF8F5",
+                  background: a.bg,
+                  marginLeft: i === 0 ? 0 : -10,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", fontWeight: 700, fontSize: 13, letterSpacing: "-0.02em",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0,
+                }}>
+                  {a.initials}
+                </div>
+              ))}
+            </div>
+            {/* Stars + text */}
+            <div>
+              <div style={{ color: "#F59E0B", fontSize: 14, marginBottom: 4, letterSpacing: 2 }}>★ ★ ★ ★ ★</div>
+              <div style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>
+                Trusted by <strong style={{ color: "#0D0D12", fontWeight: 700 }}>1,240+ DTC brands</strong>
+                {" · "}Built by buyers who managed{" "}
+                <strong style={{ color: "#0D0D12", fontWeight: 700 }}>$70M+ in ad spend</strong>
+              </div>
             </div>
           </div>
         </FadeIn>
       </div>
 
       {/* ── Product preview ── */}
-      <div className="px-4 sm:px-6" style={{ paddingBottom: 80, maxWidth: 1040, margin: "0 auto" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 20, padding: 2, boxShadow: "0 24px 64px rgba(0,0,0,0.09),0 4px 16px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-          {/* Browser chrome */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 16px", borderBottom: "1px solid #F0EDE8" }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#FF5F57" }} />
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#FFBD2E" }} />
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#28C940" }} />
-          </div>
-          <div className="flex flex-col md:flex-row gap-4 p-4 md:p-6">
-            {/* Sidebar */}
-            <div className="md:w-56 flex-shrink-0" style={{ background: "#F7F5F2", borderRadius: 12, padding: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A8A5A0", marginBottom: 12 }}>Account overview</p>
-              {[
-                { label: "Total spend",   val: "$4,820",   color: undefined },
-                { label: "Avg. ROAS",     val: "3.2×",     color: "#16A34A" },
-                { label: "CPP",           val: "$38.40",   color: "#DC2626" },
-                { label: "Wasted spend",  val: "$1,140",   color: "#DC2626" },
-                { label: "Active ad sets",val: "14",       color: undefined },
-                { label: "Health score",  val: "62 / 100", color: "#D97706" },
-              ].map((row, i, arr) => (
-                <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < arr.length - 1 ? "1px solid #EDE9E3" : "none" }}>
-                  <span style={{ fontSize: 12, color: "#6B6B72" }}>{row.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: row.color ?? "#0D0D12" }}>{row.val}</span>
-                </div>
-              ))}
+      <div className="px-4 sm:px-6" style={{ paddingBottom: 80, maxWidth: 1040, margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div style={{ position: "relative" }}>
+
+          {/* Floating Adur AI toast — top right */}
+          <div className="hidden lg:flex" style={{
+            position: "absolute", top: 68, right: -32,
+            background: "#0D0D12", color: "#fff",
+            borderRadius: 14, padding: "14px 18px 14px 14px",
+            boxShadow: "0 20px 40px rgba(13,13,18,0.25), 0 0 0 1px rgba(255,255,255,0.06)",
+            alignItems: "flex-start", gap: 12,
+            width: 280, transform: "rotate(2deg)", zIndex: 3,
+          }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 14, flexShrink: 0, boxShadow: "0 4px 12px rgba(255,60,172,0.4)" }}>A</div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 3 }}>✦ Adur</div>
+              <div style={{ fontSize: 12.5, lineHeight: 1.4, color: "#fff", fontWeight: 500 }}>
+                Killed <strong>Lookalike 2% — Cold</strong>.<br />CPA breached threshold for 6h.<br />Saved <span style={{ color: "#16A34A", fontWeight: 700 }}>+$1,420</span>.
+              </div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginTop: 6, fontFamily: "monospace", letterSpacing: "0.06em" }}>02:14 · TODAY</div>
             </div>
-            {/* Diagnosis cards */}
-            <div className="flex-1 flex flex-col gap-3">
-              {[
-                { dot: "#DC2626", title: 'Ad Set "Lookalike 2% — Cold" is bleeding budget', body: "$640 spent in 7 days. 0 purchases. CPM is 3× account average. Audience likely saturated.", tag: "→ Pause immediately", tagBg: "#FEE2E2", tagColor: "#991B1B" },
-                { dot: "#16A34A", title: '"Retargeting — Viewers 7d" has room to scale',   body: "ROAS 5.8× on $320 spend. Frequency still low at 1.4. Budget is too conservative.", tag: "→ Scale budget 2×", tagBg: "#DCFCE7", tagColor: "#14532D" },
-                { dot: "#D97706", title: "Creative fatigue detected across 3 ad sets",       body: "CTR dropped 40% week-over-week. Same creative running 18 days. Refresh needed.", tag: "→ Refresh creatives", tagBg: "#FEF3C7", tagColor: "#78350F" },
-              ].map(card => (
-                <div key={card.tag} style={{ background: "#F7F5F2", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: card.dot, marginTop: 5, flexShrink: 0 }} />
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{card.title}</p>
-                    <p style={{ fontSize: 12, color: "#6B6B72", lineHeight: 1.5 }}>{card.body}</p>
-                    <span style={{ display: "inline-block", marginTop: 8, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: card.tagBg, color: card.tagColor }}>{card.tag}</span>
+          </div>
+
+          {/* Floating creative toast — bottom left */}
+          <div className="hidden lg:flex" style={{
+            position: "absolute", bottom: 60, left: -36,
+            background: "#fff", border: "1px solid #E8E5E0",
+            borderRadius: 14, padding: 12,
+            boxShadow: "0 20px 40px rgba(13,13,18,0.12)",
+            alignItems: "center", gap: 10,
+            width: 270, transform: "rotate(-2deg)", zIndex: 3,
+          }}>
+            <div style={{ width: 48, height: 48, borderRadius: 8, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 11, boxShadow: "0 4px 10px rgba(255,60,172,0.25)" }}>AD</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "-0.01em" }}>4 new creatives drafted</div>
+              <div style={{ fontSize: 10.5, color: "#6B6B72", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontWeight: 700 }}>✦ Generated</span>
+                <span>·</span>
+                <span>2 pushed live</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Product frame */}
+          <div style={{
+            background: "#fff", borderRadius: 18, border: "1px solid #E8E5E0", overflow: "hidden",
+            boxShadow: "0 40px 80px -20px rgba(13,13,18,0.18), 0 24px 48px -16px rgba(255,60,172,0.08), 0 0 0 1px rgba(13,13,18,0.04)",
+            transform: "rotateY(-3deg) rotateX(2deg)", transformStyle: "preserve-3d",
+          }}>
+            {/* Browser chrome */}
+            <div style={{ background: "#F7F5F2", height: 36, display: "flex", alignItems: "center", padding: "0 14px", borderBottom: "1px solid #E8E5E0", gap: 14 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#FF5F57" }} />
+                <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#FFBD2E" }} />
+                <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#28C940" }} />
+              </div>
+              <div style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 6, padding: "3px 10px", fontFamily: "monospace", fontSize: 11, color: "#A8A5A0", flex: 1, maxWidth: 280, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#16A34A", flexShrink: 0 }} />
+                <span>app.adur.ai/dashboard</span>
+              </div>
+            </div>
+
+            {/* Product body */}
+            <div style={{ background: "#FAF8F5", display: "grid", gridTemplateColumns: "200px 1fr", minHeight: 480 }}>
+
+              {/* Sidebar */}
+              <aside style={{ background: "#fff", borderRight: "1px solid #E8E5E0", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A8A5A0", padding: "8px 10px 4px" }}>Account</div>
+                {[
+                  { icon: "◐", label: "Diagnose",   count: "12", active: true  },
+                  { icon: "◔", label: "Campaigns",  count: null,  active: false },
+                  { icon: "✦", label: "Creatives",  count: "47", active: false },
+                  { icon: "⊟", label: "Battle plan",count: null,  active: false },
+                  { icon: "⌁", label: "Autopilot",  count: null,  active: false },
+                ].map(item => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, fontSize: 13, fontWeight: item.active ? 600 : 500, color: item.active ? "#0D0D12" : "#6B6B72", background: item.active ? "rgba(255,60,172,0.08)" : "transparent", cursor: "pointer" }}>
+                    <span style={{ color: item.active ? "#FF3CAC" : "#A8A5A0", fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {item.count && (
+                      <span style={{ fontSize: 11, background: item.active ? "linear-gradient(135deg, #FF3CAC, #FF6B35)" : "#F0EDE8", color: item.active ? "#fff" : "#6B6B72", padding: "1px 7px", borderRadius: 999, fontWeight: 600 }}>{item.count}</span>
+                    )}
+                  </div>
+                ))}
+                <div style={{ height: 1, background: "#E8E5E0", margin: "12px 4px" }} />
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A8A5A0", padding: "8px 10px 4px" }}>Settings</div>
+                {[
+                  { icon: "⌬", label: "Integrations" },
+                  { icon: "○", label: "Team" },
+                ].map(item => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, fontSize: 13, fontWeight: 500, color: "#6B6B72", cursor: "pointer" }}>
+                    <span style={{ color: "#A8A5A0" }}>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </aside>
+
+              {/* Main panel */}
+              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Panel header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
+                    Diagnose
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#DCFCE7", color: "#14532D", fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 999 }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#16A34A", display: "inline-block" }} />
+                      Live · 09:41
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {["⤓", "⟳", "⋯"].map(icon => (
+                      <div key={icon} style={{ width: 26, height: 26, borderRadius: 7, background: "#F7F5F2", border: "1px solid #E8E5E0", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6B72", cursor: "pointer", fontSize: 12 }}>{icon}</div>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                {/* KPI row */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                  {[
+                    { label: "Spend (30d)", val: "$4,820",  suffix: null,  delta: "↓ 12%",   type: "down"  },
+                    { label: "ROAS",        val: "3.2×",    suffix: null,  delta: "↑ 0.8×",  type: "up"    },
+                    { label: "Wasted",      val: "$1,140",  suffix: null,  delta: "−68%",    type: "brand" },
+                    { label: "Health",      val: "86",      suffix: "/100",delta: "↑ 24 pts",type: "up"    },
+                  ].map(kpi => (
+                    <div key={kpi.label} style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#A8A5A0", textTransform: "uppercase" }}>{kpi.label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "#0D0D12", marginTop: 4 }}>
+                        {kpi.val}{kpi.suffix && <span style={{ fontSize: 13, color: "#A8A5A0", fontWeight: 600 }}>{kpi.suffix}</span>}
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4, color: kpi.type === "up" ? "#16A34A" : kpi.type === "down" ? "#DC2626" : undefined }}>
+                        {kpi.type === "brand"
+                          ? <span style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{kpi.delta}</span>
+                          : kpi.delta}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Diagnosis list */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[
+                    { dot: "#DC2626", title: "Lookalike 2% — Cold is bleeding budget",          meta: "$640 SPENT · 0 PURCHASES · CPM 3× AVG",     action: "→ Pause",    actionBg: "#FEE2E2", actionColor: "#991B1B" },
+                    { dot: "#16A34A", title: "Retargeting Viewers 7d has room to scale",        meta: "ROAS 5.8× · FREQ 1.4 · BUDGET TOO LOW",      action: "→ Scale 2×", actionBg: "#DCFCE7", actionColor: "#14532D" },
+                    { dot: "#D97706", title: "Creative fatigue across 3 ad sets",               meta: "CTR −40% WoW · SAME CREATIVE 18 DAYS",        action: "→ Refresh",  actionBg: "#FEF3C7", actionColor: "#78350F" },
+                    { dot: "#16A34A", title: "Summer Sale — Broad outperforming benchmark",     meta: "ROAS 4.6× · CPA $11.20 · +110% HEADROOM",    action: "→ Scale 3×", actionBg: "#DCFCE7", actionColor: "#14532D" },
+                  ].map(card => (
+                    <div key={card.title} style={{ background: "#fff", border: "1px solid #E8E5E0", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: card.dot, marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}>{card.title}</div>
+                        <div style={{ fontSize: 11, color: "#6B6B72", marginTop: 2, fontFamily: "monospace" }}>{card.meta}</div>
+                      </div>
+                      <div style={{ alignSelf: "center", flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 7, background: card.actionBg, color: card.actionColor }}>{card.action}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
