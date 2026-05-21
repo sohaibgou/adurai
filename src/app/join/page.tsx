@@ -44,11 +44,27 @@ const submitStyle: React.CSSProperties = {
 export default function JoinPage() {
   const [form, setForm] = useState({ name: "", email: "", role: "", linkedin: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire to backend
-    setSent(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Something went wrong");
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -193,7 +209,14 @@ export default function JoinPage() {
                 onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.boxShadow = "none"; }}
               />
-              <button type="submit" style={submitStyle}>Send application →</button>
+              {error && (
+                <p style={{ fontSize: 13, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.20)", borderRadius: 10, padding: "10px 14px", fontFamily: "var(--font-inter)", textAlign: "center" }}>
+                  {error}
+                </p>
+              )}
+              <button type="submit" disabled={loading} style={{ ...submitStyle, opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Sending…" : "Send application →"}
+              </button>
             </form>
           )}
         </div>
