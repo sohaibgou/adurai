@@ -48,12 +48,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
             The AI That Runs
             <br />
             Your{" "}
-            <span style={{
-              background:              "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
-              WebkitBackgroundClip:    "text",
-              WebkitTextFillColor:     "transparent",
-              backgroundClip:          "text",
-            }}>Meta Ads</span>.
+            <span>Meta Ads</span>.
           </h1>
         </FadeIn>
 

@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 4. Create Stripe session ──────────────────────────────────────────────
+  const baseUrl = (process.env.NEXT_PUBLIC_URL ?? "").replace(/\/$/, "")
+    || `${req.headers.get("x-forwarded-proto") ?? "https"}://${req.headers.get("host")}`;
+
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -59,8 +62,8 @@ export async function POST(req: NextRequest) {
       ...(userEmail ? { customer_email: userEmail } : {}),
       line_items: [{ price: priceId, quantity: 1 }],
       metadata:   { user_id: userId, plan },
-      success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
-      cancel_url:  `${process.env.NEXT_PUBLIC_URL}/#pricing`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
+      cancel_url:  `${baseUrl}/#pricing`,
     });
 
     return NextResponse.json({ url: session.url });
