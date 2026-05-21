@@ -218,17 +218,6 @@ export default function JoinPage() {
         </div>
       </section>
 
-      {/* ── Footer strip ── */}
-      <div style={{ background: "#0D0D12", borderTop: "1px solid rgba(255,255,255,0.06)", padding: "20px 24px", textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.22)", fontFamily: "var(--font-inter)" }}>
-          © {new Date().getFullYear()} Adur.ai ·{" "}
-          <Link href="/about" style={{ color: "rgba(255,255,255,0.30)", textDecoration: "none" }}>About</Link>
-          {" · "}
-          <Link href="/investors" style={{ color: "rgba(255,255,255,0.30)", textDecoration: "none" }}>Investors</Link>
-          {" · "}
-          <Link href="/privacy" style={{ color: "rgba(255,255,255,0.30)", textDecoration: "none" }}>Privacy</Link>
-        </p>
-      </div>
 
     </div>
   );
