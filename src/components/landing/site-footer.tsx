@@ -17,9 +17,9 @@ const NAV_COLUMNS = [
   {
     heading: "Company",
     links: [
-      { label: "About us",    href: "/about" },
-      { label: "Join us",     href: "/join" },
-      { label: "Investors",   href: "/join#investors" },
+      { label: "About us",  href: "/about" },
+      { label: "Join us",   href: "/join" },
+      { label: "Investors", href: "/investors" },
     ],
   },
   {
@@ -174,7 +174,7 @@ export default function SiteFooter() {
             </span>
           </div>
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.18)", fontFamily: "var(--font-inter)" }}>
-            Built for DTC brands · Powered by Claude AI
+            Built for DTC brands
           </p>
         </div>
 
