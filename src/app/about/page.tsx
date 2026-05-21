@@ -143,14 +143,12 @@ export default function AboutPage() {
           <div style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, padding: "36px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Avatar + name row */}
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              <div style={{
-                width: 72, height: 72, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(255,60,172,0.30)",
-              }}>
-                <span style={{ color: "#fff", fontWeight: 900, fontSize: 28, fontFamily: "var(--font-inter)" }}>S</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/souhaib.jpg"
+                alt="Souhaib Gouaalla"
+                style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
+              />
               <div>
                 <div className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 4 }}>
                   Souhaib Gouaalla
