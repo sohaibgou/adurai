@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About — Adur.ai",
-  description: "The story, mission, and people behind Adur.ai — built by media buyers who managed $70M+ in Meta ad spend.",
+  description: "Adur.ai was built by Souhaib Gouaalla — a 23-year-old agency owner and media buyer who managed $70M+ in Meta ad spend and built the tool he wished existed.",
 };
 
 const NAV_LOGO = (
@@ -92,7 +92,7 @@ export default function AboutPage() {
         </h1>
 
         <p style={{ fontSize: "clamp(16px, 2vw, 18px)", color: "#6B6B72", lineHeight: 1.7, maxWidth: 580, margin: "0 auto", fontFamily: "var(--font-inter)" }}>
-          Adur.ai didn&apos;t come from a pitch deck. It came from running live ad accounts — wasting money at 2am, fighting Meta&apos;s algorithm, and realising AI could do the heavy lifting.
+          Adur.ai didn&apos;t come from a pitch deck or a VC war room. It came from one person — running live accounts, wasting money at 2am, and deciding there had to be a better way.
         </p>
       </section>
 
@@ -119,10 +119,10 @@ export default function AboutPage() {
         </h2>
 
         {[
-          "We spent years managing Meta ad accounts for DTC brands — fashion, beauty, supplements, home goods. We saw the same mistakes everywhere: budgets burning on dead audiences, creative fatigue going unnoticed for weeks, ROAS numbers that looked fine but hid profit leaks.",
-          "The tools existed. Meta Ads Manager shows you the data. But interpreting it, diagnosing the problems, and turning that into a prioritised action plan? That took hours of expertise every week — expertise most brands couldn't afford to hire full-time.",
-          "When LLMs got good enough to reason about campaign data the way a senior media buyer does, we built Adur. Not as a replacement for human judgement, but as a force multiplier — so a solo founder can think like a $70M ad account manager.",
-          "Today Adur is used by DTC brands across 30+ countries. It's opinionated, fast, and ruthlessly focused on one thing: making your ad spend more profitable.",
+          "I spent years running Meta ad accounts for DTC brands — fashion, beauty, supplements, home goods. I saw the same mistakes everywhere: budgets burning on dead audiences, creative fatigue going unnoticed for weeks, ROAS numbers that looked fine but hid serious profit leaks.",
+          "The data was always there in Meta Ads Manager. But turning it into a clear diagnosis and a prioritised action plan? That took hours of senior expertise every week — expertise most brands couldn't afford to have on call.",
+          "When LLMs got good enough to reason about campaign data the way a senior media buyer does, I built Adur. Not as a replacement for human judgement, but as a force multiplier — so any brand can think like a $70M account manager.",
+          "I built every line of it myself. Today Adur is used by DTC brands across 30+ countries. It&apos;s opinionated, fast, and focused on one thing: making your ad spend more profitable.",
         ].map((para, i) => (
           <p key={i} style={{ fontSize: 16, color: "#4B4B55", lineHeight: 1.8, marginBottom: 20, fontFamily: "var(--font-inter)" }}>
             {para}
@@ -130,42 +130,62 @@ export default function AboutPage() {
         ))}
       </section>
 
-      {/* ── Team placeholder ── */}
+      {/* ── Founder ── */}
       <section style={{ background: "#fff", borderTop: "1px solid #E8E5E0", borderBottom: "1px solid #E8E5E0", padding: "80px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <h2 className="font-heading" style={{ fontSize: "clamp(26px, 3.5vw, 36px)", fontWeight: 900, letterSpacing: "-0.04em", color: "#0D0D12", marginBottom: 8 }}>
-            The team
+            The founder
           </h2>
           <p style={{ fontSize: 15, color: "#6B6B72", fontFamily: "var(--font-inter)", marginBottom: 48 }}>
-            A small, focused team obsessed with paid media performance.
+            One person. One obsession. Built from scratch.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {[
-              { initials: "SG", name: "Sohaib G.", role: "Founder & CEO", bio: "Media buyer turned builder. Managed $70M+ in Meta ad spend across 200+ DTC brands." },
-              { initials: "?",  name: "Your name here", role: "Join the team", bio: "We're looking for exceptional people who are obsessed with performance marketing.", cta: true },
-              { initials: "?",  name: "Your name here", role: "Join the team", bio: "Engineers, growth marketers, and AI researchers — see our open roles.", cta: true },
-            ].map((person, i) => (
-              <div key={i} style={{ background: person.cta ? "transparent" : "#FAF8F5", border: `1px solid ${person.cta ? "rgba(255,60,172,0.20)" : "#E8E5E0"}`, borderRadius: 18, padding: "28px 24px", ...(person.cta ? { background: "rgba(255,60,172,0.03)" } : {}) }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: "50%", marginBottom: 16,
-                  background: person.cta ? "rgba(255,60,172,0.10)" : "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-                  border: person.cta ? "1.5px dashed rgba(255,60,172,0.35)" : "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: person.cta ? "#FF3CAC" : "#fff", fontWeight: 700, fontSize: 18,
-                }}>
-                  {person.initials}
-                </div>
-                <div className="font-heading" style={{ fontSize: 17, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.02em", marginBottom: 3 }}>{person.name}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#FF3CAC", letterSpacing: "0.05em", textTransform: "uppercase", fontFamily: "var(--font-inter)", marginBottom: 12 }}>{person.role}</div>
-                <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.6, fontFamily: "var(--font-inter)", marginBottom: person.cta ? 16 : 0 }}>{person.bio}</p>
-                {person.cta && (
-                  <Link href="/join" style={{ fontSize: 13, fontWeight: 600, color: "#FF3CAC", textDecoration: "none", fontFamily: "var(--font-inter)" }}>
-                    See open roles →
-                  </Link>
-                )}
+          <div style={{ background: "#FAF8F5", border: "1px solid #E8E5E0", borderRadius: 22, padding: "36px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Avatar + name row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%", flexShrink: 0,
+                background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 8px 24px rgba(255,60,172,0.30)",
+              }}>
+                <span style={{ color: "#fff", fontWeight: 900, fontSize: 28, fontFamily: "var(--font-inter)" }}>S</span>
               </div>
-            ))}
+              <div>
+                <div className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 4 }}>
+                  Souhaib Gouaalla
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["Founder & CEO", "Agency Owner", "23 y/o"].map(tag => (
+                    <span key={tag} style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", background: "rgba(255,60,172,0.08)", padding: "3px 10px", borderRadius: 100, fontFamily: "var(--font-inter)", letterSpacing: "0.04em" }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <p style={{ fontSize: 15, color: "#4B4B55", lineHeight: 1.75, fontFamily: "var(--font-inter)", margin: 0 }}>
+              I&apos;m Souhaib — a media buyer and agency owner who managed over $70M in Meta ad spend across 200+ DTC brands. I built Adur.ai entirely by myself because I was tired of doing manually what AI could do in seconds. No co-founders, no dev team, no VC money. Just the conviction that every brand deserves a senior media buyer on call — at a price anyone can afford.
+            </p>
+
+            {/* Stats row */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, paddingTop: 8, borderTop: "1px solid #E8E5E0" }}>
+              {[
+                { value: "$70M+", label: "Ad spend managed" },
+                { value: "200+",  label: "DTC brands" },
+                { value: "30+",   label: "Countries" },
+                { value: "Solo",  label: "Built it alone" },
+              ].map(s => (
+                <div key={s.value}>
+                  <div className="font-heading" style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                    {s.value}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
