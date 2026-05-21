@@ -14,7 +14,6 @@ import FeaturesSection from "@/components/landing/features-section";
 import HowItWorks from "@/components/landing/how-it-works";
 import PricingSection from "@/components/landing/pricing-section";
 import CtaSection from "@/components/landing/cta-section";
-import SiteFooter from "@/components/landing/site-footer";
 import PaywallModal from "@/components/paywall-modal";
 import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
@@ -586,7 +585,7 @@ export default function Home() {
         <FeaturesSection />
         <PricingSection onCtaClick={scrollToOnboarding} />
         <CtaSection onCtaClick={scrollToOnboarding} />
-        <SiteFooter />
+
       </motion.div>
     </>
   );

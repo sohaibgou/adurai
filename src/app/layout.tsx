@@ -3,6 +3,7 @@ import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Analytics } from "@vercel/analytics/next";
+import ConditionalFooter from "@/components/conditional-footer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,7 +34,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${geist.variable} ${geist.className} h-full antialiased`} suppressHydrationWarning={true}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <ConditionalFooter />
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
