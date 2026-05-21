@@ -155,6 +155,7 @@ export default function ResultsPage() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [noResults, setNoResults] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
   const [paidPlan, setPaidPlan] = useState(false);
@@ -172,7 +173,8 @@ export default function ResultsPage() {
       const rawFormData = sessionStorage.getItem("adur_form_data");
 
       if (!rawResults) {
-        router.replace("/analyze");
+        setNoResults(true);
+        setHydrated(true);
         return;
       }
 
@@ -184,7 +186,8 @@ export default function ResultsPage() {
       setAnalysis(parsedAnalysis);
       setOnboarding(parsedOnboarding);
     } catch {
-      router.replace("/analyze");
+      setNoResults(true);
+      setHydrated(true);
       return;
     }
 
@@ -259,6 +262,108 @@ export default function ResultsPage() {
           </p>
         </div>
       </div>
+    );
+  }
+
+  /* ── Empty state ── */
+  if (noResults) {
+    const isPaidEmpty = paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email));
+    return (
+      <>
+      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
+      <div style={{ display: "flex", minHeight: "100vh", background: "#F7F5F2" }}>
+        <AppSidebar
+          activePage="results"
+          isPaid={isPaidEmpty}
+          subLoading={authLoading}
+          user={user}
+          onSignOut={async () => { await signOut(); router.push("/"); }}
+          onUpgrade={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
+        />
+        <div style={{ flex: 1 }} className="lg:ml-60">
+          {/* Top bar */}
+          <header
+            className="pl-14 pr-4 lg:px-8"
+            style={{
+              height: 64,
+              background: "rgba(247,245,242,0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              borderBottom: "1px solid #E8E5E0",
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div className="hidden lg:flex items-center gap-1.5" style={{ fontFamily: "var(--font-inter)" }}>
+              <span style={{ fontSize: 13, color: "#A8A5A0", fontWeight: 500 }}>Dashboard</span>
+              <ChevronRight style={{ width: 13, height: 13, color: "#C8C5C0" }} />
+              <span style={{ fontSize: 13, color: "#0D0D12", fontWeight: 600 }}>Last Results</span>
+            </div>
+            <div className="flex lg:hidden items-center gap-2">
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>A</span>
+              </div>
+            </div>
+            {!authLoading && user && (
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 10px rgba(255,60,172,0.26)", flexShrink: 0 }} title={user.email ?? ""}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "var(--font-inter)" }}>
+                  {(user.email?.[0] ?? "U").toUpperCase()}
+                </span>
+              </div>
+            )}
+          </header>
+
+          {/* Empty state body */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 64px)", padding: "40px 24px", textAlign: "center" }}>
+            {/* Illustration */}
+            <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(255,60,172,0.08)", border: "1.5px solid rgba(255,60,172,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28 }}>
+              <BarChart3 style={{ width: 36, height: 36, color: "#FF3CAC", opacity: 0.6 }} />
+            </div>
+
+            <h2 className="font-heading" style={{ fontSize: 26, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1.15, marginBottom: 10 }}>
+              No results yet
+            </h2>
+            <p style={{ fontSize: 14, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.65, maxWidth: 360, marginBottom: 32 }}>
+              You haven&apos;t run any analysis in this session. Upload your Meta Ads CSV and get a full breakdown in under 60 seconds.
+            </p>
+
+            <button
+              onClick={() => router.push("/analyze")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "14px 32px",
+                borderRadius: 100,
+                background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 15,
+                fontFamily: "var(--font-inter)",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(255,60,172,0.34)",
+                letterSpacing: "-0.01em",
+                transition: "opacity 0.15s, transform 0.15s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
+            >
+              <Plus style={{ width: 16, height: 16 }} />
+              Analyze My Campaigns
+            </button>
+
+            <p style={{ marginTop: 16, fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
+              Free · no credit card needed
+            </p>
+          </div>
+        </div>
+      </div>
+      </>
     );
   }
 
