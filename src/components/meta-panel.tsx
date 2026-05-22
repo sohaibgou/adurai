@@ -230,7 +230,7 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
       if (pollRef.current) clearInterval(pollRef.current);
       window.removeEventListener("message", onMessage);
       setConnecting(false);
-      try { popup.close(); } catch { /* already closed */ }
+      try { popup?.close(); } catch { /* already closed */ }
     }
   }
 
