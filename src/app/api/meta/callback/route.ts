@@ -1,217 +1,160 @@
 /**
  * GET /api/meta/callback
  *
- * Handles the redirect back from Meta's OAuth authorisation endpoint.
+ * Handles the redirect back from Facebook OAuth.
  *
- * 1. Reads PKCE state from the httpOnly cookie set by /api/meta/connect
- * 2. Exchanges the authorisation code for a Meta MCP access token
- * 3. Calls Claude API with the MCP token to discover the user's ad accounts
+ * 1. Validates the CSRF state token from the cookie
+ * 2. Exchanges the authorisation code for an access token via Graph API
+ * 3. Fetches the user's Meta user ID and first active ad account
  * 4. Upserts the connection in Supabase
- * 5. Redirects to /dashboard?meta=connected
+ * 5. Posts a message to the opener and closes the popup
  */
-import { NextRequest, NextResponse } from "next/server";
-import { cookies }                   from "next/headers";
-import { supabaseAdmin }             from "@/lib/supabase-server";
+import { NextRequest } from "next/server";
+import { cookies }     from "next/headers";
+import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
-const META_MCP_URL  = "https://mcp.facebook.com/ads";
-const MCP_BETA      = "mcp-client-2025-04-04";
+const HTML_OK = `<html><body><script>
+  window.opener && window.opener.postMessage('meta_connected', '*');
+  window.close();
+</script></body></html>`;
 
-// ── Use Claude + Meta MCP to resolve the first active ad account ──────────────
-
-interface AdAccountInfo {
-  adAccountId:   string;
-  adAccountName: string;
-  metaUserId:    string;
+function htmlFail(reason: string) {
+  const safe = JSON.stringify(reason);
+  return new Response(
+    `<html><body><script>
+      console.error('[meta/callback] failed:', ${safe});
+      window.opener && window.opener.postMessage({type:'meta_connection_failed',reason:${safe}},'*');
+      window.close();
+    </script></body></html>`,
+    { headers: { "Content-Type": "text/html" } },
+  );
 }
-
-async function resolveAdAccount(mcpToken: string): Promise<AdAccountInfo | null> {
-  try {
-    const res = await fetch(ANTHROPIC_API, {
-      method:  "POST",
-      headers: {
-        "Content-Type":      "application/json",
-        "x-api-key":         process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta":    MCP_BETA,
-      },
-      body: JSON.stringify({
-        model:       "claude-opus-4-5",
-        max_tokens:  1024,
-        mcp_servers: [{
-          type:                "url",
-          url:                 META_MCP_URL,
-          name:                "meta-ads",
-          authorization_token: mcpToken,
-        }],
-        messages: [{
-          role:    "user",
-          content: `List the Meta ad accounts accessible to this user.
-Return ONLY a valid JSON object — no markdown, no explanations:
-{
-  "userId": "meta_user_id_string",
-  "adAccounts": [
-    { "id": "act_XXXXXXX", "name": "Account Name", "status": 1 }
-  ]
-}
-Prefer accounts with status=1 (ACTIVE). Include all accounts found.`,
-        }],
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) {
-      console.error("[callback] Claude API error:", res.status, await res.text().catch(() => ""));
-      return null;
-    }
-
-    const data = await res.json() as {
-      content?: Array<{ type: string; text?: string }>;
-      error?:   { message: string };
-    };
-
-    if (data.error) {
-      console.error("[callback] Claude error:", data.error.message);
-      return null;
-    }
-
-    const text = (data.content ?? [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text ?? "")
-      .join("\n")
-      .trim();
-
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]+\}/);
-    if (!jsonMatch) return null;
-
-    const parsed = JSON.parse(jsonMatch[0]) as {
-      userId?:     string;
-      adAccounts?: Array<{ id: string; name: string; status?: number }>;
-    };
-
-    const accounts   = parsed.adAccounts ?? [];
-    const activeAcct = accounts.find((a) => a.status === 1) ?? accounts[0];
-    if (!activeAcct) return null;
-
-    return {
-      adAccountId:   activeAcct.id.replace(/^act_/, ""),
-      adAccountName: activeAcct.name,
-      metaUserId:    parsed.userId ?? "",
-    };
-  } catch (err) {
-    console.error("[callback] resolveAdAccount error:", err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
-// ── GET handler ───────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const code  = searchParams.get("code");
-  const state = searchParams.get("state");
-  const error = searchParams.get("error");
-  const baseUrl = process.env.NEXT_PUBLIC_URL!;
+  const code        = searchParams.get("code");
+  const stateParam  = searchParams.get("state");
+  const oauthError  = searchParams.get("error");
 
-  if (error) {
-    console.warn("[meta/callback] OAuth denied:", searchParams.get("error_description"));
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=denied`);
-  }
-  if (!code || !state) {
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+  // ── User denied the permission dialog ─────────────────────────────────────
+  if (oauthError) {
+    const desc = searchParams.get("error_description") ?? oauthError;
+    console.warn("[meta/callback] OAuth denied:", desc);
+    return htmlFail(`oauth_denied: ${desc}`);
   }
 
-  // 1. Decode state to get userId + clientId
-  let userId:   string;
-  let clientId: string;
+  if (!code || !stateParam) {
+    console.error("[meta/callback] Missing code or state");
+    return htmlFail("missing_code_or_state");
+  }
+
+  // ── Validate CSRF state ────────────────────────────────────────────────────
+  let userId: string;
+  let csrf:   string;
   try {
-    const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf8")) as {
-      userId?: string;
-      clientId?: string;
-    };
-    userId   = decoded.userId   ?? "";
-    clientId = decoded.clientId ?? "";
-    if (!userId) throw new Error("missing userId in state");
+    const decoded = JSON.parse(
+      Buffer.from(stateParam, "base64url").toString("utf8"),
+    ) as { csrf?: string; userId?: string };
+    csrf   = decoded.csrf   ?? "";
+    userId = decoded.userId ?? "";
+    if (!csrf || !userId) throw new Error("Incomplete state payload");
   } catch (err) {
-    console.error("[meta/callback] invalid state:", err);
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+    console.error("[meta/callback] Invalid state:", err);
+    return htmlFail("invalid_state_payload");
   }
 
-  // 2. Read PKCE state from httpOnly cookie
-  const cookieStore  = await cookies();
-  const cookieValue  = cookieStore.get("meta_mcp_oauth")?.value;
-  if (!cookieValue) {
-    console.error("[meta/callback] missing meta_mcp_oauth cookie");
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+  const cookieStore = await cookies();
+  const storedCsrf  = cookieStore.get("meta_oauth_state")?.value;
+  if (!storedCsrf || storedCsrf !== csrf) {
+    console.error("[meta/callback] CSRF mismatch — storedCsrf:", storedCsrf ? "present" : "missing");
+    return htmlFail("csrf_mismatch");
   }
 
-  let codeVerifier:   string;
-  let tokenEndpoint:  string;
-  try {
-    const decoded = JSON.parse(Buffer.from(cookieValue, "base64url").toString("utf8")) as {
-      codeVerifier?:  string;
-      tokenEndpoint?: string;
-    };
-    codeVerifier  = decoded.codeVerifier  ?? "";
-    tokenEndpoint = decoded.tokenEndpoint ?? "";
-    if (!codeVerifier || !tokenEndpoint) throw new Error("incomplete cookie");
-  } catch (err) {
-    console.error("[meta/callback] invalid cookie:", err);
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
-  }
-
-  const redirectUri = `${baseUrl}/api/meta/callback`;
+  const appId       = process.env.FACEBOOK_APP_ID!;
+  const appSecret   = process.env.FACEBOOK_APP_SECRET!;
+  const appUrl      = process.env.NEXT_PUBLIC_APP_URL!;
+  const redirectUri = `${appUrl}/api/meta/callback`;
 
   try {
-    // 3. Exchange code for MCP access token
-    const body = new URLSearchParams({
-      grant_type:    "authorization_code",
-      code,
-      redirect_uri:  redirectUri,
-      code_verifier: codeVerifier,
-    });
-    if (clientId) body.set("client_id", clientId);
+    // ── 1. Exchange code for access token ─────────────────────────────────────
+    const tokenUrl = new URL("https://graph.facebook.com/v19.0/oauth/access_token");
+    tokenUrl.searchParams.set("client_id",     appId);
+    tokenUrl.searchParams.set("client_secret", appSecret);
+    tokenUrl.searchParams.set("redirect_uri",  redirectUri);
+    tokenUrl.searchParams.set("code",          code);
 
-    const tokenRes = await fetch(tokenEndpoint, {
-      method:  "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body:    body.toString(),
-      signal:  AbortSignal.timeout(10_000),
+    const tokenRes = await fetch(tokenUrl.toString(), {
+      cache:  "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!tokenRes.ok) {
-      const errText = await tokenRes.text().catch(() => "");
-      console.error("[meta/callback] token exchange failed:", tokenRes.status, errText.slice(0, 300));
-      return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+      const errBody = await tokenRes.text().catch(() => "");
+      console.error("[meta/callback] Token exchange failed:", tokenRes.status, errBody.slice(0, 300));
+      return htmlFail(`token_exchange_http_${tokenRes.status}: ${errBody.slice(0, 120)}`);
     }
 
     const tokenData = await tokenRes.json() as {
       access_token?: string;
-      error?:        string;
+      token_type?:   string;
+      expires_in?:   number;
+      error?:        { message: string; code?: number };
     };
+
     if (!tokenData.access_token) {
-      console.error("[meta/callback] no access_token in response:", tokenData);
-      return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+      const msg = tokenData.error?.message ?? JSON.stringify(tokenData);
+      console.error("[meta/callback] No access_token in response:", tokenData);
+      return htmlFail(`no_access_token: ${msg}`);
     }
 
-    const mcpToken = tokenData.access_token;
+    const accessToken = tokenData.access_token;
 
-    // 4. Resolve ad account via Claude + Meta MCP
-    const accountInfo = await resolveAdAccount(mcpToken);
+    // ── 2. Fetch Meta user ID ──────────────────────────────────────────────────
+    let metaUserId = "";
+    try {
+      const meRes  = await fetch(
+        `https://graph.facebook.com/v19.0/me?access_token=${accessToken}`,
+        { signal: AbortSignal.timeout(8_000) },
+      );
+      const meData = await meRes.json() as { id?: string; name?: string };
+      metaUserId   = meData.id ?? "";
+    } catch (err) {
+      console.warn("[meta/callback] /me fetch failed (non-fatal):", err);
+    }
 
-    // 5. Upsert into Supabase
+    // ── 3. Fetch first active ad account ──────────────────────────────────────
+    let adAccountId   = "";
+    let adAccountName = "Meta Ads Account";
+    try {
+      const acctRes  = await fetch(
+        `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name,account_status&access_token=${accessToken}`,
+        { signal: AbortSignal.timeout(8_000) },
+      );
+      const acctData = await acctRes.json() as {
+        data?: Array<{ id: string; name: string; account_status?: number }>;
+      };
+      const accounts = acctData.data ?? [];
+      const active   = accounts.find((a) => a.account_status === 1) ?? accounts[0];
+      if (active) {
+        adAccountId   = active.id.replace(/^act_/, "");
+        adAccountName = active.name;
+      }
+    } catch (err) {
+      console.warn("[meta/callback] /me/adaccounts fetch failed (non-fatal):", err);
+    }
+
+    // ── 4. Upsert connection in Supabase ───────────────────────────────────────
     const { error: dbError } = await supabaseAdmin
       .from("meta_connections")
       .upsert(
         {
           user_id:         userId,
-          meta_user_id:    accountInfo?.metaUserId    ?? "",
-          access_token:    mcpToken,
-          ad_account_id:   accountInfo?.adAccountId  ?? "",
-          ad_account_name: accountInfo?.adAccountName ?? "Meta Ads Account",
+          meta_user_id:    metaUserId,
+          access_token:    accessToken,
+          ad_account_id:   adAccountId,
+          ad_account_name: adAccountName,
           status:          "active",
           connected_at:    new Date().toISOString(),
           updated_at:      new Date().toISOString(),
@@ -220,21 +163,20 @@ export async function GET(req: NextRequest) {
       );
 
     if (dbError) {
-      console.error("[meta/callback] DB error:", dbError);
-      return NextResponse.redirect(`${baseUrl}/dashboard?meta=db_error`);
+      console.error("[meta/callback] Supabase upsert error:", dbError);
+      return htmlFail(`supabase_upsert: ${dbError.message}`);
     }
 
     console.log(
-      `[meta/callback] ✓ user=${userId} account=${accountInfo?.adAccountId ?? "unknown"} (${accountInfo?.adAccountName ?? "unknown"})`,
+      `[meta/callback] ✓ Connected user=${userId} meta_user=${metaUserId} account=${adAccountId} (${adAccountName})`,
     );
 
-    // 6. Redirect to dashboard, clearing the OAuth cookie
-    const response = NextResponse.redirect(`${baseUrl}/dashboard?meta=connected`);
-    response.cookies.set("meta_mcp_oauth", "", { maxAge: 0, path: "/" });
-    return response;
+    // ── 5. Notify popup — it closes itself ────────────────────────────────────
+    return new Response(HTML_OK, { headers: { "Content-Type": "text/html" } });
 
   } catch (err) {
-    console.error("[meta/callback] error:", err instanceof Error ? err.message : err);
-    return NextResponse.redirect(`${baseUrl}/dashboard?meta=error`);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[meta/callback] Unexpected error:", msg);
+    return htmlFail(`unexpected: ${msg}`);
   }
 }

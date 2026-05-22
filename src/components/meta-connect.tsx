@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Link2, Link2Off, CheckCircle2, AlertCircle, BarChart3, RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, Link2, Link2Off, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
 
 interface MetaStatus {
   connected:        boolean;
@@ -22,12 +23,15 @@ interface MetaConnectProps {
 }
 
 export default function MetaConnect({ flashParam }: MetaConnectProps) {
+  const router = useRouter();
   const [status,        setStatus]        = useState<MetaStatus | null>(null);
   const [loading,       setLoading]       = useState(true);
+  const [connecting,    setConnecting]    = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [campaigns,     setCampaigns]     = useState<CampaignSummary | null>(null);
   const [campsLoading,  setCampsLoading]  = useState(false);
   const [flash,         setFlash]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Flash from URL param ─────────────────────────────────────────────────
   useEffect(() => {
@@ -84,6 +88,70 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
       setFlash({ type: "error", msg: "Failed to disconnect. Please try again." });
     } finally {
       setDisconnecting(false);
+    }
+  }
+
+  // ── Popup OAuth ──────────────────────────────────────────────────────────
+  function connectMeta() {
+    const width  = 600;
+    const height = 700;
+    const left   = window.screenX + Math.round((window.outerWidth  - width)  / 2);
+    const top    = window.screenY + Math.round((window.outerHeight - height) / 2);
+
+    const popup = window.open(
+      "/api/meta/connect",
+      "Connect Meta Account",
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`,
+    );
+
+    if (!popup) {
+      setFlash({ type: "error", msg: "Popup was blocked — please allow popups and try again." });
+      return;
+    }
+
+    setConnecting(true);
+
+    // Message handler
+    function onMessage(ev: MessageEvent) {
+      if (ev.data === "meta_connected") {
+        cleanup();
+        setFlash({ type: "success", msg: "Meta Ads connected successfully!" });
+        router.refresh();
+        // Re-fetch connection status so the UI updates immediately
+        fetch("/api/meta/status")
+          .then((r) => r.json())
+          .then((d: MetaStatus) => setStatus(d))
+          .catch(() => {});
+      } else if (
+        ev.data === "meta_connection_failed" ||
+        (typeof ev.data === "object" && ev.data?.type === "meta_connection_failed")
+      ) {
+        cleanup();
+        const reason: string | undefined = typeof ev.data === "object" ? ev.data.reason : undefined;
+        console.error("[meta-connect] OAuth failed:", reason ?? "unknown");
+        setFlash({
+          type: "error",
+          msg: reason
+            ? `Connection failed: ${reason}`
+            : "Connection failed. Please try again.",
+        });
+      }
+    }
+
+    // Poll for popup close as a fallback
+    pollRef.current = setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+      }
+    }, 500);
+
+    window.addEventListener("message", onMessage);
+
+    function cleanup() {
+      if (pollRef.current) clearInterval(pollRef.current);
+      window.removeEventListener("message", onMessage);
+      setConnecting(false);
+      try { popup.close(); } catch { /* already closed */ }
     }
   }
 
@@ -250,29 +318,37 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
             Connect via Meta&apos;s official MCP — pre-approved, no app review needed. Campaigns auto-import after connecting.
           </p>
 
-          <a
-            href="/api/meta/connect"
+          <button
+            onClick={connectMeta}
+            disabled={connecting}
             style={{
-              display:        "inline-flex",
-              alignItems:     "center",
-              gap:            8,
-              padding:        "11px 22px",
-              borderRadius:   100,
-              background:     "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
-              color:          "#fff",
-              fontSize:       14,
-              fontWeight:     700,
-              textDecoration: "none",
-              boxShadow:      "0 4px 20px rgba(8,102,255,0.32)",
-              fontFamily:     "var(--font-inter)",
-              transition:     "all 0.15s",
+              display:      "inline-flex",
+              alignItems:   "center",
+              gap:          8,
+              padding:      "11px 22px",
+              borderRadius: 100,
+              background:   connecting
+                ? "linear-gradient(135deg, #4d90ff 0%, #5a9cf5 100%)"
+                : "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
+              color:        "#fff",
+              fontSize:     14,
+              fontWeight:   700,
+              border:       "none",
+              cursor:       connecting ? "not-allowed" : "pointer",
+              boxShadow:    "0 4px 20px rgba(8,102,255,0.32)",
+              fontFamily:   "var(--font-inter)",
+              transition:   "all 0.15s",
+              opacity:      connecting ? 0.8 : 1,
             }}
-            onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(-1px)"; a.style.boxShadow = "0 8px 28px rgba(8,102,255,0.42)"; }}
-            onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.transform = "translateY(0)"; a.style.boxShadow = "0 4px 20px rgba(8,102,255,0.32)"; }}
+            onMouseEnter={e => { if (!connecting) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(8,102,255,0.42)"; } }}
+            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(8,102,255,0.32)"; }}
           >
-            <Link2 style={{ width: 15, height: 15 }} />
-            Connect Meta Account
-          </a>
+            {connecting
+              ? <Loader2 style={{ width: 15, height: 15, animation: "spin 1s linear infinite" }} />
+              : <Link2   style={{ width: 15, height: 15 }} />
+            }
+            {connecting ? "Connecting…" : "Connect Meta Account"}
+          </button>
         </>
       )}
     </div>
