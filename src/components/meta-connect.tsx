@@ -151,7 +151,7 @@ export default function MetaConnect({ flashParam }: MetaConnectProps) {
       if (pollRef.current) clearInterval(pollRef.current);
       window.removeEventListener("message", onMessage);
       setConnecting(false);
-      try { popup.close(); } catch { /* already closed */ }
+      try { popup?.close(); } catch { /* already closed */ }
     }
   }
 
