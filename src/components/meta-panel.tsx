@@ -68,13 +68,6 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
   const [disconnecting, setDisconnecting] = useState(false);
   const [flash,         setFlash]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  // Token paste state
-  const [showTokenForm,  setShowTokenForm]  = useState(false);
-  const [tokenValue,     setTokenValue]     = useState("");
-  const [accountIdValue, setAccountIdValue] = useState("");
-  const [tokenSaving,    setTokenSaving]    = useState(false);
-  const [tokenError,     setTokenError]     = useState<string | null>(null);
-
   // Analyze state
   const [showForm,     setShowForm]     = useState(false);
   const [analyzing,    setAnalyzing]    = useState(false);
@@ -127,33 +120,6 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
       setFlash({ type: "error", msg: "Failed to disconnect. Please try again." });
     } finally {
       setDisconnecting(false);
-    }
-  }
-
-  // ── Save pasted token ────────────────────────────────────────────────────
-  async function handleSaveToken(e: React.FormEvent) {
-    e.preventDefault();
-    setTokenError(null);
-    if (!tokenValue.trim())     { setTokenError("Please enter your access token."); return; }
-    if (!accountIdValue.trim()) { setTokenError("Please enter your Ad Account ID."); return; }
-    setTokenSaving(true);
-    try {
-      const res  = await fetch("/api/meta/save-token", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ access_token: tokenValue.trim(), ad_account_id: accountIdValue.trim() }),
-      });
-      const data = await res.json() as { ok?: boolean; accountName?: string; error?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error ?? "Failed to save token");
-      setTokenValue("");
-      setAccountIdValue("");
-      setShowTokenForm(false);
-      setFlash({ type: "success", msg: `Connected — ${data.accountName}` });
-      loadStatus();
-    } catch (err) {
-      setTokenError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setTokenSaving(false);
     }
   }
 
@@ -546,106 +512,44 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
             ))}
           </div>
 
-          {/* CTA — token paste form (Pro) or upgrade prompt (free) */}
+          {/* CTA — Meta MCP OAuth (Pro) or upgrade prompt (free) */}
           {isPro ? (
-            showTokenForm ? (
-              /* ── Paste token form ── */
-              <form onSubmit={handleSaveToken} style={{ width: "100%", maxWidth: 440 }}>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#6b7280", marginBottom: 5, fontFamily: "var(--font-inter)" }}>
-                    Meta Access Token
-                  </label>
-                  <input
-                    type="password"
-                    value={tokenValue}
-                    onChange={(e) => setTokenValue(e.target.value)}
-                    placeholder="EAAxxxxxxx..."
-                    disabled={tokenSaving}
-                    style={{ ...inputStyle, fontSize: 13 }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#6c5ce7"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(108,92,231,0.12)"; }}
-                    onBlur={(e)  => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
-                  />
-                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4, fontFamily: "var(--font-inter)" }}>
-                    Get it from{" "}
-                    <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" style={{ color: "#6c5ce7" }}>
-                      Meta Graph API Explorer
-                    </a>
-                    {" "}→ Generate Token
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#6b7280", marginBottom: 5, fontFamily: "var(--font-inter)" }}>
-                    Ad Account ID
-                  </label>
-                  <input
-                    type="text"
-                    value={accountIdValue}
-                    onChange={(e) => setAccountIdValue(e.target.value)}
-                    placeholder="123456789 or act_123456789"
-                    disabled={tokenSaving}
-                    style={{ ...inputStyle, fontSize: 13 }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#6c5ce7"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(108,92,231,0.12)"; }}
-                    onBlur={(e)  => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
-                  />
-                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4, fontFamily: "var(--font-inter)" }}>
-                    Find in Meta Business Manager → Settings → Ad Accounts
-                  </p>
-                </div>
-
-                {tokenError && (
-                  <p style={{ fontSize: 12, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.18)", borderRadius: 8, padding: "8px 12px", marginBottom: 10, fontFamily: "var(--font-inter)" }}>
-                    {tokenError}
-                  </p>
-                )}
-
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="submit"
-                    disabled={tokenSaving}
-                    style={{
-                      flex: 1, padding: "11px 0", borderRadius: 100,
-                      background: tokenSaving ? "#9ca3af" : "#6c5ce7",
-                      color: "#fff", fontSize: 14, fontWeight: 700,
-                      border: "none", cursor: tokenSaving ? "not-allowed" : "pointer",
-                      fontFamily: "var(--font-inter)", transition: "opacity 0.15s",
-                    }}
-                  >
-                    {tokenSaving ? "Connecting…" : "Connect →"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowTokenForm(false); setTokenError(null); }}
-                    disabled={tokenSaving}
-                    style={{
-                      padding: "11px 18px", borderRadius: 100, border: "1px solid #e5e7eb",
-                      background: "#fff", color: "#6b7280", fontSize: 14, fontWeight: 600,
-                      cursor: "pointer", fontFamily: "var(--font-inter)",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <button
-                onClick={() => setShowTokenForm(true)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  padding: "13px 28px", borderRadius: 100,
-                  background: "#6c5ce7",
-                  color: "#fff", fontSize: 14, fontWeight: 700,
-                  boxShadow: "0 4px 20px rgba(108,92,231,0.32)",
-                  fontFamily: "var(--font-inter)", transition: "all 0.15s",
-                  letterSpacing: "-0.01em",
-                  marginBottom: 12, border: "none", cursor: "pointer",
-                }}
-                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(108,92,231,0.44)"; }}
-                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(108,92,231,0.32)"; }}
-              >
-                Connect Meta Account →
-              </button>
-            )
+            <a
+              href="/api/meta/connect"
+              style={{
+                display:        "inline-flex",
+                alignItems:     "center",
+                gap:            8,
+                padding:        "13px 28px",
+                borderRadius:   100,
+                background:     "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
+                color:          "#fff",
+                fontSize:       14,
+                fontWeight:     700,
+                boxShadow:      "0 4px 20px rgba(8,102,255,0.32)",
+                fontFamily:     "var(--font-inter)",
+                transition:     "all 0.15s",
+                letterSpacing:  "-0.01em",
+                marginBottom:   12,
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                const a = e.currentTarget as HTMLAnchorElement;
+                a.style.transform = "translateY(-1px)";
+                a.style.boxShadow = "0 8px 28px rgba(8,102,255,0.44)";
+              }}
+              onMouseLeave={(e) => {
+                const a = e.currentTarget as HTMLAnchorElement;
+                a.style.transform = "translateY(0)";
+                a.style.boxShadow = "0 4px 20px rgba(8,102,255,0.32)";
+              }}
+            >
+              {/* Facebook f icon */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
+              </svg>
+              Connect Meta Account →
+            </a>
           ) : (
             <button
               onClick={() => setUpgradeOpen(true)}
@@ -667,13 +571,11 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
           )}
 
           {/* Disclaimer */}
-          {!showTokenForm && (
-            <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
-              {isPro
-                ? "Paste your Meta access token — no OAuth setup needed."
-                : "Available on Pro plan · $99/month"}
-            </p>
-          )}
+          <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
+            {isPro
+              ? "Authorise via Meta Business OAuth — no app setup needed."
+              : "Available on Pro plan · $99/month"}
+          </p>
         </>
       )}
     </div>

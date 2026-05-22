@@ -1,18 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { supabaseAdmin } from "@/lib/supabase-server";
+/**
+ * GET /api/meta/campaigns
+ *
+ * Returns the campaign list for the connected Meta ad account.
+ * All data retrieval goes through Claude + Meta MCP —
+ * no direct Graph API calls.
+ */
+import { NextRequest, NextResponse }        from "next/server";
+import { createServerClient }               from "@supabase/ssr";
+import { cookies }                          from "next/headers";
+import { supabaseAdmin }                    from "@/lib/supabase-server";
+import { invokeClaudeWithMeta, parseClaudeJSON } from "@/lib/claude-meta";
 
 export const dynamic = "force-dynamic";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+interface CampaignListResult {
+  campaigns: Array<{
+    id:               string;
+    name:             string;
+    status:           string;
+    effective_status: string;
+    objective?:       string;
+  }>;
+  total: number;
+}
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
-  const supabase = createServerClient(
+  const supabase    = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll() } }
+    { cookies: { getAll: () => cookieStore.getAll() } },
   );
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -28,34 +45,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Not connected" }, { status: 404 });
   }
 
-  const url = new URL(`${GRAPH}/act_${conn.ad_account_id}/campaigns`);
-  url.searchParams.set("access_token", conn.access_token);
-  url.searchParams.set("fields", [
-    "id", "name", "status", "effective_status", "objective",
-    "daily_budget", "lifetime_budget", "start_time", "stop_time", "created_time",
-    "insights.date_preset(last_30d){impressions,clicks,spend,ctr,cpm,cpc,reach,date_start,date_stop}",
-  ].join(","));
-  url.searchParams.set("limit", "50");
+  try {
+    // Claude calls Meta MCP to list campaigns — no direct Graph API
+    const text   = await invokeClaudeWithMeta({
+      accessToken: conn.access_token,
+      adAccountId: conn.ad_account_id,
+      action:      "list_campaigns",
+    });
+    const result = parseClaudeJSON<CampaignListResult>(text);
 
-  const res  = await fetch(url.toString());
-  const data = await res.json() as {
-    data?:  Array<Record<string, unknown>>;
-    error?: { message: string };
-  };
-
-  if (!res.ok || data.error) {
-    return NextResponse.json({ error: data.error?.message ?? "Graph API error" }, { status: 500 });
+    return NextResponse.json({
+      adAccountId:   conn.ad_account_id,
+      adAccountName: conn.ad_account_name,
+      campaigns:     result.campaigns ?? [],
+      total:         result.total ?? result.campaigns?.length ?? 0,
+    });
+  } catch (err) {
+    console.error("[campaigns]", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Failed to fetch campaigns" }, { status: 500 });
   }
-
-  const campaigns = (data.data ?? []).map((c) => {
-    const insights = (c.insights as { data?: Record<string, unknown>[] } | undefined)?.data?.[0];
-    return { ...c, insights };
-  });
-
-  return NextResponse.json({
-    adAccountId:   conn.ad_account_id,
-    adAccountName: conn.ad_account_name,
-    campaigns,
-    total:         campaigns.length,
-  });
 }

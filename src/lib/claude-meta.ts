@@ -13,6 +13,7 @@
 
 export type ClaudeMetaAction =
   | "analyze"
+  | "list_campaigns"
   | "monitor_and_optimize"
   | "pause_campaign"
   | "scale_campaign";
@@ -45,7 +46,7 @@ export interface ExecuteResult {
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const MCP_BETA      = "mcp-client-2025-04-04";
 const MODEL         = "claude-opus-4-5";
-const META_MCP_URL  = "https://mcp.meta.com/ads";
+const META_MCP_URL  = "https://mcp.facebook.com/ads";
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
@@ -184,6 +185,19 @@ Using your Meta MCP tools, scale the budget for campaign ID: ${campaignId ?? "un
 
 Return ONLY a valid JSON object — no markdown:
 { "success": true, "campaignName": "string", "oldBudget": 0, "newBudget": 0, "message": "Budget scaled from $X to $Y per day" }`;
+
+    // ── List campaigns (lightweight) ──────────────────────────────────────────
+    case "list_campaigns":
+      return `You are a Meta Ads data retriever for account act_${adAccountId}.
+
+Using your Meta MCP tools, list all campaigns for this ad account.
+Return ONLY a valid JSON object — no markdown, no code fences, no explanations:
+{
+  "campaigns": [
+    { "id": "string", "name": "string", "status": "ACTIVE", "effective_status": "ACTIVE", "objective": "string" }
+  ],
+  "total": 0
+}`;
   }
 }
 
@@ -202,7 +216,9 @@ export async function invokeClaudeWithMeta(params: {
   goal?:          string;
 }): Promise<string> {
   const prompt    = buildPrompt(params);
-  const maxTokens = params.action === "analyze" ? 8000 : 4000;
+  const maxTokens = params.action === "analyze"        ? 8000
+                  : params.action === "list_campaigns" ? 2000
+                  : 4000;
 
   const res = await fetch(ANTHROPIC_API, {
     method:  "POST",
