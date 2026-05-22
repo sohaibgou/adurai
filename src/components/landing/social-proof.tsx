@@ -83,12 +83,12 @@ export default function SocialProof() {
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#FF3CAC", marginBottom: 16, fontFamily: "var(--font-inter)" }}>
               The Advertising Crisis
             </p>
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-              <h2 className="font-heading" style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.05, maxWidth: 560 }}>
-                Your Meta Ads are bleeding<br />money right now.{" "}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <h2 className="font-heading" style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.1, maxWidth: 520 }}>
+                Your Meta Ads are bleeding money right now.{" "}
                 <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Here&apos;s proof.</span>
               </h2>
-              <p style={{ fontSize: 16, color: "#6b7280", lineHeight: 1.65, maxWidth: 360, fontFamily: "var(--font-inter)" }}>
+              <p style={{ fontSize: 15, color: "#6b7280", lineHeight: 1.65, maxWidth: 340, fontFamily: "var(--font-inter)", flexShrink: 0 }}>
                 Every day, e-commerce brands waste thousands of dollars on underperforming campaigns — not because they don&apos;t care, but because no tool has ever told them exactly what to do. Until now.
               </p>
             </div>
