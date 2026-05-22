@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -65,8 +65,10 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
   const [status,        setStatus]        = useState<MetaStatus | null>(null);
   const [loading,       setLoading]       = useState(true);
+  const [connecting,    setConnecting]    = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [flash,         setFlash]         = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Analyze state
   const [showForm,     setShowForm]     = useState(false);
@@ -175,6 +177,60 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
       setAnalyzeError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
     } finally {
       setAnalyzing(false);
+    }
+  }
+
+  // ── Popup OAuth ───────────────────────────────────────────────────────────
+  function connectMeta() {
+    const width  = 600;
+    const height = 700;
+    const left   = window.screenX + Math.round((window.outerWidth  - width)  / 2);
+    const top    = window.screenY + Math.round((window.outerHeight - height) / 2);
+
+    const popup = window.open(
+      "/api/meta/connect",
+      "Connect Meta Account",
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`,
+    );
+
+    if (!popup) {
+      setFlash({ type: "error", msg: "Popup blocked — please allow popups and try again." });
+      return;
+    }
+
+    setConnecting(true);
+
+    function onMessage(ev: MessageEvent) {
+      if (ev.data === "meta_connected") {
+        cleanup();
+        setFlash({ type: "success", msg: "Meta Ads connected successfully!" });
+        router.refresh();
+        fetch("/api/meta/status")
+          .then((r) => r.json())
+          .then((d: MetaStatus) => setStatus(d))
+          .catch(() => {});
+      } else if (
+        ev.data === "meta_connection_failed" ||
+        (typeof ev.data === "object" && ev.data?.type === "meta_connection_failed")
+      ) {
+        cleanup();
+        const reason: string | undefined = typeof ev.data === "object" ? ev.data.reason : undefined;
+        console.error("[meta-panel] OAuth failed:", reason ?? "unknown");
+        setFlash({ type: "error", msg: reason ? `Connection failed: ${reason}` : "Connection failed. Please try again." });
+      }
+    }
+
+    pollRef.current = setInterval(() => {
+      if (popup.closed) cleanup();
+    }, 500);
+
+    window.addEventListener("message", onMessage);
+
+    function cleanup() {
+      if (pollRef.current) clearInterval(pollRef.current);
+      window.removeEventListener("message", onMessage);
+      setConnecting(false);
+      try { popup.close(); } catch { /* already closed */ }
     }
   }
 
@@ -512,44 +568,44 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
             ))}
           </div>
 
-          {/* CTA — Meta MCP OAuth (Pro) or upgrade prompt (free) */}
+          {/* CTA — Facebook OAuth popup (Pro) or upgrade prompt (free) */}
           {isPro ? (
-            <a
-              href="/api/meta/connect"
+            <button
+              onClick={connectMeta}
+              disabled={connecting}
               style={{
-                display:        "inline-flex",
-                alignItems:     "center",
-                gap:            8,
-                padding:        "13px 28px",
-                borderRadius:   100,
-                background:     "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
-                color:          "#fff",
-                fontSize:       14,
-                fontWeight:     700,
-                boxShadow:      "0 4px 20px rgba(8,102,255,0.32)",
-                fontFamily:     "var(--font-inter)",
-                transition:     "all 0.15s",
-                letterSpacing:  "-0.01em",
-                marginBottom:   12,
-                textDecoration: "none",
+                display:       "inline-flex",
+                alignItems:    "center",
+                gap:           8,
+                padding:       "13px 28px",
+                borderRadius:  100,
+                background:    connecting
+                  ? "linear-gradient(135deg, #4d90ff 0%, #5a9cf5 100%)"
+                  : "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)",
+                color:         "#fff",
+                fontSize:      14,
+                fontWeight:    700,
+                border:        "none",
+                cursor:        connecting ? "not-allowed" : "pointer",
+                boxShadow:     "0 4px 20px rgba(8,102,255,0.32)",
+                fontFamily:    "var(--font-inter)",
+                transition:    "all 0.15s",
+                letterSpacing: "-0.01em",
+                marginBottom:  12,
+                opacity:       connecting ? 0.8 : 1,
               }}
-              onMouseEnter={(e) => {
-                const a = e.currentTarget as HTMLAnchorElement;
-                a.style.transform = "translateY(-1px)";
-                a.style.boxShadow = "0 8px 28px rgba(8,102,255,0.44)";
-              }}
-              onMouseLeave={(e) => {
-                const a = e.currentTarget as HTMLAnchorElement;
-                a.style.transform = "translateY(0)";
-                a.style.boxShadow = "0 4px 20px rgba(8,102,255,0.32)";
-              }}
+              onMouseEnter={(e) => { if (!connecting) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 8px 28px rgba(8,102,255,0.44)"; }}}
+              onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(8,102,255,0.32)"; }}
             >
-              {/* Facebook f icon */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
-              </svg>
-              Connect Meta Account →
-            </a>
+              {connecting ? (
+                <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
+                </svg>
+              )}
+              {connecting ? "Connecting…" : "Connect Meta Account →"}
+            </button>
           ) : (
             <button
               onClick={() => setUpgradeOpen(true)}
