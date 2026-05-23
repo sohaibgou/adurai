@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
-import EmailVerifyBanner from "@/components/email-verify-banner";
 import MetaPanel from "@/components/meta-panel";
 import PendingActions from "@/components/pending-actions";
 import AutopilotSettings from "@/components/autopilot-settings";
@@ -123,12 +122,8 @@ function DashboardContent() {
     transition: { duration: 0.4, delay },
   });
 
-  const needsEmailVerify = user?.app_metadata?.email_link_verified === false;
-
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "#F7F5F2" }}>
-
-      {needsEmailVerify && <EmailVerifyBanner email={user?.email} />}
 
       <div className="flex flex-1 min-h-0">
       <AppSidebar
