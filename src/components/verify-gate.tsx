@@ -8,9 +8,11 @@
  * clean locked-state card instead of letting them interact with features.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Lock, Mail } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+
+const COOLDOWN_SECS = 60;
 
 export default function VerifyGate({ children }: { children: React.ReactNode }) {
   const { emailVerified, user } = useAuth();
@@ -38,12 +40,25 @@ export default function VerifyGate({ children }: { children: React.ReactNode }) 
 
 function LockedCard({ email }: { email: string }) {
   const { session } = useAuth();
-  const [sent,    setSent]    = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [err,     setErr]     = useState<string | null>(null);
+  const [sent,      setSent]      = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [err,       setErr]       = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    timerRef.current = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { clearInterval(timerRef.current!); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current!);
+  }, [countdown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function resend() {
-    if (!email) return;
+    if (!email || countdown > 0) return;
     setLoading(true);
     setErr(null);
     try {
@@ -55,9 +70,17 @@ function LockedCard({ email }: { email: string }) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(body.error ?? `Failed (${res.status})`);
+        const msg  = body.error ?? `Failed (${res.status})`;
+        if (msg.toLowerCase().includes("rate limit") || res.status === 429) {
+          setErr("Rate limit reached — please wait 60 s before retrying.");
+          setCountdown(COOLDOWN_SECS);
+        } else {
+          setErr(msg);
+        }
+        return;
       }
       setSent(true);
+      setCountdown(COOLDOWN_SECS);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong — try again.");
     } finally {
@@ -136,27 +159,29 @@ function LockedCard({ email }: { email: string }) {
         <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
           <button
             onClick={resend}
-            disabled={loading}
+            disabled={loading || countdown > 0}
             style={{
               padding:      "11px 28px",
               borderRadius:  100,
               background:   "transparent",
-              color:        err ? "#e17055" : "#FF3CAC",
+              color:        countdown > 0 ? "#A8A5A0" : err ? "#e17055" : "#FF3CAC",
               fontSize:      13,
               fontWeight:    600,
-              border:        `1.5px solid ${err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.35)"}`,
-              cursor:        loading ? "default" : "pointer",
+              border:        `1.5px solid ${countdown > 0 ? "rgba(168,165,160,0.35)" : err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.35)"}`,
+              cursor:        (loading || countdown > 0) ? "default" : "pointer",
               fontFamily:   "var(--font-inter)",
               opacity:       loading ? 0.6 : 1,
               transition:   "all 0.15s",
             }}
-            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.70)" : "rgba(255,60,172,0.70)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.35)"; }}
           >
-            {loading ? "Sending…" : err ? "Retry →" : "Resend verification email →"}
+            {loading
+              ? "Sending…"
+              : countdown > 0
+                ? `Retry in ${countdown}s`
+                : err ? "Retry →" : "Resend verification email →"}
           </button>
           {err && (
-            <p style={{ fontSize: 12, color: "#e17055", fontFamily: "var(--font-inter)", margin: 0 }}>{err}</p>
+            <p style={{ fontSize: 12, color: "#e17055", fontFamily: "var(--font-inter)", margin: 0, maxWidth: 300, textAlign: "center" }}>{err}</p>
           )}
         </div>
       )}
