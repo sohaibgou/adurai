@@ -78,6 +78,8 @@ function DashboardContent() {
   const [analysisCount,    setAnalysisCount]    = useState(0);
   const [recentAnalyses,   setRecentAnalyses]   = useState<RecentAnalysis[]>([]);
   const [checkoutLoading,  setCheckoutLoading]  = useState(false);
+  // null = loading, true = verified, false = needs verification
+  const [emailVerified,    setEmailVerified]    = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -93,6 +95,11 @@ function DashboardContent() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => { setSubscription(data ?? null); setSubLoading(false); });
+    // Check real email-verification status from DB (JWT may be stale)
+    fetch("/api/auth/verify-status")
+      .then(r => r.json())
+      .then(({ emailVerified }: { emailVerified: boolean }) => setEmailVerified(emailVerified))
+      .catch(() => setEmailVerified(true)); // fail open
   }, [user]);
 
   if (authLoading || !user) {
@@ -186,12 +193,56 @@ function DashboardContent() {
           </div>
         </header>
 
-        {/* ── Email verification banner ── */}
-        {user && (!user.email_confirmed_at || user.app_metadata?.email_link_verified === false) && (
+        {/* ── Email verification banner (shown when unverified) ── */}
+        {emailVerified === false && (
           <EmailVerifyBanner email={user.email ?? ""} />
         )}
 
-        {/* ── Page content ── */}
+        {/* ── Page content — blocked until email is verified ── */}
+        {emailVerified === false ? (
+          /* ═══ VERIFY-EMAIL WALL ═══════════════════════════════════════ */
+          <main className="flex-1 flex items-center justify-center px-6 py-16">
+            <div style={{
+              background: "#fff",
+              border:     "1px solid #E8E5E0",
+              borderRadius: 24,
+              padding:    "48px 40px",
+              maxWidth:   480,
+              width:      "100%",
+              textAlign:  "center",
+              boxShadow:  "0 4px 24px rgba(0,0,0,0.06)",
+            }}>
+              {/* Icon */}
+              <div style={{
+                width: 64, height: 64, borderRadius: 18, margin: "0 auto 24px",
+                background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
+              }}>
+                📧
+              </div>
+
+              <h2 className="font-heading" style={{ fontSize: 24, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 12 }}>
+                Verify your email first
+              </h2>
+              <p style={{ fontSize: 15, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.65, marginBottom: 28 }}>
+                We sent a confirmation link to <strong style={{ color: "#0D0D12" }}>{user.email}</strong>. Click it to unlock all features.
+              </p>
+
+              {/* Resend inline */}
+              <EmailVerifyBanner email={user.email ?? ""} compact />
+
+              <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", marginTop: 20, lineHeight: 1.5 }}>
+                Already clicked the link?{" "}
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{ color: "#FF3CAC", fontWeight: 700, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontFamily: "var(--font-inter)" }}
+                >
+                  Refresh the page →
+                </button>
+              </p>
+            </div>
+          </main>
+        ) : (
         <main className="flex-1 px-6 lg:px-8 py-8">
           <div className="max-w-5xl space-y-5">
 
@@ -518,6 +569,7 @@ function DashboardContent() {
             <div className="pb-8" />
           </div>
         </main>
+        )} {/* end emailVerified conditional */}
       </div>
       </div>
     </div>

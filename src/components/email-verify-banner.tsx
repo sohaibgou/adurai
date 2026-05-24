@@ -3,18 +3,20 @@
 /**
  * EmailVerifyBanner
  *
- * Shows a sticky top banner when the user has bypassed email confirmation
- * (app_metadata.email_link_verified === false). Includes a "Resend email" button.
+ * Two modes:
+ *   default  → sticky pink gradient bar across the top of the page
+ *   compact  → just the resend button (used inside the verify-email wall card)
  */
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface Props {
-  email?: string;
+  email?:   string;
+  compact?: boolean;
 }
 
-export default function EmailVerifyBanner({ email }: Props) {
+export default function EmailVerifyBanner({ email, compact }: Props) {
   const [sent,    setSent]    = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +24,7 @@ export default function EmailVerifyBanner({ email }: Props) {
     if (!email) return;
     setLoading(true);
     await supabase.auth.resend({
-      type:  "signup",
+      type:    "signup",
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
     });
@@ -30,20 +32,50 @@ export default function EmailVerifyBanner({ email }: Props) {
     setLoading(false);
   }
 
+  // ── Compact mode — just the resend button (no bar) ───────────────────────
+  if (compact) {
+    return sent ? (
+      <p style={{ fontSize: 13, color: "#16A34A", fontFamily: "var(--font-inter)", fontWeight: 600 }}>
+        ✓ Verification email sent — check your inbox!
+      </p>
+    ) : (
+      <button
+        onClick={resend}
+        disabled={loading}
+        style={{
+          padding:      "12px 28px",
+          borderRadius:  100,
+          background:   loading ? "#d1d5db" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+          color:        "#fff",
+          fontSize:      14,
+          fontWeight:    700,
+          border:        "none",
+          cursor:        loading ? "default" : "pointer",
+          fontFamily:   "var(--font-inter)",
+          boxShadow:    loading ? "none" : "0 4px 20px rgba(255,60,172,0.32)",
+          transition:   "all 0.15s",
+        }}
+      >
+        {loading ? "Sending…" : "Resend verification email →"}
+      </button>
+    );
+  }
+
+  // ── Default mode — sticky banner bar ─────────────────────────────────────
   return (
     <div
       style={{
-        background: "linear-gradient(90deg, #FF3CAC 0%, #FF6B35 100%)",
-        padding:    "10px 20px",
-        display:    "flex",
-        alignItems: "center",
+        background:     "linear-gradient(90deg, #FF3CAC 0%, #FF6B35 100%)",
+        padding:        "10px 20px",
+        display:        "flex",
+        alignItems:     "center",
         justifyContent: "center",
-        gap: 12,
-        flexWrap: "wrap",
+        gap:            12,
+        flexWrap:       "wrap",
       }}
     >
       <span style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "var(--font-inter)" }}>
-        📧 Please verify your email to unlock AI generation features.
+        📧 Please verify your email address to unlock all features.
       </span>
       {!sent ? (
         <button
