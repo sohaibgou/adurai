@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
 import MetaPanel from "@/components/meta-panel";
 import PendingActions from "@/components/pending-actions";
 import AutopilotSettings from "@/components/autopilot-settings";
@@ -184,6 +185,11 @@ function DashboardContent() {
             </div>
           </div>
         </header>
+
+        {/* ── Email verification banner ── */}
+        {user && (!user.email_confirmed_at || user.app_metadata?.email_link_verified === false) && (
+          <EmailVerifyBanner email={user.email ?? ""} />
+        )}
 
         {/* ── Page content ── */}
         <main className="flex-1 px-6 lg:px-8 py-8">

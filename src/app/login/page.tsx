@@ -36,14 +36,28 @@ function LoginContent() {
   const redirectTo   = searchParams.get("redirect");
   const planParam    = searchParams.get("plan") === "pro" ? "pro" : "starter";
 
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
+  const [email,      setEmail]      = useState("");
+  const [password,   setPassword]   = useState("");
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [resendSent, setResendSent] = useState(false);
+  const [needsVerify, setNeedsVerify] = useState(false);
+
+  async function handleResend() {
+    if (!email.trim()) return;
+    setResendSent(false);
+    await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+    });
+    setResendSent(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNeedsVerify(false);
     if (!email.trim() || !password.trim()) { setError("Please fill in all fields."); return; }
     setLoading(true);
 
@@ -51,16 +65,19 @@ function LoginContent() {
 
     if (error) {
       if (error.message.toLowerCase().includes("email not confirmed")) {
-        // Force-confirm on server then retry — works even for users created before this fix
+        // Server-side force-confirm so the user can sign in immediately
         await fetch("/api/auth/auto-confirm", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ email: email.trim() }),
         });
+        // Give Supabase a moment to propagate the update
+        await new Promise(r => setTimeout(r, 400));
         const { error: retryErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (retryErr) {
-          // auto-confirm may have failed (wrong service key on server) — show clear message
-          setError("Your email is not yet confirmed. Please check your inbox or contact support.");
+          // auto-confirm failed (likely wrong service key on server) —
+          // show a soft banner with resend instead of a hard error
+          setNeedsVerify(true);
           setLoading(false);
           return;
         }
@@ -157,6 +174,27 @@ function LoginContent() {
             {error && (
               <div style={{ padding: "12px 16px", borderRadius: 10, background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.20)" }}>
                 <p style={{ fontSize: 13, color: "#e17055", fontFamily: "var(--font-inter)", textAlign: "center" }}>{error}</p>
+              </div>
+            )}
+
+            {needsVerify && (
+              <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.20)" }}>
+                <p style={{ fontSize: 13, color: "#0D0D12", fontFamily: "var(--font-inter)", marginBottom: 8, lineHeight: 1.5 }}>
+                  📧 <strong>Please verify your email</strong> — check your inbox for a confirmation link.
+                </p>
+                {resendSent ? (
+                  <p style={{ fontSize: 12, color: "#16A34A", fontFamily: "var(--font-inter)", fontWeight: 600 }}>
+                    ✓ Verification email sent — check your inbox!
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    style={{ fontSize: 12, fontWeight: 700, color: "#FF3CAC", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", textDecoration: "underline" }}
+                  >
+                    Didn&apos;t receive it? Resend verification email →
+                  </button>
+                )}
               </div>
             )}
 
