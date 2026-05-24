@@ -50,15 +50,20 @@ function LoginContent() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
     if (error) {
-      // Email not confirmed → bypass so user can log in; generation will be gated separately
       if (error.message.toLowerCase().includes("email not confirmed")) {
+        // Force-confirm on server then retry — works even for users created before this fix
         await fetch("/api/auth/auto-confirm", {
-          method: "POST",
+          method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim() }),
+          body:    JSON.stringify({ email: email.trim() }),
         });
         const { error: retryErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (retryErr) { setError(retryErr.message); setLoading(false); return; }
+        if (retryErr) {
+          // auto-confirm may have failed (wrong service key on server) — show clear message
+          setError("Your email is not yet confirmed. Please check your inbox or contact support.");
+          setLoading(false);
+          return;
+        }
       } else {
         setError(error.message); setLoading(false); return;
       }

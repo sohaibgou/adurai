@@ -48,31 +48,29 @@ function SignupContent() {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    // Server-side signup — creates user pre-confirmed, no email verification needed
+    const signupRes = await fetch("/api/auth/signup", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email: email.trim(), password }),
+    });
+    const signupJson = await signupRes.json() as { ok?: boolean; error?: string };
+
+    if (!signupRes.ok && signupJson.error) {
+      setError(signupJson.error);
+      setLoading(false);
+      return;
+    }
+
+    // Sign in — user is already confirmed so this will succeed
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
-      options: {
-        // Redirect to our confirm handler so we can mark email_link_verified = true
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
-      },
     });
 
-    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+    if (signInError) { setError(signInError.message); setLoading(false); return; }
 
-    // Bypass email confirmation so user can log in immediately;
-    // generation features are gated on email_link_verified (set via /auth/confirm).
-    await fetch("/api/auth/auto-confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-
-    let token = data.session?.access_token;
-    if (!token) {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (signInError) { setError(signInError.message); setLoading(false); return; }
-      token = signInData.session?.access_token;
-    }
+    const token = signInData.session?.access_token;
 
     if (redirectTo === "checkout" && token) {
       try { await redirectToCheckout(token, planParam); return; } catch { /* fall through */ }
