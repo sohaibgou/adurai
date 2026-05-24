@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 export default function ConfirmContent() {
@@ -16,44 +17,69 @@ export default function ConfirmContent() {
       const type      = searchParams.get("type") as "signup" | "email" | "magiclink" | "invite" | null;
       const code      = searchParams.get("code");
 
-      // Helper: call mark-verified with the access token so the server
-      // doesn't need to rely on potentially-stale cookies.
+      // Pass access_token directly so mark-verified doesn't need cookies
       async function markVerified(accessToken?: string | null) {
         await fetch("/api/auth/mark-verified", {
           method: "POST",
-          headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         }).catch(() => {});
       }
 
       try {
+        let session: Session | null = null;
+
         if (code) {
-          // PKCE flow — Supabase sends ?code=...
+          // PKCE flow — ?code=...
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
-          await markVerified(data.session?.access_token);
+          session = data.session;
 
         } else if (tokenHash && type) {
           // Token-hash flow — ?token_hash=...&type=magiclink|signup|email
           const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
           if (error) throw error;
-          await markVerified(data.session?.access_token);
+          session = data.session;
+
+        } else if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+          // Implicit / hash flow — #access_token=...
+          // createBrowserClient processes the hash asynchronously; wait for it.
+          session = await new Promise<Session | null>((resolve) => {
+            let done = false;
+
+            const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+              if (!done && s) {
+                done = true;
+                subscription.unsubscribe();
+                resolve(s);
+              }
+            });
+
+            // Also check immediately — might already be processed
+            supabase.auth.getSession().then(({ data }) => {
+              if (!done && data.session) {
+                done = true;
+                subscription.unsubscribe();
+                resolve(data.session);
+              }
+            });
+
+            // 8-second safety timeout
+            setTimeout(() => {
+              if (!done) {
+                done = true;
+                subscription.unsubscribe();
+                resolve(null);
+              }
+            }, 8000);
+          });
 
         } else {
-          // Implicit / hash-fragment flow — session arrives as #access_token=...
-          // createBrowserClient processes the hash automatically; just read it back.
-          const { data: { session } } = await supabase.auth.getSession();
-
-          if (session) {
-            await markVerified(session.access_token);
-          } else {
-            // No token at all — redirect to dashboard (already verified or stale link)
-            router.replace("/dashboard");
-            return;
-          }
+          // No token at all — already verified or stale link
+          router.replace("/dashboard");
+          return;
         }
 
+        await markVerified(session?.access_token);
         setStatus("success");
         setMsg("Email verified! Redirecting…");
         setTimeout(() => router.replace("/dashboard"), 1200);
@@ -61,13 +87,16 @@ export default function ConfirmContent() {
       } catch (err) {
         const message = err instanceof Error ? err.message : "Verification failed.";
 
-        // "already confirmed" / "expired" → still mark as verified and move on
+        // "already confirmed" / "expired" → still mark as verified and continue
         if (
           message.toLowerCase().includes("expired") ||
           message.toLowerCase().includes("already")
         ) {
           const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-          await markVerified(session?.access_token);
+          await fetch("/api/auth/mark-verified", {
+            method: "POST",
+            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+          }).catch(() => {});
           setStatus("success");
           setMsg("Email already verified! Redirecting…");
           setTimeout(() => router.replace("/dashboard"), 1200);
