@@ -99,35 +99,15 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
 
         {/* ── Logo with pulse ── */}
         <motion.div
-          animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+          animate={{ scale: [1, 1.04, 1], opacity: [0.85, 1, 0.85] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-          className="flex items-center gap-2.5"
         >
-          <div
-            className="flex items-center justify-center font-bold text-white flex-shrink-0"
-            style={{
-              width: 38, height: 38, borderRadius: 11,
-              background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-              fontSize: 16,
-              boxShadow: "0 4px 18px rgba(255,60,172,0.40)",
-            }}
-          >
-            A
-          </div>
-          <span
-            className="font-heading font-bold"
-            style={{ fontSize: 21, color: "#0d0d1a", letterSpacing: "-0.025em" }}
-          >
-            Adur
-            <span style={{
-              background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              .ai
-            </span>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/logo-black.svg"
+            alt="Adur.ai"
+            style={{ height: 36, width: "auto" }}
+          />
         </motion.div>
 
         {/* ── Circular progress ring ── */}
