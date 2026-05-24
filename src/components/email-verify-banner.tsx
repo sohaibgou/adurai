@@ -19,13 +19,22 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
   async function resend() {
     if (!email) return;
     setLoading(true);
-    await supabase.auth.resend({
-      type:    "signup",
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
-    });
-    setSent(true);
-    setLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        },
+      });
+      if (error) throw error;
+      setSent(true);
+    } catch {
+      // fail silently — still show "sent" so user checks inbox
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Don't render if verified (protects against flash)

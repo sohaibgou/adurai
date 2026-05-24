@@ -13,7 +13,7 @@ export default function ConfirmContent() {
   useEffect(() => {
     async function verify() {
       const tokenHash = searchParams.get("token_hash");
-      const type      = searchParams.get("type") as "signup" | "email" | null;
+      const type      = searchParams.get("type") as "signup" | "email" | "magiclink" | null;
       const code      = searchParams.get("code");
 
       try {
