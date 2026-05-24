@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BarChart3, Palette, ArrowRight, Sparkles, Upload } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
+import VerifyGate from "@/components/verify-gate";
 import OnboardingForm from "@/components/onboarding-form";
 import PaywallModal from "@/components/paywall-modal";
 import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
@@ -220,6 +222,9 @@ export default function AnalyzePage() {
             )}
           </header>
 
+          <EmailVerifyBanner />
+
+          <VerifyGate>
           {/* ── Content ── */}
           <main className="flex-1 px-6 lg:px-8 py-8">
 
@@ -361,6 +366,7 @@ export default function AnalyzePage() {
             </motion.div>
 
           </main>
+          </VerifyGate>
 
           {/* Minimal footer */}
           <footer className="flex items-center justify-center gap-5 px-6 py-5" style={{ borderTop: "1px solid #E8E5E0" }}>

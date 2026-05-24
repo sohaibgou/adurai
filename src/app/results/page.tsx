@@ -19,6 +19,8 @@ import {
   Plus,
 } from "lucide-react";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
+import VerifyGate from "@/components/verify-gate";
 import CampaignTable from "@/components/campaign-table";
 import SpendRoasChart from "@/components/spend-roas-chart";
 import Recommendations from "@/components/recommendations";
@@ -564,6 +566,9 @@ export default function ResultsPage() {
             </div>
           </header>
 
+          <EmailVerifyBanner />
+
+          <VerifyGate>
           {/* ── Tab navigation bar ── */}
           <div
             style={{
@@ -1102,6 +1107,7 @@ export default function ResultsPage() {
               </AnimatePresence>
             </main>
           )}
+          </VerifyGate>
         </div>
       </div>
     </>

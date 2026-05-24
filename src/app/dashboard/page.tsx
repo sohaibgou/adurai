@@ -72,14 +72,13 @@ function DashboardContent() {
   const searchParams  = useSearchParams();
   const metaParam     = searchParams.get("meta");
   const actionParam   = searchParams.get("action"); // from approve-email / reject-email
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, emailVerified } = useAuth();
   const [subscription,     setSubscription]     = useState<Subscription | null>(null);
   const [subLoading,       setSubLoading]       = useState(true);
   const [analysisCount,    setAnalysisCount]    = useState(0);
   const [recentAnalyses,   setRecentAnalyses]   = useState<RecentAnalysis[]>([]);
   const [checkoutLoading,  setCheckoutLoading]  = useState(false);
   // null = loading, true = verified, false = needs verification
-  const [emailVerified,    setEmailVerified]    = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -95,11 +94,6 @@ function DashboardContent() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => { setSubscription(data ?? null); setSubLoading(false); });
-    // Check real email-verification status from DB (JWT may be stale)
-    fetch("/api/auth/verify-status")
-      .then(r => r.json())
-      .then(({ emailVerified }: { emailVerified: boolean }) => setEmailVerified(emailVerified))
-      .catch(() => setEmailVerified(true)); // fail open
   }, [user]);
 
   if (authLoading || !user) {

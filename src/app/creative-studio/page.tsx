@@ -9,6 +9,8 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import CreativeStudio from "@/components/creative-studio";
 import PaywallModal from "@/components/paywall-modal";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
+import VerifyGate from "@/components/verify-gate";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import type { AnalysisResult } from "@/lib/types";
@@ -170,6 +172,9 @@ export default function CreativeStudioPage() {
           )}
         </header>
 
+        <EmailVerifyBanner />
+
+        <VerifyGate>
         {/* ── Page content ── */}
         <main className="px-6 lg:px-8 py-8 space-y-6">
 
@@ -355,6 +360,7 @@ export default function CreativeStudioPage() {
           </motion.div>
 
         </main>
+        </VerifyGate>
       </div>
 
       {/* ── Paywall modal ── */}

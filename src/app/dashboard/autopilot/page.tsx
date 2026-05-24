@@ -9,6 +9,8 @@ import {
   Loader2, Save, ToggleLeft, ToggleRight, BarChart3, Zap,
 } from "lucide-react";
 import AppSidebar from "@/components/app-sidebar";
+import EmailVerifyBanner from "@/components/email-verify-banner";
+import VerifyGate from "@/components/verify-gate";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -428,6 +430,9 @@ export default function AutopilotPage() {
           </div>
         </header>
 
+        <EmailVerifyBanner />
+
+        <VerifyGate>
         {/* ── Page content ── */}
         <main className="flex-1 px-6 lg:px-8 py-8">
           <div className="max-w-4xl space-y-6">
@@ -1045,6 +1050,7 @@ export default function AutopilotPage() {
             </> /* end isPro gate */}
           </div>
         </main>
+        </VerifyGate>
       </div>
 
       {/* ══════════════════════════════════════════════════
