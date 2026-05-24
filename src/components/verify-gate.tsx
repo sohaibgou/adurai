@@ -10,7 +10,6 @@
 
 import { useState } from "react";
 import { Lock, Mail } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/auth-context";
 
 export default function VerifyGate({ children }: { children: React.ReactNode }) {
@@ -22,12 +21,12 @@ export default function VerifyGate({ children }: { children: React.ReactNode }) 
   return (
     <div
       style={{
-        flex:            1,
-        display:         "flex",
-        alignItems:      "center",
-        justifyContent:  "center",
-        padding:         "40px 24px",
-        background:      "#F7F5F2",
+        flex:           1,
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+        padding:        "40px 24px",
+        background:     "#F7F5F2",
       }}
     >
       <LockedCard email={user?.email ?? ""} />
@@ -38,24 +37,29 @@ export default function VerifyGate({ children }: { children: React.ReactNode }) 
 /* ── Locked card ──────────────────────────────────────────────────────────── */
 
 function LockedCard({ email }: { email: string }) {
+  const { session } = useAuth();
   const [sent,    setSent]    = useState(false);
   const [loading, setLoading] = useState(false);
+  const [err,     setErr]     = useState<string | null>(null);
 
   async function resend() {
     if (!email) return;
     setLoading(true);
+    setErr(null);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-        },
+      const res = await fetch("/api/auth/resend-verify", {
+        method:  "POST",
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
       });
-      if (error) throw error;
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Failed (${res.status})`);
+      }
       setSent(true);
-    } catch {
-      setSent(true); // show success anyway — let them check inbox
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong — try again.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +95,6 @@ function LockedCard({ email }: { email: string }) {
         <Lock size={22} style={{ color: "#A8A5A0" }} />
       </div>
 
-      {/* Heading */}
       <h2
         className="font-heading"
         style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 10 }}
@@ -99,14 +102,10 @@ function LockedCard({ email }: { email: string }) {
         Verify your email to unlock
       </h2>
 
-      {/* Body */}
       <p
         style={{
-          fontSize:   14,
-          color:      "#6B6B72",
-          fontFamily: "var(--font-inter)",
-          lineHeight:  1.65,
-          marginBottom: 28,
+          fontSize: 14, color: "#6B6B72", fontFamily: "var(--font-inter)",
+          lineHeight: 1.65, marginBottom: 28,
         }}
       >
         We sent a confirmation link to{" "}
@@ -114,7 +113,7 @@ function LockedCard({ email }: { email: string }) {
         <br />Click it to access all features.
       </p>
 
-      {/* Resend */}
+      {/* Resend / sent state */}
       {sent ? (
         <div
           style={{
@@ -134,44 +133,41 @@ function LockedCard({ email }: { email: string }) {
           </span>
         </div>
       ) : (
-        <button
-          onClick={resend}
-          disabled={loading}
-          style={{
-            display:      "inline-block",
-            marginBottom:  24,
-            padding:      "11px 28px",
-            borderRadius:  100,
-            background:   "transparent",
-            color:        "#FF3CAC",
-            fontSize:      13,
-            fontWeight:    600,
-            border:        "1.5px solid rgba(255,60,172,0.35)",
-            cursor:        loading ? "default" : "pointer",
-            fontFamily:   "var(--font-inter)",
-            opacity:       loading ? 0.6 : 1,
-            transition:   "all 0.15s",
-          }}
-          onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.70)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.35)"; }}
-        >
-          {loading ? "Sending…" : "Resend verification email →"}
-        </button>
+        <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={resend}
+            disabled={loading}
+            style={{
+              padding:      "11px 28px",
+              borderRadius:  100,
+              background:   "transparent",
+              color:        err ? "#e17055" : "#FF3CAC",
+              fontSize:      13,
+              fontWeight:    600,
+              border:        `1.5px solid ${err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.35)"}`,
+              cursor:        loading ? "default" : "pointer",
+              fontFamily:   "var(--font-inter)",
+              opacity:       loading ? 0.6 : 1,
+              transition:   "all 0.15s",
+            }}
+            onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.70)" : "rgba(255,60,172,0.70)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.35)"; }}
+          >
+            {loading ? "Sending…" : err ? "Retry →" : "Resend verification email →"}
+          </button>
+          {err && (
+            <p style={{ fontSize: 12, color: "#e17055", fontFamily: "var(--font-inter)", margin: 0 }}>{err}</p>
+          )}
+        </div>
       )}
 
-      {/* Refresh hint */}
       <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
         Already clicked the link?{" "}
         <button
           onClick={() => window.location.reload()}
           style={{
-            color:      "#FF3CAC",
-            fontWeight:  600,
-            background: "none",
-            border:     "none",
-            cursor:     "pointer",
-            fontSize:    12,
-            fontFamily: "var(--font-inter)",
+            color: "#FF3CAC", fontWeight: 600, background: "none",
+            border: "none", cursor: "pointer", fontSize: 12, fontFamily: "var(--font-inter)",
           }}
         >
           Refresh →

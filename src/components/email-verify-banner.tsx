@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/auth-context";
 
 interface Props {
@@ -10,28 +9,31 @@ interface Props {
 }
 
 export default function EmailVerifyBanner({ email: emailProp, compact }: Props) {
-  const { user, emailVerified } = useAuth();
+  const { user, emailVerified, session } = useAuth();
   const email = emailProp ?? user?.email ?? "";
 
   const [sent,    setSent]    = useState(false);
   const [loading, setLoading] = useState(false);
+  const [err,     setErr]     = useState<string | null>(null);
 
   async function resend() {
     if (!email) return;
     setLoading(true);
+    setErr(null);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-        },
+      const res = await fetch("/api/auth/resend-verify", {
+        method:  "POST",
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
       });
-      if (error) throw error;
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Failed (${res.status})`);
+      }
       setSent(true);
-    } catch {
-      // fail silently — still show "sent" so user checks inbox
-      setSent(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong — try again.");
     } finally {
       setLoading(false);
     }
@@ -42,32 +44,38 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
 
   // ── Compact mode (resend button only — used in VerifyGate) ───────────────
   if (compact) {
-    return sent ? (
+    if (sent) return (
       <p style={{ fontSize: 13, color: "#16A34A", fontFamily: "var(--font-inter)", fontWeight: 600, margin: 0 }}>
         ✓ Verification email sent — check your inbox!
       </p>
-    ) : (
-      <button
-        onClick={resend}
-        disabled={loading}
-        style={{
-          padding:      "10px 28px",
-          borderRadius:  100,
-          background:   "transparent",
-          color:        "#FF3CAC",
-          fontSize:      13,
-          fontWeight:    600,
-          border:        "1.5px solid rgba(255,60,172,0.35)",
-          cursor:        loading ? "default" : "pointer",
-          fontFamily:   "var(--font-inter)",
-          opacity:       loading ? 0.6 : 1,
-          transition:   "all 0.15s",
-        }}
-        onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.70)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.35)"; }}
-      >
-        {loading ? "Sending…" : "Resend verification email →"}
-      </button>
+    );
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <button
+          onClick={resend}
+          disabled={loading}
+          style={{
+            padding:      "10px 28px",
+            borderRadius:  100,
+            background:   "transparent",
+            color:        "#FF3CAC",
+            fontSize:      13,
+            fontWeight:    600,
+            border:        "1.5px solid rgba(255,60,172,0.35)",
+            cursor:        loading ? "default" : "pointer",
+            fontFamily:   "var(--font-inter)",
+            opacity:       loading ? 0.6 : 1,
+            transition:   "all 0.15s",
+          }}
+          onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.70)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.35)"; }}
+        >
+          {loading ? "Sending…" : "Resend verification email →"}
+        </button>
+        {err && (
+          <p style={{ fontSize: 12, color: "#e17055", fontFamily: "var(--font-inter)", margin: 0 }}>{err}</p>
+        )}
+      </div>
     );
   }
 
@@ -104,12 +112,10 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
           fontSize: 13, fontFamily: "var(--font-inter)", color: "#6B6B72",
           margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
-          Verify your email
-          {email && (
-            <> — link sent to{" "}
-              <span style={{ color: "#0D0D12", fontWeight: 600 }}>{email}</span>
-            </>
-          )}
+          {err
+            ? <span style={{ color: "#e17055" }}>{err}</span>
+            : <>Verify your email{email && <> — link sent to <span style={{ color: "#0D0D12", fontWeight: 600 }}>{email}</span></>}</>
+          }
         </p>
       </div>
 
@@ -134,20 +140,20 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
             padding:     "5px 14px",
             borderRadius: 100,
             background:  "transparent",
-            color:       "#FF3CAC",
+            color:       err ? "#e17055" : "#FF3CAC",
             fontSize:     12,
             fontWeight:   600,
-            border:       "1.5px solid rgba(255,60,172,0.30)",
+            border:       `1.5px solid ${err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.30)"}`,
             cursor:       loading ? "default" : "pointer",
             fontFamily:  "var(--font-inter)",
             opacity:      loading ? 0.55 : 1,
             transition:  "border-color 0.15s, opacity 0.15s",
             whiteSpace:  "nowrap",
           }}
-          onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.65)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,60,172,0.30)"; }}
+          onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.70)" : "rgba(255,60,172,0.65)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = err ? "rgba(225,112,85,0.35)" : "rgba(255,60,172,0.30)"; }}
         >
-          {loading ? "Sending…" : "Resend"}
+          {loading ? "Sending…" : err ? "Retry" : "Resend"}
         </button>
       )}
 
