@@ -15,7 +15,7 @@ import {
   TrendingUp,
   ShoppingCart,
   MousePointer,
-  ChevronRight,
+  ArrowLeft,
   Plus,
 } from "lucide-react";
 import AppSidebar from "@/components/app-sidebar";
@@ -283,12 +283,12 @@ export default function ResultsPage() {
           onUpgrade={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
         />
         <div style={{ flex: 1 }} className="lg:ml-60">
-          {/* Top bar */}
+          {/* Top bar — empty state */}
           <header
             className="pl-14 pr-4 lg:px-8"
             style={{
               height: 64,
-              background: "rgba(247,245,242,0.85)",
+              background: "rgba(247,245,242,0.90)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               borderBottom: "1px solid #E8E5E0",
@@ -300,15 +300,28 @@ export default function ResultsPage() {
               justifyContent: "space-between",
             }}
           >
-            <div className="hidden lg:flex items-center gap-1.5" style={{ fontFamily: "var(--font-inter)" }}>
-              <span style={{ fontSize: 13, color: "#A8A5A0", fontWeight: 500 }}>Dashboard</span>
-              <ChevronRight style={{ width: 13, height: 13, color: "#C8C5C0" }} />
-              <span style={{ fontSize: 13, color: "#0D0D12", fontWeight: 600 }}>Last Results</span>
-            </div>
+            {/* Mobile logo */}
             <div className="flex lg:hidden items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
             </div>
+
+            {/* Desktop left */}
+            <div className="hidden lg:flex items-center gap-2" style={{ fontFamily: "var(--font-inter)" }}>
+              <button
+                onClick={() => router.push("/dashboard")}
+                style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8, color: "#A8A5A0", fontSize: 13, fontWeight: 500, transition: "all 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EDE8"; (e.currentTarget as HTMLButtonElement).style.color = "#0D0D12"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "#A8A5A0"; }}
+              >
+                <ArrowLeft style={{ width: 13, height: 13 }} />
+                Dashboard
+              </button>
+              <span style={{ color: "#D4D0CA", fontSize: 14 }}>›</span>
+              <span className="font-heading" style={{ fontSize: 15, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.02em" }}>Results</span>
+            </div>
+
+            {/* Right */}
             {!authLoading && user && (
               <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 10px rgba(255,60,172,0.26)", flexShrink: 0 }} title={user.email ?? ""}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "var(--font-inter)" }}>
@@ -436,7 +449,7 @@ export default function ResultsPage() {
             className="pl-14 pr-4 lg:px-8"
             style={{
               height: 64,
-              background: "rgba(247,245,242,0.85)",
+              background: "rgba(247,245,242,0.90)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               borderBottom: "1px solid #E8E5E0",
@@ -446,25 +459,57 @@ export default function ResultsPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 12,
             }}
           >
-            {/* Left: mobile logo / desktop breadcrumb */}
-            <div>
-              {/* Mobile logo */}
-              <div className="flex lg:hidden items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
+            {/* Mobile logo */}
+            <div className="flex lg:hidden items-center flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
+            </div>
+
+            {/* Desktop left — back link · title · score badge · campaign count */}
+            <div className="hidden lg:flex items-center gap-2 min-w-0" style={{ fontFamily: "var(--font-inter)" }}>
+              {/* Back */}
+              <button
+                onClick={() => router.push("/dashboard")}
+                style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8, color: "#A8A5A0", fontSize: 13, fontWeight: 500, flexShrink: 0, transition: "all 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EDE8"; (e.currentTarget as HTMLButtonElement).style.color = "#0D0D12"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "#A8A5A0"; }}
+              >
+                <ArrowLeft style={{ width: 13, height: 13 }} />
+                Dashboard
+              </button>
+
+              <span style={{ color: "#D4D0CA", fontSize: 14, flexShrink: 0 }}>›</span>
+
+              {/* Title */}
+              <span className="font-heading" style={{ fontSize: 15, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.02em", flexShrink: 0 }}>
+                Results
+              </span>
+
+              {/* Score badge */}
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "3px 10px", borderRadius: 8, flexShrink: 0,
+                background: score >= 75 ? "rgba(22,163,74,0.10)" : score >= 50 ? "rgba(161,98,7,0.10)" : "rgba(225,112,85,0.10)",
+                border: `1px solid ${score >= 75 ? "rgba(22,163,74,0.22)" : score >= 50 ? "rgba(161,98,7,0.22)" : "rgba(225,112,85,0.22)"}`,
+              }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: score >= 75 ? "#16A34A" : score >= 50 ? "#A16207" : "#e17055",
+                }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: score >= 75 ? "#16A34A" : score >= 50 ? "#A16207" : "#e17055" }}>
+                  {score}/100
+                </span>
               </div>
 
-              {/* Desktop breadcrumb */}
-              <div
-                className="hidden lg:flex items-center gap-1.5"
-                style={{ fontFamily: "var(--font-inter)" }}
-              >
-                <span style={{ fontSize: 13, color: "#A8A5A0", fontWeight: 500 }}>Dashboard</span>
-                <ChevronRight style={{ width: 13, height: 13, color: "#C8C5C0" }} />
-                <span style={{ fontSize: 13, color: "#0D0D12", fontWeight: 600 }}>Results</span>
-              </div>
+              {/* Campaign count */}
+              {summaries.length > 0 && (
+                <span style={{ fontSize: 12, color: "#A8A5A0", flexShrink: 0 }}>
+                  · {summaries.length} campaign{summaries.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
 
             {/* Right: actions */}
