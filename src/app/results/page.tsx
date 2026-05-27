@@ -2,8 +2,8 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Download,
@@ -151,8 +151,18 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 /* ── Main page ───────────────────────────────────────────── */
 
 export default function ResultsPage() {
+  return (
+    <Suspense>
+      <ResultsContent />
+    </Suspense>
+  );
+}
+
+function ResultsContent() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const searchParams = useSearchParams();
+  const analysisId = searchParams.get("id"); // specific analysis to load (from dashboard)
+  const { user, session, loading: authLoading, signOut } = useAuth();
 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
@@ -163,39 +173,121 @@ export default function ResultsPage() {
   const [paidPlan, setPaidPlan] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [needsDbFetch, setNeedsDbFetch] = useState(false);
 
   useEffect(() => {
     document.title = "Your Campaign Analysis — Adur.ai";
   }, []);
 
-  /* ── Read session storage on mount ── */
+  /* ── Step 1: Try sessionStorage on mount (skip when a specific ID is requested) ── */
   useEffect(() => {
+    // If a specific analysis ID is in the URL, always go to the DB —
+    // sessionStorage only has the most-recent result, not the clicked one.
+    if (analysisId) {
+      setNeedsDbFetch(true);
+      return;
+    }
     try {
-      const rawResults = sessionStorage.getItem("adur_results");
+      const rawResults  = sessionStorage.getItem("adur_results");
       const rawFormData = sessionStorage.getItem("adur_form_data");
-
-      if (!rawResults) {
-        setNoResults(true);
+      if (rawResults) {
+        setAnalysis(JSON.parse(rawResults) as AnalysisResult);
+        if (rawFormData) setOnboarding(JSON.parse(rawFormData) as OnboardingData);
+        setPaidPlan(isPaidPlan());
         setHydrated(true);
         return;
       }
+    } catch { /* ignore */ }
+    // sessionStorage empty — wait for auth then try DB
+    setNeedsDbFetch(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      const parsedAnalysis = JSON.parse(rawResults) as AnalysisResult;
-      const parsedOnboarding = rawFormData
-        ? (JSON.parse(rawFormData) as OnboardingData)
-        : null;
+  /* ── Step 2: If sessionStorage was empty, fetch latest from DB once auth is ready ── */
+  useEffect(() => {
+    if (!needsDbFetch || authLoading) return;
 
-      setAnalysis(parsedAnalysis);
-      setOnboarding(parsedOnboarding);
-    } catch {
+    if (!user || !session) {
+      // Not logged in — nothing to fetch
       setNoResults(true);
+      setPaidPlan(isPaidPlan());
       setHydrated(true);
+      setNeedsDbFetch(false);
       return;
     }
 
-    setPaidPlan(isPaidPlan());
-    setHydrated(true);
-  }, [router]);
+    (async () => {
+      try {
+        // Append specific ID when coming from the dashboard Recent Analyses list
+        const url = analysisId
+          ? `/api/analyses/latest?id=${encodeURIComponent(analysisId)}`
+          : "/api/analyses/latest";
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const body = await res.json() as {
+            analysis: AnalysisResult | null;
+            formData: OnboardingData | null;
+          };
+          if (body.analysis) {
+            setAnalysis(body.analysis);
+            if (body.formData) setOnboarding(body.formData);
+            // Only repopulate sessionStorage for "latest" fetches, not for
+            // specific-ID fetches (we don't want to overwrite the current result)
+            if (!analysisId) {
+              try {
+                sessionStorage.setItem("adur_results", JSON.stringify(body.analysis));
+                if (body.formData) sessionStorage.setItem("adur_form_data", JSON.stringify(body.formData));
+              } catch { /* noop */ }
+            }
+          } else if (analysisId) {
+            // Specific ID not found in DB (table may not exist yet, or ID is stale).
+            // Fallback chain: sessionStorage → DB latest → no results
+            let recovered = false;
+            try {
+              const raw = sessionStorage.getItem("adur_results");
+              if (raw) {
+                setAnalysis(JSON.parse(raw) as AnalysisResult);
+                const rawForm = sessionStorage.getItem("adur_form_data");
+                if (rawForm) setOnboarding(JSON.parse(rawForm) as OnboardingData);
+                recovered = true;
+              }
+            } catch { /* ignore */ }
+
+            if (!recovered) {
+              // Last resort: try DB latest (no ID filter)
+              try {
+                const fallbackRes = await fetch("/api/analyses/latest", {
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                if (fallbackRes.ok) {
+                  const fallback = await fallbackRes.json() as { analysis: AnalysisResult | null; formData: OnboardingData | null };
+                  if (fallback.analysis) {
+                    setAnalysis(fallback.analysis);
+                    if (fallback.formData) setOnboarding(fallback.formData);
+                    recovered = true;
+                  }
+                }
+              } catch { /* ignore */ }
+            }
+
+            if (!recovered) setNoResults(true);
+          } else {
+            setNoResults(true);
+          }
+        } else {
+          setNoResults(true);
+        }
+      } catch {
+        setNoResults(true);
+      } finally {
+        setPaidPlan(isPaidPlan());
+        setHydrated(true);
+        setNeedsDbFetch(false);
+      }
+    })();
+  }, [needsDbFetch, authLoading, user, session]);
 
   /* ── Sync paid status from Supabase ── */
   useEffect(() => {
@@ -905,38 +997,53 @@ export default function ResultsPage() {
                     {/* ── Profit Leak Banner ── */}
                     {onboarding && (
                       <ProfitLeakBanner
-                        summaries={analysis.summaries}
+                        summaries={analysis.summaries ?? []}
                         onboarding={onboarding}
                       />
                     )}
 
                     {/* ── Spend vs ROAS Chart ── */}
-                    <div
-                      style={{
-                        background: "#FFFFFF",
-                        border: "1px solid #E8E5E0",
-                        borderRadius: 20,
-                        padding: "24px",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <h3
-                        className="font-heading"
+                    {summaries.length > 0 ? (
+                      <div
                         style={{
-                          fontSize: 17,
-                          fontWeight: 900,
-                          color: "#0D0D12",
-                          letterSpacing: "-0.03em",
-                          marginBottom: 20,
+                          background: "#FFFFFF",
+                          border: "1px solid #E8E5E0",
+                          borderRadius: 20,
+                          padding: "24px",
+                          overflow: "hidden",
                         }}
                       >
-                        Spend vs ROAS
-                      </h3>
-                      <SpendRoasChart
-                        summaries={summaries}
-                        analysisMode={analysis.analysisMode}
-                      />
-                    </div>
+                        <h3
+                          className="font-heading"
+                          style={{
+                            fontSize: 17,
+                            fontWeight: 900,
+                            color: "#0D0D12",
+                            letterSpacing: "-0.03em",
+                            marginBottom: 20,
+                          }}
+                        >
+                          Spend vs ROAS
+                        </h3>
+                        <SpendRoasChart
+                          summaries={summaries}
+                          analysisMode={analysis.analysisMode}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl"
+                        style={{ background: "#FFFFFF", border: "1px solid #E8E5E0" }}
+                      >
+                        <span style={{ fontSize: 28 }}>📊</span>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                          Campaign chart not available
+                        </p>
+                        <p style={{ fontSize: 13, color: "#9ca3af", fontFamily: "var(--font-inter)", textAlign: "center", maxWidth: 340 }}>
+                          This analysis was saved before per-campaign data was stored. Run a new analysis to see the full chart and table.
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -948,6 +1055,20 @@ export default function ResultsPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   >
+                    {summaries.length === 0 ? (
+                      <div
+                        className="flex flex-col items-center justify-center gap-3 py-16 rounded-2xl"
+                        style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", marginTop: 8 }}
+                      >
+                        <span style={{ fontSize: 28 }}>📋</span>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)" }}>
+                          Campaign data not available
+                        </p>
+                        <p style={{ fontSize: 13, color: "#9ca3af", fontFamily: "var(--font-inter)", textAlign: "center", maxWidth: 340 }}>
+                          This analysis was saved before per-campaign data was stored. Run a new analysis to see the full campaign breakdown.
+                        </p>
+                      </div>
+                    ) : (
                     <div
                       style={{
                         background: "#FFFFFF",
@@ -990,6 +1111,7 @@ export default function ResultsPage() {
                         analysisMode={analysis.analysisMode}
                       />
                     </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -1143,7 +1265,7 @@ export default function ResultsPage() {
                           recommendations={analysis.recommendations}
                           battlePlan={analysis.battlePlan}
                           insights={analysis.insights}
-                          summaries={analysis.summaries}
+                          summaries={analysis.summaries ?? []}
                         />
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -42,6 +42,22 @@ function LoginContent() {
   const [error,      setError]      = useState<string | null>(null);
   const [resendSent, setResendSent] = useState(false);
   const [needsVerify, setNeedsVerify] = useState(false);
+
+  // Guard: if already authenticated, send to dashboard immediately.
+  // The middleware handles this for the first load, but this catches the
+  // case where a session is set in a sibling tab between requests.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const dest =
+          redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login"
+            ? redirectTo
+            : "/dashboard";
+        router.replace(dest);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleResend() {
     if (!email.trim()) return;

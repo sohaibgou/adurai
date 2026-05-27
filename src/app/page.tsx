@@ -204,7 +204,7 @@ export default function Home() {
       <AnalysisLoadingScreen
         visible={showLoader}
         active={isLoading}
-        onComplete={() => { setShowLoader(false); router.push("/results"); }}
+        onComplete={() => { setShowLoader(false); router.push(user ? "/results" : "/preview"); }}
       />
 
       <motion.div

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, Crown, Zap, Upload, Sparkles,
-  Calendar, TrendingUp, ChevronRight, FileText,
+  Calendar, TrendingUp, ChevronRight, FileText, LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
@@ -72,7 +72,7 @@ function DashboardContent() {
   const searchParams  = useSearchParams();
   const metaParam     = searchParams.get("meta");
   const actionParam   = searchParams.get("action"); // from approve-email / reject-email
-  const { user, loading: authLoading, signOut, emailVerified } = useAuth();
+  const { user, session, loading: authLoading, signOut, emailVerified } = useAuth();
   const [subscription,     setSubscription]     = useState<Subscription | null>(null);
   const [subLoading,       setSubLoading]       = useState(true);
   const [analysisCount,    setAnalysisCount]    = useState(0);
@@ -85,16 +85,35 @@ function DashboardContent() {
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !session) return;
+
+    // Optimistic: show localStorage counts immediately while DB loads
     setAnalysisCount(getAnalysisCount());
     setRecentAnalyses(getRecentAnalyses());
+
+    // Load subscription
     supabase
       .from("subscriptions")
       .select("plan, status, stripe_customer_id")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => { setSubscription(data ?? null); setSubLoading(false); });
-  }, [user]);
+
+    // Load analyses list from DB (authoritative, cross-device)
+    fetch("/api/analyses/list", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { analyses: RecentAnalysis[] } | null) => {
+        if (!data?.analyses?.length) return; // keep localStorage version if DB empty (migration not run yet)
+        setRecentAnalyses(data.analyses);
+        // Keep analysisCount in sync with DB list length if it's higher
+        if (data.analyses.length > getAnalysisCount()) {
+          setAnalysisCount(data.analyses.length);
+        }
+      })
+      .catch(() => { /* non-fatal — localStorage fallback stays */ });
+  }, [user, session]);
 
   if (authLoading || !user) {
     return (
@@ -170,6 +189,18 @@ function DashboardContent() {
             >
               <Upload className="w-3.5 h-3.5" />
               New Analysis
+            </button>
+
+            {/* Sign-out icon — desktop only (sidebar bottom row already has it on mobile) */}
+            <button
+              onClick={async () => { await signOut(); router.push("/"); }}
+              className="hidden sm:flex items-center justify-center cursor-pointer transition-all"
+              title="Sign out"
+              style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.07)", color: "#A8A5A0", flexShrink: 0 }}
+              onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(255,60,172,0.06)"; b.style.color = "#FF3CAC"; b.style.borderColor = "rgba(255,60,172,0.18)"; }}
+              onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "rgba(0,0,0,0.04)"; b.style.color = "#A8A5A0"; b.style.borderColor = "rgba(0,0,0,0.07)"; }}
+            >
+              <LogOut className="w-4 h-4" />
             </button>
 
             {/* Mobile avatar + sign out */}
@@ -397,7 +428,13 @@ function DashboardContent() {
                           key={a.id}
                           className="flex items-center justify-between gap-4 px-6 py-4 cursor-pointer transition-all"
                           style={{ borderBottom: i < recentAnalyses.length - 1 ? "1px solid #F7F5F2" : "none" }}
-                          onClick={() => router.push("/results")}
+                          onClick={() => {
+                            // Only pass the ID when it's a real DB UUID (has dashes).
+                            // localStorage fallback entries have timestamp IDs like "1779645088999"
+                            // which can't be looked up in the DB — just navigate to latest in that case.
+                            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(a.id);
+                            router.push(isUUID ? `/results?id=${a.id}` : "/results");
+                          }}
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#FAFAF9"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                         >

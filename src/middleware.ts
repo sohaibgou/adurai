@@ -9,14 +9,18 @@ const PROTECTED_PREFIXES = [
   "/results",
 ];
 
+// Auth pages — redirect authenticated users away to prevent multi-account sessions
+const AUTH_ROUTES = ["/login", "/signup"];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
   );
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route);
 
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected && !isAuthRoute) return NextResponse.next();
 
   // Read the Supabase session from cookies (edge-compatible)
   const res = NextResponse.next();
@@ -38,11 +42,21 @@ export async function middleware(req: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
+  // Unauthenticated → protected route: redirect to login
+  if (isProtected && !session) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Already authenticated → auth route: redirect to dashboard
+  // This prevents signing into a second account in a new tab
+  if (isAuthRoute && session) {
+    const dashUrl = req.nextUrl.clone();
+    dashUrl.pathname = "/dashboard";
+    dashUrl.search = "";
+    return NextResponse.redirect(dashUrl);
   }
 
   return res;
@@ -54,5 +68,7 @@ export const config = {
     "/creative-studio/:path*",
     "/analyze/:path*",
     "/results/:path*",
+    "/login",
+    "/signup",
   ],
 };

@@ -14,17 +14,31 @@ import {
   Check,
   Image,
   FileText,
+  Video,
 } from "lucide-react";
 import type { CampaignSummary } from "@/lib/types";
+import { useAuth } from "@/context/auth-context";
 
 /* ── Props ───────────────────────────────────────────────── */
 
+export interface SavedSession {
+  id:            string;
+  created_at:    string;
+  image_urls:    Array<{ url: string; angle?: string; headline?: string }>;
+  copy_variants?: AdCopyVariant[];
+  prompt?:       string;
+}
+
 interface CreativeStudioProps {
-  summaries:  CampaignSummary[];
-  winners?:   string[];
-  isPaid?:    boolean;
-  isAdmin?:   boolean;
-  onPaywall?: (reason: "image" | "copy") => void;
+  summaries:        CampaignSummary[];
+  winners?:         string[];
+  isPaid?:          boolean;
+  isAdmin?:         boolean;
+  isProPlan?:       boolean;
+  onPaywall?:       (reason: "image" | "copy") => void;
+  onSaved?:         (id: string) => void;
+  onLibraryOpen?:   () => void;   // called when user switches to Library tab
+  savedSessions?:   SavedSession[];
 }
 
 interface ReferenceImage {
@@ -60,6 +74,20 @@ interface ArabicTextData {
   cta:         string;
 }
 
+/* ── Helpers ─────────────────────────────────────────────── */
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1)  return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7)  return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 /* ── Colour maps ─────────────────────────────────────────── */
 
 const HOOK_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -84,6 +112,69 @@ const ANGLE_COLORS = [
 const LANGUAGES = ["English", "French", "Arabic"];
 
 const CREATIVE_LIMIT = 3;
+
+/* ── UGC constants ───────────────────────────────────────── */
+
+const UGC_HOOKS = [
+  { id: "Problem/Solution",  icon: "🎯", label: "Problem/Solution",  desc: "Start with a pain point your customer feels" },
+  { id: "Testimonial Style", icon: "⭐", label: "Testimonial Style", desc: "Feel like a real customer sharing results"    },
+  { id: "Shocking Fact",     icon: "😲", label: "Shocking Fact",     desc: "Open with a surprising statistic or claim"   },
+  { id: "Direct Offer",      icon: "💰", label: "Direct Offer",      desc: "Lead with your deal or value proposition"    },
+] as const;
+
+const UGC_STYLES = [
+  "Natural/Authentic",
+  "Energetic/Hype",
+  "Educational/Trust",
+  "Luxury/Premium",
+] as const;
+
+// Monthly generation limits per plan
+const UGC_LIMIT: Record<string, number> = { free: 0, starter: 3, pro: 30 };
+
+function getUgcPlan(): "free" | "starter" | "pro" {
+  try {
+    const p = localStorage.getItem("adur_plan");
+    if (p === "pro")     return "pro";
+    if (p === "starter") return "starter";
+    return "free";
+  } catch { return "free"; }
+}
+
+function getUgcRawCount(): number {
+  try { return parseInt(localStorage.getItem("adur_ugc_count") ?? "0", 10) || 0; } catch { return 0; }
+}
+
+function getCurrentMonthKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Checks the stored month key, resets counter if it's a new month, returns current count */
+function initUgcCount(): number {
+  try {
+    const stored   = localStorage.getItem("adur_ugc_reset_date") ?? "";
+    const monthKey = getCurrentMonthKey();
+    if (stored !== monthKey) {
+      localStorage.setItem("adur_ugc_count",      "0");
+      localStorage.setItem("adur_ugc_reset_date", monthKey);
+      return 0;
+    }
+    return getUgcRawCount();
+  } catch { return 0; }
+}
+
+function incrementUgcCount(): number {
+  const next = getUgcRawCount() + 1;
+  try { localStorage.setItem("adur_ugc_count", String(next)); } catch { /* noop */ }
+  return next;
+}
+
+function getNextResetDate(): string {
+  const now   = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return first.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+}
 
 function getImageCount(): number {
   try { return parseInt(localStorage.getItem("adur_image_count") ?? "0", 10) || 0; } catch { return 0; }
@@ -230,9 +321,12 @@ async function applyArabicOverlay(
 
 /* ── Main component ──────────────────────────────────────── */
 
-export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, isAdmin = false, onPaywall }: CreativeStudioProps) {
+export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, isAdmin = false, isProPlan = false, onPaywall, onSaved, onLibraryOpen, savedSessions = [] }: CreativeStudioProps) {
+  /* ── Auth (for hub save) ─────────────────────────── */
+  const { session } = useAuth();
+
   /* ── Tab ─────────────────────────────────────────── */
-  const [activeTab, setActiveTab] = useState<"creative" | "adcopy">("creative");
+  const [activeTab, setActiveTab] = useState<"creative" | "adcopy" | "ugc" | "library">("creative");
 
   /* ════════════════════════════════════════════════════════
      CREATIVE TAB STATE
@@ -252,10 +346,54 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [isArabicMode,  setIsArabicMode]  = useState(false);
   const [arabicTexts,   setArabicTexts]   = useState<ArabicTextData[]>([]);
 
-  const [imageUsage, setImageUsage] = useState(0);
-  const [copyUsage,  setCopyUsage]  = useState(0);
+  const [imageUsage,         setImageUsage]         = useState(0);
+  const [copyUsage,          setCopyUsage]          = useState(0);
+  const [savingToHub,        setSavingToHub]        = useState(false);
+  const [savingCopyToHub,    setSavingCopyToHub]    = useState(false);
+  const [saveStatus,         setSaveStatus]         = useState<"idle" | "saving" | "ok" | "err">("idle");
+  const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Derived history lists — fully guarded against null/undefined from DB
+  const _sessions     = Array.isArray(savedSessions) ? savedSessions : [];
+  const imageSessions = _sessions.filter((s) => Array.isArray(s.image_urls) && s.image_urls.length > 0);
+  const copySessions  = _sessions.filter((s) => Array.isArray(s.copy_variants) && s.copy_variants.length > 0);
+
+  function toggleHistory(id: string) {
+    setExpandedHistoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ugcProgressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ════════════════════════════════════════════════════════
+     UGC VIDEO TAB STATE
+  ════════════════════════════════════════════════════════ */
+  const ugcImageRef                           = useRef<HTMLInputElement>(null);
+  const [ugcImage,       setUgcImage]         = useState<{ file: File; previewUrl: string } | null>(null);
+  const [ugcProduct,     setUgcProduct]       = useState("");
+  const [ugcHook,        setUgcHook]          = useState<string>("Problem/Solution");
+  const [ugcStyle,       setUgcStyle]         = useState<string>("Natural/Authentic");
+  const [ugcLang,        setUgcLang]          = useState("English");
+  const [ugcDuration,    setUgcDuration]      = useState<5 | 10 | 15>(10);
+  const [ugcRatio,       setUgcRatio]         = useState<"9:16" | "1:1" | "16:9">("9:16");
+  const [ugcLoading,     setUgcLoading]       = useState(false);
+  const [ugcStage,       setUgcStage]         = useState(0); // 0=idle 1=script 2=video 3=audio 4=done
+  const [ugcProgress,    setUgcProgress]      = useState(0);
+  const [ugcScript,      setUgcScript]        = useState<string | null>(null);
+  const [ugcHookLine,    setUgcHookLine]      = useState<string | null>(null);
+  const [ugcVideoUrl,    setUgcVideoUrl]      = useState<string | null>(null);
+  const [ugcClip2Url,    setUgcClip2Url]      = useState<string | null>(null);
+  const [ugcNeedsMerge,  setUgcNeedsMerge]   = useState(false);
+  const [ugcError,       setUgcError]         = useState<string | null>(null);
+  const [ugcScriptOpen,  setUgcScriptOpen]    = useState(false);
+  const [ugcScriptCopied, setUgcScriptCopied] = useState(false);
+  const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "pro">("free");
+  const [ugcUsage,       setUgcUsage]         = useState(0);
 
   /* ── Progress bar (60 s window for 4 parallel images) ── */
   useEffect(() => {
@@ -271,11 +409,32 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
+  /* ── UGC video stage-2 progress bar ─────────────── */
+  useEffect(() => {
+    if (ugcStage !== 2) {
+      if (ugcProgressRef.current) { clearInterval(ugcProgressRef.current); ugcProgressRef.current = null; }
+      return;
+    }
+    const start = Date.now();
+    ugcProgressRef.current = setInterval(() => {
+      setUgcProgress(Math.min(88, ((Date.now() - start) / 100_000) * 100));
+    }, 300);
+    return () => { if (ugcProgressRef.current) { clearInterval(ugcProgressRef.current); ugcProgressRef.current = null; } };
+  }, [ugcStage]);
+
   /* ── Hydrate usage counts from localStorage ─────── */
   useEffect(() => {
     setImageUsage(getImageCount());
     setCopyUsage(getCopyCount());
+    setUgcPlan(getUgcPlan());
+    setUgcUsage(initUgcCount());
   }, []);
+
+  /* ── Fetch fresh library data whenever Library tab opens ── */
+  useEffect(() => {
+    if (activeTab === "library") onLibraryOpen?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   /* ── Image upload helpers ────────────────────────── */
   function readImageFile(file: File) {
@@ -293,6 +452,70 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   function clearImage() {
     if (refImage) URL.revokeObjectURL(refImage.previewUrl);
     setRefImage(null);
+  }
+
+  /* ── Hub save helpers ───────────────────────────── */
+  async function saveToHub(imgs: CreativeImage[], usedPrompt: string) {
+    const token = session?.access_token;
+    if (!token) return;
+    setSavingToHub(true);
+    setSaveStatus("saving");
+    try {
+      const res  = await fetch("/api/creatives/save", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({
+          images: imgs.map((img) => ({ url: img.url, angle: img.angle, headline: img.headline })),
+          prompt: usedPrompt,
+        }),
+      });
+      const data = await res.json() as { id?: string; error?: string };
+      if (res.ok && data.id) {
+        setSaveStatus("ok");
+        onSaved?.(data.id);
+      } else {
+        setSaveStatus("err");
+        console.error("[saveToHub]", data.error ?? `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      setSaveStatus("err");
+      console.error("[saveToHub]", e);
+    } finally {
+      setSavingToHub(false);
+      setTimeout(() => setSaveStatus("idle"), 4000);
+    }
+  }
+
+  async function saveCopyToHub(variants: AdCopyVariant[], description: string) {
+    const token = session?.access_token;
+    if (!token) return;
+    setSavingCopyToHub(true);
+    setSaveStatus("saving");
+    try {
+      const res  = await fetch("/api/creatives/save", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({
+          images:       [],
+          copyVariants: variants,
+          prompt:       description || undefined,
+        }),
+      });
+      const data = await res.json() as { id?: string; error?: string };
+      if (res.ok && data.id) {
+        setSaveStatus("ok");
+        onSaved?.(data.id);
+      } else {
+        setSaveStatus("err");
+        console.error("[saveCopyToHub]", data.error ?? `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      setSaveStatus("err");
+      console.error("[saveCopyToHub]", e);
+    } finally {
+      setSavingCopyToHub(false);
+      setTimeout(() => setSaveStatus("idle"), 4000);
+    }
   }
 
   /* ── API call ────────────────────────────────────── */
@@ -362,6 +585,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       setPromptUsed(prompt.trim());
       setProgress(100);
       if (!isAdmin && !isPaid) { const next = incrementImageCount(); setImageUsage(next); }
+      // Save to creative hub (best-effort, non-blocking)
+      saveToHub(finalImages, prompt.trim());
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed. Please try again.";
       console.error("[creative-studio] generate error:", msg);
@@ -415,6 +640,97 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     }
   }
 
+  /* ── UGC image helpers ──────────────────────────── */
+  function readUgcImage(file: File) {
+    if (file.size > 10 * 1024 * 1024) { alert("Image must be under 10 MB."); return; }
+    setUgcImage({ file, previewUrl: URL.createObjectURL(file) });
+  }
+  function handleUgcImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (f) readUgcImage(f); e.target.value = "";
+  }
+  function handleUgcDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f && f.type.startsWith("image/")) readUgcImage(f);
+  }
+  function clearUgcImage() {
+    if (ugcImage) URL.revokeObjectURL(ugcImage.previewUrl);
+    setUgcImage(null);
+  }
+
+  /* ── Generate UGC video ─────────────────────────── */
+  async function generateUgc() {
+    if (!ugcImage || ugcLoading) return;
+
+    // Re-read plan + count fresh from localStorage (guards against stale closure)
+    const currentPlan  = isAdmin ? "pro" : getUgcPlan();
+    const currentCount = isAdmin ? 0      : initUgcCount();
+    const limit        = isAdmin ? Infinity : (UGC_LIMIT[currentPlan] ?? 0);
+
+    if (!isAdmin && currentPlan === "free")       return; // blocked by UI
+    if (!isAdmin && currentCount >= limit)         return; // blocked by UI
+
+    setUgcLoading(true);
+    setUgcError(null);
+    setUgcVideoUrl(null);
+    setUgcClip2Url(null);
+    setUgcScript(null);
+    setUgcHookLine(null);
+    setUgcNeedsMerge(false);
+    setUgcProgress(0);
+    setUgcStage(1); // ✍️ Writing script
+
+    const stageTimer = setTimeout(() => setUgcStage(2), 7_000); // 🎬 Generating
+
+    try {
+      const fd = new FormData();
+      fd.append("image",              ugcImage.file, ugcImage.file.name || "product.jpg");
+      fd.append("productDescription", ugcProduct);
+      fd.append("hookType",           ugcHook);
+      fd.append("creatorStyle",       ugcStyle);
+      fd.append("language",           ugcLang);
+      fd.append("duration",           String(ugcDuration));
+      fd.append("aspectRatio",        ugcRatio);
+
+      const res  = await fetch("/api/generate-ugc", { method: "POST", body: fd });
+      const data = await res.json() as {
+        videoUrl?:  string;
+        clip2Url?:  string | null;
+        script?:    string;
+        hook?:      string;
+        duration?:  number;
+        needsMerge?: boolean;
+        error?:     string;
+      };
+
+      clearTimeout(stageTimer);
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);
+
+      setUgcStage(3); // 🔊 Adding audio
+      await new Promise(r => setTimeout(r, 1_800));
+
+      setUgcVideoUrl(data.videoUrl ?? null);
+      setUgcClip2Url(data.clip2Url ?? null);
+      setUgcScript(data.script ?? null);
+      setUgcHookLine(data.hook ?? null);
+      setUgcNeedsMerge(data.needsMerge ?? false);
+      setUgcProgress(100);
+      setUgcStage(4); // ✅ Done
+      setUgcScriptOpen(true);
+      // Increment monthly counter
+      if (!isAdmin) {
+        const next = incrementUgcCount();
+        setUgcUsage(next);
+      }
+    } catch (err) {
+      clearTimeout(stageTimer);
+      setUgcError(err instanceof Error ? err.message : "Generation failed. Please try again.");
+      setUgcStage(0);
+    } finally {
+      setUgcLoading(false);
+    }
+  }
+
   /* ════════════════════════════════════════════════════════
      AD COPY TAB STATE
   ════════════════════════════════════════════════════════ */
@@ -444,8 +760,13 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       });
       const data = await res.json() as { variants?: AdCopyVariant[]; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
-      setCopyVariants(data.variants ?? []);
+      const variants = data.variants ?? [];
+      setCopyVariants(variants);
       if (!isAdmin && !isPaid) { const next = incrementCopyCount(); setCopyUsage(next); }
+      // Build a human-readable description for the library card
+      const desc = [copyProduct, copyAudience && `for ${copyAudience}`, copyBenefit && `— ${copyBenefit}`]
+        .filter(Boolean).join(" ");
+      saveCopyToHub(variants, desc);
     } catch (err) {
       setCopyError(err instanceof Error ? err.message : "Failed to generate. Try again.");
     } finally {
@@ -477,23 +798,83 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       {/* ── Tab bar ── */}
       <div className="flex border-b border-[#f0f0f5] bg-white px-6 pt-5">
         <div className="flex gap-1 p-1 rounded-xl bg-[#F7F5F2]">
-          {(["creative", "adcopy"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+          {/* Creative tab */}
+          <button
+            onClick={() => setActiveTab("creative")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+            style={{
+              background: activeTab === "creative" ? "#ffffff" : "transparent",
+              color:      activeTab === "creative" ? "#0a0a0f"  : "#6b7280",
+              boxShadow:  activeTab === "creative" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <Image className="w-3.5 h-3.5" /> Creative
+          </button>
+
+          {/* Ad Copy tab */}
+          <button
+            onClick={() => setActiveTab("adcopy")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+            style={{
+              background: activeTab === "adcopy" ? "#ffffff" : "transparent",
+              color:      activeTab === "adcopy" ? "#0a0a0f"  : "#6b7280",
+              boxShadow:  activeTab === "adcopy" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <FileText className="w-3.5 h-3.5" /> Ad Copy
+          </button>
+
+          {/* UGC Video tab */}
+          <button
+            onClick={() => setActiveTab("ugc")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+            style={{
+              background: activeTab === "ugc" ? "#ffffff" : "transparent",
+              color:      activeTab === "ugc" ? "#7c3aed"  : "#6b7280",
+              boxShadow:  activeTab === "ugc" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <Video className="w-3.5 h-3.5" />
+            UGC Video
+            <span
               style={{
-                background: activeTab === tab ? "#ffffff" : "transparent",
-                color:      activeTab === tab ? "#0a0a0f"  : "#6b7280",
-                boxShadow:  activeTab === tab ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                fontSize: 8, fontWeight: 800, letterSpacing: "0.06em",
+                padding: "2px 5px", borderRadius: 100,
+                background: activeTab === "ugc"
+                  ? "linear-gradient(135deg,#7c3aed,#a855f7)"
+                  : "rgba(124,58,237,0.12)",
+                color: activeTab === "ugc" ? "#fff" : "#7c3aed",
               }}
             >
-              {tab === "creative"
-                ? <><Image className="w-3.5 h-3.5" /> Creative</>
-                : <><FileText className="w-3.5 h-3.5" /> Ad Copy</>
-              }
-            </button>
-          ))}
+              PRO
+            </span>
+          </button>
+
+          {/* Library tab */}
+          <button
+            onClick={() => setActiveTab("library")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
+            style={{
+              background: activeTab === "library" ? "#ffffff" : "transparent",
+              color:      activeTab === "library" ? "#0a0a0f"  : "#6b7280",
+              boxShadow:  activeTab === "library" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+            }}
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            Library
+            {_sessions.length > 0 && (
+              <span
+                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none"
+                style={{
+                  minWidth: 18, height: 18, padding: "0 5px",
+                  background: activeTab === "library" ? "linear-gradient(135deg,#FF3CAC,#FF6B35)" : "rgba(255,60,172,0.12)",
+                  color: activeTab === "library" ? "#fff" : "#FF3CAC",
+                }}
+              >
+                {_sessions.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -812,6 +1193,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
+                    {/* Save status pill */}
+                    {saveStatus !== "idle" && (
+                      <div className="flex items-center gap-1.5 mb-3 px-1">
+                        {saveStatus === "saving" && <><Loader2 className="w-3 h-3 text-[#FF3CAC] animate-spin" /><span className="text-[11px] text-[#9ca3af] font-medium">Saving to Library…</span></>}
+                        {saveStatus === "ok"     && <><Check   className="w-3 h-3 text-[#16a34a]" /><span className="text-[11px] text-[#16a34a] font-semibold">Saved to Library ✓</span></>}
+                        {saveStatus === "err"    && <><X       className="w-3 h-3 text-red-500" /><span className="text-[11px] text-red-500 font-semibold">Save failed — run the DB migration first</span></>}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       {images.map((img, i) => {
                         const isRegen = regenMap[i] ?? false;
@@ -925,6 +1314,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                                 Regenerate
                               </button>
                             </div>
+
                           </motion.div>
                         );
                       })}
@@ -933,6 +1323,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 )}
 
               </AnimatePresence>
+
             </div>
           </motion.div>
         )}
@@ -1157,6 +1548,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="space-y-3"
                   >
+                    {/* Save status pill */}
+                    {saveStatus !== "idle" && (
+                      <div className="flex items-center gap-1.5 pb-1 px-1">
+                        {saveStatus === "saving" && <><Loader2 className="w-3 h-3 text-[#FF3CAC] animate-spin" /><span className="text-[11px] text-[#9ca3af] font-medium">Saving to Library…</span></>}
+                        {saveStatus === "ok"     && <><Check   className="w-3 h-3 text-[#16a34a]" /><span className="text-[11px] text-[#16a34a] font-semibold">Saved to Library ✓</span></>}
+                        {saveStatus === "err"    && <><X       className="w-3 h-3 text-red-500" /><span className="text-[11px] text-red-500 font-semibold">Save failed — run the DB migration first</span></>}
+                      </div>
+                    )}
                     {copyVariants.map((v, i) => {
                       const color    = hookColor(v.hookType);
                       const isCopied = copiedIdx === i;
@@ -1222,6 +1621,846 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
               </AnimatePresence>
             </div>
+          </motion.div>
+        )}
+
+        {/* ════════════════════════════════════════════
+            UGC VIDEO TAB
+        ════════════════════════════════════════════ */}
+        {activeTab === "ugc" && (
+          <motion.div
+            key="ugc"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex flex-col lg:flex-row"
+            style={{ minHeight: 720 }}
+          >
+            {/* ── LEFT: Controls ── */}
+            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5] overflow-y-auto">
+
+              <div>
+                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">UGC Video</h2>
+                <p className="text-sm text-[#6b7280] mt-1">Generate authentic UGC-style videos with AI</p>
+              </div>
+
+              {/* ─ Section 1: Product Setup ─ */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">YOUR PRODUCT</p>
+
+                {/* Image upload */}
+                {ugcImage ? (
+                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={ugcImage.previewUrl} alt="Product" className="w-14 h-14 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Ready
+                      </span>
+                      <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcImage.file.name}</p>
+                    </div>
+                    <button onClick={clearUgcImage} className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => ugcImageRef.current?.click()}
+                    onDrop={handleUgcDrop}
+                    onDragOver={e => e.preventDefault()}
+                    className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
+                      <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload your product image</p>
+                      <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-snug max-w-[200px]">The AI will generate a UGC video featuring your product</p>
+                    </div>
+                  </div>
+                )}
+                <input ref={ugcImageRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUgcImageChange} />
+
+                {/* Product description */}
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">DESCRIBE YOUR PRODUCT</p>
+                  <textarea
+                    value={ugcProduct}
+                    onChange={e => setUgcProduct(e.target.value)}
+                    placeholder="e.g. Premium supplement for men that boosts energy and confidence. 299 DH. Natural ingredients."
+                    rows={3}
+                    className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* ─ Section 2: Video Style ─ */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">HOOK TYPE</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {UGC_HOOKS.map(h => {
+                    const sel = ugcHook === h.id;
+                    return (
+                      <button
+                        key={h.id}
+                        onClick={() => setUgcHook(h.id)}
+                        className="text-left p-3 rounded-xl border-2 transition-all cursor-pointer"
+                        style={{
+                          background:   sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
+                          borderColor:  sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
+                        }}
+                      >
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>{h.icon}</span>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f", marginTop: 5, lineHeight: 1.2 }}>{h.label}</p>
+                        <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 3, lineHeight: 1.35 }}>{h.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CREATOR STYLE</p>
+                  <select
+                    value={ugcStyle}
+                    onChange={e => setUgcStyle(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all cursor-pointer"
+                  >
+                    {UGC_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* ─ Section 3: Settings ─ */}
+              <div className="space-y-4">
+                {/* Language */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">LANGUAGE</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {["English", "French", "Arabic", "Darija"].map(lang => (
+                      <button
+                        key={lang}
+                        onClick={() => setUgcLang(lang)}
+                        className="py-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
+                        style={{
+                          background:  ugcLang === lang ? "rgba(124,58,237,0.10)" : "#F7F5F2",
+                          color:       ugcLang === lang ? "#7c3aed" : "#6b7280",
+                          border:      `1.5px solid ${ugcLang === lang ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
+                        }}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">DURATION</p>
+                  <div className="flex gap-2">
+                    {([5, 10, 15] as const).map(d => (
+                      <button
+                        key={d}
+                        onClick={() => setUgcDuration(d)}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
+                        style={{
+                          background:  ugcDuration === d ? "rgba(124,58,237,0.10)" : "#F7F5F2",
+                          color:       ugcDuration === d ? "#7c3aed" : "#6b7280",
+                          border:      `2px solid ${ugcDuration === d ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
+                        }}
+                      >
+                        {d}s
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Aspect ratio */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">ASPECT RATIO</p>
+                  <div className="flex gap-2">
+                    {(["9:16", "1:1", "16:9"] as const).map(ratio => {
+                      const labels = { "9:16": "Story", "1:1": "Feed", "16:9": "Landscape" };
+                      return (
+                        <button
+                          key={ratio}
+                          onClick={() => setUgcRatio(ratio)}
+                          className="flex-1 py-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center"
+                          style={{
+                            background:  ugcRatio === ratio ? "rgba(124,58,237,0.10)" : "#F7F5F2",
+                            color:       ugcRatio === ratio ? "#7c3aed" : "#6b7280",
+                            border:      `1.5px solid ${ugcRatio === ratio ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
+                          }}
+                        >
+                          <span style={{ fontSize: 9, display: "block", opacity: 0.7 }}>{ratio}</span>
+                          {labels[ratio]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ─ Generate button / usage gate ─ */}
+              {(() => {
+                const plan        = isAdmin ? "pro" : ugcPlan;
+                const limit       = isAdmin ? 30    : (UGC_LIMIT[plan] ?? 0);
+                const used        = isAdmin ? 0     : ugcUsage;
+                const exhausted   = !isAdmin && used >= limit;
+                const canAccess   = isAdmin || plan !== "free";
+                const btnDisabled = !ugcImage || !ugcProduct.trim() || ugcLoading || exhausted;
+
+                return (
+                  <div className="mt-auto space-y-2">
+                    {/* Free plan — fully locked */}
+                    {!canAccess && (
+                      <div
+                        className="rounded-2xl p-5 text-center space-y-3"
+                        style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.18)" }}
+                      >
+                        <div style={{ fontSize: 26 }}>🔒</div>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>UGC Video</p>
+                          <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", marginTop: 4, lineHeight: 1.5 }}>
+                            Available on Starter and Pro plans
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => onPaywall?.("image")}
+                          className="w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer"
+                          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none" }}
+                        >
+                          Upgrade to Starter →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Starter exhausted — upgrade to Pro */}
+                    {canAccess && exhausted && plan === "starter" && (
+                      <div
+                        className="rounded-2xl p-4 text-center space-y-2.5"
+                        style={{ background: "rgba(225,112,85,0.06)", border: "1px solid rgba(225,112,85,0.22)" }}
+                      >
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>
+                          Monthly limit reached
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
+                          You&apos;ve used all {limit} UGC videos this month. Upgrade to Pro for 30/month.
+                        </p>
+                        <button
+                          onClick={() => onPaywall?.("image")}
+                          className="w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer"
+                          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none" }}
+                        >
+                          Upgrade to Pro — 30/month →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Pro exhausted — show reset date */}
+                    {canAccess && exhausted && plan === "pro" && (
+                      <div
+                        className="rounded-2xl p-4 text-center space-y-1.5"
+                        style={{ background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.16)" }}
+                      >
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>
+                          Monthly limit reached
+                        </p>
+                        <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
+                          You&apos;ve used all {limit} UGC videos this month.
+                          <br />Resets on {getNextResetDate()}.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Generate button — accessible + not exhausted */}
+                    {canAccess && !exhausted && (
+                      <>
+                        <button
+                          onClick={generateUgc}
+                          disabled={btnDisabled}
+                          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            background: btnDisabled ? "#e8e8f0" : "linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)",
+                            color:      btnDisabled ? "#9ca3af" : "#fff",
+                            boxShadow:  btnDisabled ? "none"    : "0 4px 20px rgba(124,58,237,0.30)",
+                            border:     "none",
+                          }}
+                        >
+                          {ugcLoading
+                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                            : <><Video className="w-4 h-4" /> Generate UGC Video</>
+                          }
+                        </button>
+
+                        {/* Counter */}
+                        <p className="text-[11px] text-[#9ca3af] text-center" style={{ fontFamily: "var(--font-inter)" }}>
+                          {plan === "starter"
+                            ? `${used} of ${limit} UGC videos used this month`
+                            : `${limit - used} of ${limit} monthly UGC videos remaining`
+                          }
+                        </p>
+
+                        {!ugcImage && (
+                          <p className="text-[11px] text-[#9ca3af] text-center">↑ Upload a product image to enable generation</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ─ Script preview ─ */}
+              {ugcScript && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">YOUR UGC SCRIPT</p>
+                    <button
+                      onClick={() => setUgcScriptOpen(o => !o)}
+                      className="text-[11px] font-semibold cursor-pointer"
+                      style={{ color: "#7c3aed", background: "none", border: "none" }}
+                    >
+                      {ugcScriptOpen ? "Hide ▲" : "Show ▼"}
+                    </button>
+                  </div>
+                  {ugcScriptOpen && (
+                    <div className="relative">
+                      <div
+                        className="p-3 rounded-xl text-[12px] leading-relaxed whitespace-pre-line"
+                        style={{ background: "#F7F5F2", border: "1px solid #E8E5E0", color: "#374151", maxHeight: 180, overflowY: "auto" }}
+                      >
+                        {ugcScript}
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(ugcScript);
+                          setUgcScriptCopied(true);
+                          setTimeout(() => setUgcScriptCopied(false), 2000);
+                        }}
+                        className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold cursor-pointer transition-all"
+                        style={{
+                          background: ugcScriptCopied ? "#ecfdf5" : "rgba(255,255,255,0.90)",
+                          color:      ugcScriptCopied ? "#059669" : "#6b7280",
+                          border:     `1px solid ${ugcScriptCopied ? "#a7f3d0" : "#E8E5E0"}`,
+                          backdropFilter: "blur(4px)",
+                        }}
+                      >
+                        {ugcScriptCopied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy Script</>}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── RIGHT: Output ── */}
+            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
+              <AnimatePresence mode="wait">
+
+                {/* ─ Free plan lock state (right panel) ─ */}
+                {!isAdmin && ugcPlan === "free" && ugcStage === 0 && !ugcVideoUrl && (
+                  <motion.div
+                    key="ugc-locked"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-6 py-12"
+                  >
+                    <div
+                      className="flex flex-col items-center gap-4 p-8 rounded-3xl text-center"
+                      style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.16)", maxWidth: 380 }}
+                    >
+                      <div style={{ fontSize: 52 }}>🎬</div>
+                      <div>
+                        <p style={{ fontSize: 17, fontWeight: 800, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>UGC Video</p>
+                        <p style={{ fontSize: 13, color: "#6b7280", marginTop: 8, lineHeight: 1.6, fontFamily: "var(--font-inter)" }}>
+                          Turn your product images into authentic UGC-style videos — available on Starter and Pro plans.
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 w-full">
+                        {["✍️ Claude writes your UGC script", "🎬 Kling AI generates the video", "📱 Story, Feed & Landscape formats"].map(f => (
+                          <div key={f} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.10)" }}>
+                            <span style={{ fontSize: 12, color: "#7c3aed", fontFamily: "var(--font-inter)" }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => onPaywall?.("image")}
+                        className="w-full py-3 rounded-xl text-sm font-bold text-white cursor-pointer"
+                        style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 4px 20px rgba(124,58,237,0.28)" }}
+                      >
+                        Upgrade to Starter →
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ─ Empty state ─ */}
+                {(isAdmin || ugcPlan !== "free") && ugcStage === 0 && !ugcVideoUrl && !ugcError && !ugcLoading && (
+                  <motion.div
+                    key="ugc-empty"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-6"
+                  >
+                    <div className="flex items-center justify-center rounded-3xl" style={{ width: 80, height: 80, background: "rgba(124,58,237,0.08)", border: "2px dashed rgba(124,58,237,0.25)" }}>
+                      <Video className="w-8 h-8" style={{ color: "rgba(124,58,237,0.45)" }} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-[#0a0a0f]">Your UGC video will appear here</p>
+                      <p className="text-xs text-[#9ca3af] mt-1">Upload your product and click Generate</p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {["Perfect for Meta Feed", "Instagram Stories", "TikTok Ads"].map(label => (
+                        <span
+                          key={label}
+                          className="px-3 py-1.5 rounded-full text-[11px] font-semibold"
+                          style={{ background: "#fff", border: "1px solid #E8E5E0", color: "#6b7280" }}
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ─ Error state ─ */}
+                {ugcError && !ugcLoading && (
+                  <motion.div
+                    key="ugc-error"
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-4"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">⚠️</div>
+                    <p className="text-sm font-semibold text-[#0a0a0f] text-center max-w-xs">{ugcError}</p>
+                    <button
+                      onClick={generateUgc}
+                      disabled={!ugcImage}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
+                      style={{ background: "#7c3aed" }}
+                    >
+                      <RefreshCw className="w-4 h-4" /> Try Again
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* ─ Generation stages ─ */}
+                {ugcLoading && (
+                  <motion.div
+                    key="ugc-loading"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center gap-8"
+                  >
+                    {/* Stage steps */}
+                    <div className="w-full max-w-sm space-y-3">
+                      {[
+                        { stage: 1, icon: "✍️", label: "Writing your UGC script…" },
+                        { stage: 2, icon: "🎬", label: "Generating your video…"   },
+                        { stage: 3, icon: "🔊", label: "Adding audio…"            },
+                        { stage: 4, icon: "✅", label: "Your UGC is ready!"       },
+                      ].map(step => {
+                        const isActive = ugcStage === step.stage;
+                        const isDone   = ugcStage > step.stage;
+                        return (
+                          <div
+                            key={step.stage}
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+                            style={{
+                              background:  isActive ? "rgba(124,58,237,0.08)" : isDone ? "rgba(22,163,74,0.05)" : "rgba(0,0,0,0.03)",
+                              border:      `1px solid ${isActive ? "rgba(124,58,237,0.22)" : isDone ? "rgba(22,163,74,0.18)" : "transparent"}`,
+                            }}
+                          >
+                            {isActive
+                              ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: "#7c3aed" }} />
+                              : isDone
+                              ? <Check className="w-4 h-4 flex-shrink-0" style={{ color: "#16a34a" }} />
+                              : <span className="w-4 h-4 flex-shrink-0" />
+                            }
+                            <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? "#7c3aed" : isDone ? "#16a34a" : "#9ca3af", fontFamily: "var(--font-inter)" }}>
+                              {step.icon} {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Progress bar for stage 2 */}
+                    {ugcStage === 2 && (
+                      <div className="w-full max-w-sm space-y-1.5">
+                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.12)" }}>
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${ugcProgress}%`, background: "linear-gradient(90deg,#7c3aed,#a855f7)" }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-[#9ca3af] text-center">This takes 60–120 seconds — please keep this tab open</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ─ Video output ─ */}
+                {ugcVideoUrl && !ugcLoading && (
+                  <motion.div
+                    key="ugc-output"
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="space-y-5"
+                  >
+                    {/* Video title */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-[#0a0a0f]">{ugcHook} UGC — {ugcDuration}s</p>
+                        <p className="text-xs text-[#9ca3af] mt-0.5">{ugcStyle} · {ugcRatio} · {ugcLang}</p>
+                      </div>
+                      <span
+                        className="px-2.5 py-1 rounded-full text-[10px] font-bold"
+                        style={{ background: "rgba(22,163,74,0.10)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.22)" }}
+                      >
+                        ✅ Ready
+                      </span>
+                    </div>
+
+                    {/* Video player */}
+                    <div
+                      className="rounded-2xl overflow-hidden mx-auto bg-black"
+                      style={{
+                        width:  ugcRatio === "9:16" ? 280 : "100%",
+                        aspectRatio: ugcRatio === "9:16" ? "9/16" : ugcRatio === "1:1" ? "1/1" : "16/9",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <video
+                        src={ugcVideoUrl}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Clip 2 (15 s) */}
+                    {ugcNeedsMerge && ugcClip2Url && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold text-[#9ca3af]">Clip 2 — CTA Moment (5s)</p>
+                        <div className="rounded-2xl overflow-hidden bg-black" style={{ aspectRatio: ugcRatio === "16:9" ? "16/9" : ugcRatio === "1:1" ? "1/1" : "9/16", maxWidth: ugcRatio === "9:16" ? 200 : "100%" }}>
+                          <video src={ugcClip2Url} controls muted loop playsInline className="w-full h-full object-cover" />
+                        </div>
+                        <p className="text-[10px] text-[#9ca3af]">💡 Merge Clip 1 + Clip 2 in CapCut or Premiere for your full 15s video</p>
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      <a
+                        href={ugcVideoUrl}
+                        download={`adurai-ugc-${ugcHook.replace(/\//g,"-").toLowerCase()}-${ugcDuration}s.mp4`}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                        style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", textDecoration: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.28)" }}
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download MP4
+                      </a>
+                      <button
+                        onClick={generateUgc}
+                        disabled={ugcLoading}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                        style={{ background: "#fff", color: "#6b7280", border: "1px solid #E8E5E0" }}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (ugcScript) {
+                            navigator.clipboard.writeText(ugcScript);
+                            setUgcScriptCopied(true);
+                            setTimeout(() => setUgcScriptCopied(false), 2000);
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                        style={{ background: "#fff", color: ugcScriptCopied ? "#059669" : "#6b7280", border: `1px solid ${ugcScriptCopied ? "#a7f3d0" : "#E8E5E0"}` }}
+                      >
+                        {ugcScriptCopied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Script</>}
+                      </button>
+                    </div>
+
+                    {/* Pro tips */}
+                    <div
+                      className="rounded-2xl p-4 space-y-2"
+                      style={{ background: "rgba(124,58,237,0.04)", border: "1px solid rgba(124,58,237,0.12)" }}
+                    >
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", fontFamily: "var(--font-inter)" }}>💡 Pro Tips for this UGC</p>
+                      {[
+                        "Hook should stop scroll in the first 1.5 seconds",
+                        "Add captions — 85% of people watch without sound",
+                        "Test 3 different hooks with the same product",
+                      ].map(tip => (
+                        <div key={tip} className="flex items-start gap-2">
+                          <span style={{ color: "#a855f7", marginTop: 1, flexShrink: 0, fontSize: 10 }}>▸</span>
+                          <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>{tip}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ════════════════════════════════════════════
+            LIBRARY TAB
+        ════════════════════════════════════════════ */}
+        {activeTab === "library" && (
+          <motion.div
+            key="library"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="p-6"
+            style={{ minHeight: 480 }}
+          >
+            {_sessions.length === 0 ? (
+              /* Empty state */
+              <div className="flex flex-col items-center justify-center gap-4 py-20">
+                <div
+                  className="flex items-center justify-center rounded-2xl"
+                  style={{ width: 56, height: 56, background: "#F7F5F2", border: "1px solid #E8E5E0" }}
+                >
+                  <ImageIcon className="w-6 h-6" style={{ color: "#C4C4D8" }} />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-[#0a0a0f]">No saved creatives yet</p>
+                  <p className="text-xs text-[#9ca3af] mt-1 max-w-xs">
+                    Generate images or ad copy — everything you create is saved here automatically.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab("creative")}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", color: "#fff", border: "none" }}
+                  >
+                    <Image className="w-3.5 h-3.5" /> Generate Images
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("adcopy")}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                    style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Write Copy
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+
+                {/* ── Image sessions ── */}
+                {imageSessions.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.06em] mb-3">
+                      Image Creatives · {imageSessions.length}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {imageSessions.map((session) => {
+                        const isOpen = expandedHistoryIds.has(session.id);
+                        const imgs   = Array.isArray(session.image_urls) ? session.image_urls : [];
+                        return (
+                          <div
+                            key={session.id}
+                            className="rounded-2xl overflow-hidden cursor-pointer"
+                            style={{
+                              background: "#F7F5F2",
+                              border: `1px solid ${isOpen ? "rgba(255,60,172,0.28)" : "#E8E5E0"}`,
+                              boxShadow: isOpen ? "0 4px 20px rgba(255,60,172,0.10)" : "none",
+                              transition: "border-color 0.2s, box-shadow 0.2s",
+                            }}
+                            onClick={() => toggleHistory(session.id)}
+                          >
+                            {/* 2×2 thumbnail */}
+                            <div className="grid grid-cols-2 gap-0.5" style={{ height: 120 }}>
+                              {imgs.slice(0, 4).map((img, i) => (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  key={i}
+                                  src={img.url}
+                                  alt={img.angle ?? `img ${i}`}
+                                  className="w-full h-full object-cover"
+                                  style={{ borderRadius: i === 0 ? "12px 0 0 0" : i === 1 ? "0 12px 0 0" : i === 2 ? "0 0 0 12px" : "0 0 12px 0" }}
+                                />
+                              ))}
+                            </div>
+                            {/* Footer */}
+                            <div className="p-3">
+                              <p className="text-xs font-semibold text-[#0a0a0f] line-clamp-1">
+                                {session.prompt ?? "No prompt"}
+                              </p>
+                              <p className="text-[10px] text-[#9ca3af] mt-0.5">
+                                {timeAgo(session.created_at)} · {imgs.length} image{imgs.length !== 1 ? "s" : ""}
+                              </p>
+                            </div>
+                            {/* Expanded */}
+                            {isOpen && (
+                              <div
+                                className="px-3 pb-3 grid grid-cols-2 gap-2"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {imgs.map((img, i) => (
+                                  <div key={i} className="relative group/li">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={img.url}
+                                      alt={img.angle ?? `Image ${i + 1}`}
+                                      className="w-full aspect-square rounded-xl object-cover"
+                                    />
+                                    {img.angle && (
+                                      <span
+                                        className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        style={{ background: "rgba(10,10,15,0.65)", color: "#fff" }}
+                                      >
+                                        {img.angle}
+                                      </span>
+                                    )}
+                                    <button
+                                      className="absolute bottom-1.5 right-1.5 opacity-0 group-hover/li:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold"
+                                      style={{ background: "rgba(255,255,255,0.92)", color: "#0a0a0f" }}
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          const res  = await fetch(img.url);
+                                          const blob = await res.blob();
+                                          const obj  = URL.createObjectURL(blob);
+                                          const a    = document.createElement("a");
+                                          a.href     = obj;
+                                          a.download = `adurai-${img.angle?.replace(/\s+/g,"-").toLowerCase() ?? "image"}-${i+1}.png`;
+                                          a.click();
+                                          URL.revokeObjectURL(obj);
+                                        } catch { window.open(img.url,"_blank"); }
+                                      }}
+                                    >
+                                      <Download className="w-2.5 h-2.5" /> Save
+                                    </button>
+                                  </div>
+                                ))}
+                                {imgs.length > 1 && (
+                                  <button
+                                    className="col-span-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer mt-1"
+                                    style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.16)" }}
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      for (let i = 0; i < imgs.length; i++) {
+                                        try {
+                                          const res  = await fetch(imgs[i].url);
+                                          const blob = await res.blob();
+                                          const obj  = URL.createObjectURL(blob);
+                                          const a    = document.createElement("a");
+                                          a.href     = obj;
+                                          a.download = `adurai-${imgs[i].angle?.replace(/\s+/g,"-").toLowerCase() ?? "image"}-${i+1}.png`;
+                                          a.click();
+                                          URL.revokeObjectURL(obj);
+                                          await new Promise(r => setTimeout(r, 250));
+                                        } catch { window.open(imgs[i].url,"_blank"); }
+                                      }
+                                    }}
+                                  >
+                                    <Download className="w-3.5 h-3.5" /> Download all {imgs.length}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Copy sessions ── */}
+                {copySessions.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.06em] mb-3">
+                      Ad Copy · {copySessions.length}
+                    </p>
+                    <div className="space-y-2">
+                      {copySessions.map((session) => {
+                        const isOpen  = expandedHistoryIds.has(session.id);
+                        const copies  = Array.isArray(session.copy_variants) ? session.copy_variants : [];
+                        return (
+                          <div
+                            key={session.id}
+                            className="rounded-2xl overflow-hidden cursor-pointer"
+                            style={{
+                              background: "#F7F5F2",
+                              border: `1px solid ${isOpen ? "rgba(124,58,237,0.28)" : "#E8E5E0"}`,
+                              transition: "border-color 0.2s",
+                            }}
+                            onClick={() => toggleHistory(session.id)}
+                          >
+                            {/* Collapsed row */}
+                            <div className="flex items-center gap-3 p-3">
+                              <div
+                                className="flex-shrink-0 flex items-center justify-center rounded-xl text-base"
+                                style={{ width: 40, height: 40, background: "linear-gradient(135deg,#fdf4ff,#eff6ff)", border: "1px solid rgba(124,58,237,0.15)" }}
+                              >
+                                ✍️
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-[#0a0a0f] line-clamp-1">
+                                  {session.prompt ?? "No description"}
+                                </p>
+                                <p className="text-[10px] text-[#9ca3af] mt-0.5">
+                                  {timeAgo(session.created_at)} · {copies.length} variant{copies.length !== 1 ? "s" : ""}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-semibold px-2 py-1 rounded-lg flex-shrink-0"
+                                style={{ background: "#fff", color: "#9ca3af", border: "1px solid #E8E5E0" }}>
+                                {isOpen ? "▲" : "▼"}
+                              </span>
+                            </div>
+                            {/* Expanded variants */}
+                            {isOpen && (
+                              <div className="px-3 pb-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                {copies.map((v, i) => {
+                                  const color = hookColor(v.hookType);
+                                  return (
+                                    <div key={i} className="rounded-xl p-3 space-y-2 bg-white" style={{ border: "1px solid #E8E5E0" }}>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                                          style={{ background: color.bg, color: color.text, borderColor: color.border }}>
+                                          {v.hookType}
+                                        </span>
+                                        <button
+                                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold cursor-pointer"
+                                          style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const text = [v.primaryText, `HEADLINE: ${v.headline}`, v.description ? `DESCRIPTION: ${v.description}` : null, `CTA: ${v.cta}`].filter(Boolean).join("\n\n");
+                                            navigator.clipboard.writeText(text);
+                                          }}
+                                        >
+                                          <Copy className="w-3 h-3" /> Copy
+                                        </button>
+                                      </div>
+                                      <p className="text-xs text-[#374151] leading-relaxed line-clamp-3">{v.primaryText}</p>
+                                      <p className="text-xs font-bold text-[#0a0a0f]">{v.headline}</p>
+                                      <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold"
+                                        style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.15)" }}>
+                                        {v.cta}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
           </motion.div>
         )}
 

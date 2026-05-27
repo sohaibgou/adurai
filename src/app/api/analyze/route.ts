@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-server";
 import type { CampaignSummary } from "@/lib/types";
 
@@ -184,13 +183,11 @@ export async function POST(request: NextRequest) {
 
     if (sessionToken) {
       try {
-        const sb = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          { global: { headers: { Authorization: `Bearer ${sessionToken}` } } }
-        );
-        const { data: { user } } = await sb.auth.getUser();
-        if (user?.email) {
+        // Use supabaseAdmin.auth.getUser — consistent with all other API routes
+        const { data: { user }, error: tokenErr } = await supabaseAdmin.auth.getUser(sessionToken);
+        if (tokenErr) {
+          console.error("[analyze] token verification failed:", tokenErr.message);
+        } else if (user?.email) {
           authedUserId = user.id;
           serverAdmin  = ADMIN_EMAILS.includes(user.email);
           if (!serverAdmin) {
@@ -203,7 +200,9 @@ export async function POST(request: NextRequest) {
             serverPaid = !!sub;
           }
         }
-      } catch { /* fall through */ }
+      } catch (e) {
+        console.error("[analyze] auth check threw:", e);
+      }
     }
 
     if (!serverAdmin && !serverPaid) {
@@ -468,12 +467,33 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       convAvgCPR,
       convBestRoas,
       analysisMode,
+      summaries,  // ← include campaign rows so DB-loaded results show Overview & Campaigns tabs
     };
     // Increment DB usage for authenticated free users
     if (authedUserId && !serverPaid && !serverAdmin) {
       try {
         await supabaseAdmin.rpc("increment_user_analysis", { p_user_id: authedUserId });
       } catch { /* non-fatal — count will be checked next request */ }
+    }
+
+    // Persist full analysis result for authenticated users (free or paid)
+    // so /results page can reload it across sessions
+    if (authedUserId) {
+      console.log("[analyze] saving analysis for user", authedUserId);
+      const { error: insertErr } = await supabaseAdmin.from("analyses").insert({
+        user_id:        authedUserId,
+        score:          responsePayload.score ?? 0,
+        campaign_count: summaries.length,
+        result_json:    responsePayload,
+        form_data:      onboarding ?? null,
+      });
+      if (insertErr) {
+        console.error("[analyze] DB insert failed:", insertErr.message, insertErr.details ?? "");
+      } else {
+        console.log("[analyze] analysis saved to DB ✓");
+      }
+    } else {
+      console.warn("[analyze] no authedUserId — analysis NOT saved (no session token or auth failed)");
     }
 
     console.log("[analyze] Analysis complete, sending response");
