@@ -428,6 +428,7 @@ export default function CreativeStudioPage() {
           open={paywallOpen}
           onClose={() => setPaywallOpen(false)}
           reason={paywallReason}
+          currentPlan={isAdmin ? "pro" : isProPlan ? "pro" : isPaid ? "starter" : "free"}
         />
       </div>
     </div>

@@ -1682,26 +1682,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     </p>
                   </div>
 
-                  {/* Feature list */}
-                  <div className="w-full flex flex-col gap-2">
-                    {[
-                      { icon: "✍️", text: "Claude writes an authentic UGC script" },
-                      { icon: "🎬", text: "Kling AI generates the product video" },
-                      { icon: "📱", text: "Story (9:16), Feed (1:1) & Landscape (16:9)" },
-                      { icon: "🌍", text: "English, French, Arabic & Darija" },
-                      { icon: "⏱️", text: "5s, 10s and 15s durations" },
-                    ].map(({ icon, text }) => (
-                      <div
-                        key={text}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-left"
-                        style={{ background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.10)" }}
-                      >
-                        <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
-                        <span style={{ fontSize: 13, color: "#374151", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{text}</span>
-                      </div>
-                    ))}
-                  </div>
-
                   {/* Plan pills */}
                   <div className="flex items-center gap-3">
                     <span
