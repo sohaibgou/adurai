@@ -471,50 +471,85 @@ function DashboardContent() {
               <motion.div {...fade(0.20)}>
                 <div
                   className="relative overflow-hidden rounded-2xl"
-                  style={{ background: "#FFFFFF", border: "1px solid rgba(255,60,172,0.22)", boxShadow: "0 4px 24px rgba(255,60,172,0.08)" }}
+                  style={{ background: "#FFFFFF", border: "1px solid rgba(255,60,172,0.18)", boxShadow: "0 4px 24px rgba(255,60,172,0.07)" }}
                 >
                   {/* Top gradient bar */}
-                  <div style={{ height: 3, background: "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
-                  {/* Bg orb */}
-                  <div style={{ position: "absolute", top: -50, right: 40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,60,172,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+                  <div style={{ height: 3, background: "linear-gradient(90deg, #FF3CAC, #FF6B35 50%, #7c3aed)" }} />
 
-                  <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-7 py-7">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#FF3CAC" }} />
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)" }}>
-                          Starter — $19/mo
-                        </span>
+                  <div className="px-5 sm:px-7 pt-5 pb-6">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#FF3CAC" }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#6B6B72", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)" }}>
+                        Choose your plan — scale your ads
+                      </span>
+                    </div>
+
+                    {/* Two plan cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Starter */}
+                      <div className="flex flex-col rounded-xl p-4" style={{ background: "rgba(255,60,172,0.04)", border: "1.5px solid rgba(255,60,172,0.18)" }}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC" }} />
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Starter</span>
+                        </div>
+                        <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                          $19<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
+                        </p>
+                        <ul className="flex-1 space-y-1.5 mb-4">
+                          {["Unlimited campaign analyses", "Full 7-Day Battle Plan", "AI Creative Studio", "3 UGC AI videos / month"].map(f => (
+                            <li key={f} className="flex items-start gap-2">
+                              <span style={{ color: "#FF3CAC", flexShrink: 0, fontSize: 13 }}>✓</span>
+                              <span style={{ fontSize: 12, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          onClick={() => { setPaywallOpen(true); }}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
+                          style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", boxShadow: "0 3px 12px rgba(255,60,172,0.30)", fontFamily: "var(--font-inter)" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
+                        >
+                          Get Starter →
+                        </button>
                       </div>
-                      <h2 className="font-heading" style={{ fontSize: 20, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.03em", marginBottom: 14 }}>
-                        Unlock unlimited analyses & your full Battle Plan
-                      </h2>
-                      <div className="flex flex-wrap gap-2">
-                        {["✨ Unlimited analyses", "🎯 7-Day Battle Plan", "🎨 AI Creative Studio", "📄 PDF Export"].map((f) => (
-                          <span
-                            key={f}
-                            style={{ display: "inline-flex", alignItems: "center", padding: "5px 12px", borderRadius: 100, background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.16)", fontSize: 12, fontWeight: 500, color: "#FF3CAC", fontFamily: "var(--font-inter)" }}
-                          >
-                            {f}
+
+                      {/* Pro */}
+                      <div className="flex flex-col rounded-xl p-4 relative" style={{ background: "rgba(124,58,237,0.05)", border: "1.5px solid rgba(124,58,237,0.25)" }}>
+                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                          <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: "#7c3aed", padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                            Most Powerful
                           </span>
-                        ))}
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-1.5 mt-1">
+                          <Crown className="w-3.5 h-3.5" style={{ color: "#7c3aed" }} />
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Pro</span>
+                        </div>
+                        <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                          $99<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
+                        </p>
+                        <ul className="flex-1 space-y-1.5 mb-4">
+                          {["Everything in Starter", "30 UGC AI videos / month", "Connect Meta Ad Account", "AI Manager & Autopilot"].map(f => (
+                            <li key={f} className="flex items-start gap-2">
+                              <span style={{ color: "#7c3aed", flexShrink: 0, fontSize: 13 }}>✓</span>
+                              <span style={{ fontSize: 12, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          onClick={() => { setPaywallOpen(true); }}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
+                          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.30)", fontFamily: "var(--font-inter)" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
+                        >
+                          Get Pro →
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-stretch sm:items-end gap-2 flex-shrink-0">
-                      <button
-                        disabled={checkoutLoading}
-                        onClick={async () => { setCheckoutLoading(true); try { await redirectToCheckout(); } finally { setCheckoutLoading(false); } }}
-                        className="inline-flex items-center justify-center gap-2 text-white font-semibold cursor-pointer transition-all disabled:opacity-60"
-                        style={{ padding: "13px 28px", borderRadius: 100, background: checkoutLoading ? "#9ca3af" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", fontSize: 14, fontFamily: "var(--font-inter)", boxShadow: checkoutLoading ? "none" : "0 4px 20px rgba(255,60,172,0.35)", border: "none", letterSpacing: "-0.01em" }}
-                        onMouseEnter={e => { if (!checkoutLoading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 7px 28px rgba(255,60,172,0.50)"; } }}
-                        onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 20px rgba(255,60,172,0.35)"; }}
-                      >
-                        {checkoutLoading ? "Redirecting…" : "Upgrade Now"}
-                        {!checkoutLoading && <ArrowRight className="w-4 h-4" />}
-                      </button>
-                      <p className="text-center" style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>Cancel anytime · No commitment</p>
-                    </div>
+                    <p className="text-center mt-3" style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>Cancel anytime · No commitment</p>
                   </div>
                 </div>
               </motion.div>
