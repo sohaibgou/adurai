@@ -1645,7 +1645,100 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
             className="flex flex-col lg:flex-row"
             style={{ minHeight: 720 }}
           >
-            {/* ── LEFT: Controls ── */}
+
+            {/* ── FREE PLAN: full-tab upgrade gate ── */}
+            {!isAdmin && ugcPlan === "free" && (
+              <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#F7F5F2" }}>
+                <div
+                  className="flex flex-col items-center text-center gap-6 p-10 rounded-3xl"
+                  style={{
+                    background: "#ffffff",
+                    border: "1.5px solid rgba(124,58,237,0.20)",
+                    boxShadow: "0 8px 40px rgba(124,58,237,0.10)",
+                    maxWidth: 480,
+                    width: "100%",
+                  }}
+                >
+                  {/* Icon */}
+                  <div
+                    className="flex items-center justify-center rounded-2xl"
+                    style={{
+                      width: 72, height: 72,
+                      background: "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))",
+                      border: "1.5px solid rgba(124,58,237,0.20)",
+                      fontSize: 34,
+                    }}
+                  >
+                    🎬
+                  </div>
+
+                  {/* Copy */}
+                  <div className="space-y-2">
+                    <p className="font-heading text-2xl font-black text-[#0a0a0f] tracking-tight" style={{ letterSpacing: "-0.03em" }}>
+                      UGC AI Video
+                    </p>
+                    <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, fontFamily: "var(--font-inter)" }}>
+                      Turn your product image into a scroll-stopping UGC-style video in minutes — powered by Claude and Kling AI.
+                    </p>
+                  </div>
+
+                  {/* Feature list */}
+                  <div className="w-full flex flex-col gap-2">
+                    {[
+                      { icon: "✍️", text: "Claude writes an authentic UGC script" },
+                      { icon: "🎬", text: "Kling AI generates the product video" },
+                      { icon: "📱", text: "Story (9:16), Feed (1:1) & Landscape (16:9)" },
+                      { icon: "🌍", text: "English, French, Arabic & Darija" },
+                      { icon: "⏱️", text: "5s, 10s and 15s durations" },
+                    ].map(({ icon, text }) => (
+                      <div
+                        key={text}
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-left"
+                        style={{ background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.10)" }}
+                      >
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+                        <span style={{ fontSize: 13, color: "#374151", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Plan pills */}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                      style={{ background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.22)", color: "#FF3CAC" }}
+                    >
+                      ✓ Starter — 3 videos/mo
+                    </span>
+                    <span
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                      style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.22)", color: "#7c3aed" }}
+                    >
+                      ✓ Pro — 30 videos/mo
+                    </span>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => onPaywall?.("image")}
+                    className="w-full py-3.5 rounded-2xl text-sm font-bold text-white cursor-pointer transition-all"
+                    style={{
+                      background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                      border: "none",
+                      boxShadow: "0 4px 20px rgba(124,58,237,0.32)",
+                      letterSpacing: "-0.01em",
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(124,58,237,0.44)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.32)"; (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
+                  >
+                    Upgrade to unlock UGC Video →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── LEFT: Controls (Starter / Pro only) ── */}
+            {(isAdmin || ugcPlan !== "free") && (
             <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5] overflow-y-auto">
 
               <div>
@@ -1961,46 +2054,12 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 </div>
               )}
             </div>
+            )} {/* end (isAdmin || ugcPlan !== "free") left panel */}
 
-            {/* ── RIGHT: Output ── */}
+            {/* ── RIGHT: Output (Starter / Pro only) ── */}
+            {(isAdmin || ugcPlan !== "free") && (
             <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
               <AnimatePresence mode="wait">
-
-                {/* ─ Free plan lock state (right panel) ─ */}
-                {!isAdmin && ugcPlan === "free" && ugcStage === 0 && !ugcVideoUrl && (
-                  <motion.div
-                    key="ugc-locked"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-6 py-12"
-                  >
-                    <div
-                      className="flex flex-col items-center gap-4 p-8 rounded-3xl text-center"
-                      style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.16)", maxWidth: 380 }}
-                    >
-                      <div style={{ fontSize: 52 }}>🎬</div>
-                      <div>
-                        <p style={{ fontSize: 17, fontWeight: 800, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>UGC Video</p>
-                        <p style={{ fontSize: 13, color: "#6b7280", marginTop: 8, lineHeight: 1.6, fontFamily: "var(--font-inter)" }}>
-                          Turn your product images into authentic UGC-style videos — available on Starter and Pro plans.
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2 w-full">
-                        {["✍️ Claude writes your UGC script", "🎬 Kling AI generates the video", "📱 Story, Feed & Landscape formats"].map(f => (
-                          <div key={f} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.10)" }}>
-                            <span style={{ fontSize: 12, color: "#7c3aed", fontFamily: "var(--font-inter)" }}>{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => onPaywall?.("image")}
-                        className="w-full py-3 rounded-xl text-sm font-bold text-white cursor-pointer"
-                        style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 4px 20px rgba(124,58,237,0.28)" }}
-                      >
-                        Upgrade to Starter →
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
 
                 {/* ─ Empty state ─ */}
                 {(isAdmin || ugcPlan !== "free") && ugcStage === 0 && !ugcVideoUrl && !ugcError && !ugcLoading && (
@@ -2212,6 +2271,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
               </AnimatePresence>
             </div>
+            )} {/* end (isAdmin || ugcPlan !== "free") right panel */}
+
           </motion.div>
         )}
 
