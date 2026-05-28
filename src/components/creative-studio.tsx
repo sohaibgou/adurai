@@ -422,13 +422,34 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     return () => { if (ugcProgressRef.current) { clearInterval(ugcProgressRef.current); ugcProgressRef.current = null; } };
   }, [ugcStage]);
 
-  /* ── Hydrate usage counts from localStorage ─────── */
+  /* ── Hydrate usage counts from localStorage (user-scoped) ── */
   useEffect(() => {
-    setImageUsage(getImageCount());
-    setCopyUsage(getCopyCount());
+    const userId = session?.user?.id;
+    try {
+      if (userId) {
+        const storedUid = localStorage.getItem("adur_creative_user_id");
+        if (storedUid !== userId) {
+          // Different user on this browser — wipe stale counts
+          localStorage.setItem("adur_creative_user_id", userId);
+          localStorage.setItem("adur_image_count", "0");
+          localStorage.setItem("adur_copy_count", "0");
+          setImageUsage(0);
+          setCopyUsage(0);
+        } else {
+          setImageUsage(getImageCount());
+          setCopyUsage(getCopyCount());
+        }
+      } else {
+        setImageUsage(getImageCount());
+        setCopyUsage(getCopyCount());
+      }
+    } catch {
+      setImageUsage(0);
+      setCopyUsage(0);
+    }
     setUgcPlan(getUgcPlan());
     setUgcUsage(initUgcCount());
-  }, []);
+  }, [session?.user?.id]);
 
   /* ── Sync ugcPlan from subscription props (authoritative over localStorage) ── */
   useEffect(() => {
