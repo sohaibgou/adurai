@@ -87,10 +87,6 @@ function DashboardContent() {
   useEffect(() => {
     if (!user || !session) return;
 
-    // Optimistic: show localStorage counts immediately while DB loads
-    setAnalysisCount(getAnalysisCount());
-    setRecentAnalyses(getRecentAnalyses());
-
     // Load subscription
     supabase
       .from("subscriptions")
@@ -99,20 +95,22 @@ function DashboardContent() {
       .maybeSingle()
       .then(({ data }) => { setSubscription(data ?? null); setSubLoading(false); });
 
-    // Load analyses list from DB (authoritative, cross-device)
+    // Load analyses from DB — always authoritative, never use localStorage
+    // (localStorage is per-browser not per-user; using it leaks previous users' data)
     fetch("/api/analyses/list", {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
-      .then(r => r.ok ? r.json() : null)
-      .then((data: { analyses: RecentAnalysis[] } | null) => {
-        if (!data?.analyses?.length) return; // keep localStorage version if DB empty (migration not run yet)
-        setRecentAnalyses(data.analyses);
-        // Keep analysisCount in sync with DB list length if it's higher
-        if (data.analyses.length > getAnalysisCount()) {
-          setAnalysisCount(data.analyses.length);
-        }
+      .then(r => r.ok ? r.json() : { analyses: [] })
+      .then((data: { analyses: RecentAnalysis[] }) => {
+        const list = data.analyses ?? [];
+        setRecentAnalyses(list);
+        setAnalysisCount(list.length);
       })
-      .catch(() => { /* non-fatal — localStorage fallback stays */ });
+      .catch(() => {
+        // Network error — fall back to localStorage only as last resort
+        setRecentAnalyses(getRecentAnalyses());
+        setAnalysisCount(getAnalysisCount());
+      });
   }, [user, session]);
 
   if (authLoading || !user) {
