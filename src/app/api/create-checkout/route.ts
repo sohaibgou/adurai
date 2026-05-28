@@ -67,8 +67,11 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 4. Create Stripe session ──────────────────────────────────────────────
+  // Build baseUrl: explicit env var → forwarded headers → request origin
+  const proto   = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(/:$/, "");
+  const host    = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
   const baseUrl = (process.env.NEXT_PUBLIC_URL ?? "").replace(/\/$/, "")
-    || `${req.headers.get("x-forwarded-proto") ?? "https"}://${req.headers.get("host")}`;
+    || `${proto}://${host}`;
 
   try {
     const session = await stripe.checkout.sessions.create({
