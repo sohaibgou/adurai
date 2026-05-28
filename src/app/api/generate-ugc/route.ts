@@ -2,14 +2,14 @@
  * POST /api/generate-ugc
  *
  * Two-step UGC video pipeline:
- *   1. Claude writes an authentic UGC script + video prompt (model-aware)
- *   2. fal.ai generates the video via Seedance 2.0 (default) or Kling V3 Pro
- *
- * For 15 s videos with Kling, two clips (10 s + 5 s) are generated separately.
- * For Seedance, a single 15 s clip is supported natively.
+ *   1. Claude writes an authentic UGC script + model-specific video prompt
+ *   2. fal.ai generates the video — model auto-selected from hookType:
+ *        Testimonial Style | Problem/Solution  → Seedance 2.0 (human UGC feel)
+ *        Direct Offer      | Shocking Fact     → Kling V3 Pro (product showcase)
+ *        everything else                       → Seedance 2.0 (default)
  *
  * FormData fields: image, productDescription, hookType, creatorStyle,
- *                  language, duration, aspectRatio, model
+ *                  language, duration, aspectRatio
  */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
@@ -31,6 +31,17 @@ interface VideoOutput {
   data?: { video?: { url?: string } };
 }
 
+/* ── Auto-select video model from hook type ─────────────────────────────── */
+function selectModel(hookType: string): typeof SEEDANCE | typeof KLING {
+  if (hookType === "Testimonial Style" || hookType === "Problem/Solution") {
+    return SEEDANCE; // human UGC feel
+  }
+  if (hookType === "Direct Offer" || hookType === "Shocking Fact") {
+    return KLING; // product hero / showcase
+  }
+  return SEEDANCE; // default
+}
+
 export async function POST(req: NextRequest) {
   /* ── Parse form data ────────────────────────────────────────────────────── */
   let formData: FormData;
@@ -39,12 +50,11 @@ export async function POST(req: NextRequest) {
 
   const imageFile    = formData.get("image")              as File   | null;
   const productDesc  = formData.get("productDescription") as string | null;
-  const hookType     = formData.get("hookType")           as string;
-  const creatorStyle = formData.get("creatorStyle")       as string;
-  const language     = formData.get("language")           as string;
+  const hookType     = (formData.get("hookType")     as string) || "";
+  const creatorStyle = (formData.get("creatorStyle") as string) || "";
+  const language     = (formData.get("language")     as string) || "English";
   const duration     = parseInt(formData.get("duration") as string || "10", 10);
   const aspectRatio  = (formData.get("aspectRatio") as string) || "9:16";
-  const model        = ((formData.get("model") as string) || "seedance") as "seedance" | "kling";
 
   if (!imageFile || !productDesc?.trim()) {
     return NextResponse.json({ error: "Product image and description are required" }, { status: 400 });
@@ -56,29 +66,17 @@ export async function POST(req: NextRequest) {
   const mimeType     = imageFile.type || "image/jpeg";
   const imageDataUrl = `data:${mimeType};base64,${base64Image}`;
 
-  /* ── Step 1: Claude writes UGC script ──────────────────────────────────── */
+  /* ── Choose model ───────────────────────────────────────────────────────── */
+  const chosenModel = selectModel(hookType);
+  const isSeedance  = chosenModel === SEEDANCE;
+
+  /* ── Step 1: Claude writes UGC script + video prompt ───────────────────── */
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let scriptData: ScriptData;
 
-  const seedancePromptGuidance = model === "seedance" ? `
-For Seedance 2.0 video generation, write prompts that include:
-- Camera movement: handheld, tracking shot, close-up, pull back
-- Lighting: natural light, golden hour, soft indoor lighting
-- Sound cues: describe sounds you want to hear
-- Motion: describe how the person moves with the product
-- Multi-shot: describe scene cuts if needed
-Example: 'Handheld close-up shot of hands picking up a supplement bottle, pulling back to reveal a fit person in a modern kitchen. Natural morning light. Sound of the bottle opening, then upbeat ambient music. Person looks at camera and smiles confidently.'` : ``;
-
-  const klingPromptGuidance = model === "kling" ? `
-Also write a detailed Kling AI video generation prompt (in English):
-- Scene: where is the person, what is the setting (bedroom, kitchen, gym, outdoors)
-- Person: what they look like, what they are doing with the product
-- Camera: movement style (slow zoom, handheld feel, close-up reveal, pull-back)
-- Lighting: natural window light, warm golden hour, studio ring-light, etc.
-- Mood: matches ${creatorStyle} style exactly
-- Motion: natural everyday movements, authentic unscripted feel
-- Product should be clearly featured and recognizable
-- Avoid text, watermarks, logos in the frame` : ``;
+  const modelPromptGuidance = isSeedance
+    ? `Write a Seedance 2.0 optimized video prompt. Include: handheld camera movement, natural lighting, sound cues, multi-shot cuts, authentic human motion. UGC style. Example format: 'Handheld close-up of hands holding the product, pulling back to reveal a real person in a natural setting. Soft morning light. Sound of the product opening, then warm ambient music. Person looks at camera and smiles.'`
+    : `Write a Kling V3 Pro optimized video prompt. Include: product hero shot, premium lighting, smooth cinematic camera movement, brand aesthetic. Focus on the product looking aspirational and high-quality.`;
 
   try {
     const claudeRes = await anthropic.messages.create({
@@ -93,7 +91,6 @@ Hook type: ${hookType}
 Creator style: ${creatorStyle}
 Language: ${language}
 Duration: ${duration} seconds
-Video model: ${model === "seedance" ? "Seedance 2.0 (optimised for UGC/human style)" : "Kling V3 Pro (optimised for product showcase)"}
 
 Write a UGC-style video script that feels 100% authentic — like a real customer or creator talking, NOT a corporate ad.
 
@@ -106,15 +103,13 @@ Rules:
 - Write in ${language}
 ${language === "Darija" ? "- Use Moroccan Darija dialect (mix of Arabic and French typical in Morocco)" : ""}
 ${language === "Arabic" ? "- Use Modern Standard Arabic suitable for Gulf/MENA ads" : ""}
-${seedancePromptGuidance}
-${klingPromptGuidance}
 
-Write a detailed video generation prompt optimised for ${model === "seedance" ? "Seedance 2.0 — focus on camera movement, sound, lighting and authentic human motion" : "Kling V3 Pro — focus on scene, person, product interaction and cinematic framing"}.
+${modelPromptGuidance}
 
 Return ONLY valid JSON with no markdown:
 {
   "script": "full voiceover script here",
-  "videoPrompt": "detailed scene and motion description for ${model === "seedance" ? "Seedance 2.0" : "Kling V3 Pro"} here",
+  "videoPrompt": "detailed scene and motion description here",
   "hook": "first 1-2 sentences of script only"
 }`,
       }],
@@ -134,7 +129,7 @@ Return ONLY valid JSON with no markdown:
   fal.config({ credentials: process.env.FAL_KEY });
 
   /* ── Seedance 2.0 ────────────────────────────────────────────────────────── */
-  if (model === "seedance") {
+  if (isSeedance) {
     try {
       const videoResult = await fal.subscribe(SEEDANCE, {
         input: {
@@ -166,7 +161,7 @@ Return ONLY valid JSON with no markdown:
       });
     } catch (e) {
       console.error("[generate-ugc] Seedance error:", e);
-      return NextResponse.json({ error: "Seedance video generation failed. Please try again." }, { status: 500 });
+      return NextResponse.json({ error: "Video generation failed. Please try again." }, { status: 500 });
     }
   }
 
@@ -197,7 +192,7 @@ Return ONLY valid JSON with no markdown:
       return NextResponse.json({ error: "Kling returned no video URL" }, { status: 500 });
     }
 
-    /* ── 15 s: second 5 s clip (CTA moment) ──────────────────────────────── */
+    /* ── 15 s: generate a second 5 s CTA clip ────────────────────────────── */
     if (duration === 15) {
       try {
         const clip2Result = await fal.subscribe(KLING, {
@@ -237,6 +232,6 @@ Return ONLY valid JSON with no markdown:
     });
   } catch (e) {
     console.error("[generate-ugc] Kling error:", e);
-    return NextResponse.json({ error: "Kling video generation failed. Please try again." }, { status: 500 });
+    return NextResponse.json({ error: "Video generation failed. Please try again." }, { status: 500 });
   }
 }

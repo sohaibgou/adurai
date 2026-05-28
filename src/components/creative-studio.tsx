@@ -394,7 +394,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [ugcScriptCopied, setUgcScriptCopied] = useState(false);
   const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "pro">("free");
   const [ugcUsage,       setUgcUsage]         = useState(0);
-  const [ugcModel,       setUgcModel]         = useState<"seedance" | "kling">("seedance");
 
   /* ── Progress bar (60 s window for 4 parallel images) ── */
   useEffect(() => {
@@ -721,7 +720,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       fd.append("language",           ugcLang);
       fd.append("duration",           String(ugcDuration));
       fd.append("aspectRatio",        ugcRatio);
-      fd.append("model",              ugcModel);
 
       const res  = await fetch("/api/generate-ugc", { method: "POST", body: fd });
       const data = await res.json() as {
@@ -1858,54 +1856,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 </div>
               </div>
 
-              {/* ─ Section 2: Video Model ─ */}
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">VIDEO MODEL</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Seedance */}
-                  <button
-                    onClick={() => setUgcModel("seedance")}
-                    className="text-left p-3 rounded-xl border-2 transition-all cursor-pointer"
-                    style={{
-                      background:  ugcModel === "seedance" ? "rgba(124,58,237,0.06)" : "#F7F5F2",
-                      borderColor: ugcModel === "seedance" ? "rgba(124,58,237,0.40)" : "#E8E5E0",
-                    }}
-                  >
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>🎥</span>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: ugcModel === "seedance" ? "#7c3aed" : "#0a0a0f", marginTop: 5, lineHeight: 1.2 }}>
-                      Seedance 2.0
-                    </p>
-                    <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 3, lineHeight: 1.35 }}>
-                      Best for UGC / human style
-                    </p>
-                    {ugcModel === "seedance" && (
-                      <span style={{ display: "inline-block", marginTop: 5, fontSize: 9, fontWeight: 700, color: "#7c3aed", background: "rgba(124,58,237,0.10)", padding: "2px 7px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                        Default
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Kling */}
-                  <button
-                    onClick={() => setUgcModel("kling")}
-                    className="text-left p-3 rounded-xl border-2 transition-all cursor-pointer"
-                    style={{
-                      background:  ugcModel === "kling" ? "rgba(124,58,237,0.06)" : "#F7F5F2",
-                      borderColor: ugcModel === "kling" ? "rgba(124,58,237,0.40)" : "#E8E5E0",
-                    }}
-                  >
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>🎬</span>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: ugcModel === "kling" ? "#7c3aed" : "#0a0a0f", marginTop: 5, lineHeight: 1.2 }}>
-                      Kling V3 Pro
-                    </p>
-                    <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 3, lineHeight: 1.35 }}>
-                      Best for product showcase
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {/* ─ Section 3: Video Style ─ */}
+              {/* ─ Section 2: Video Style ─ */}
               <div className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">HOOK TYPE</p>
                 <div className="grid grid-cols-2 gap-2">
