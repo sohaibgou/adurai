@@ -1678,7 +1678,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       UGC AI Video
                     </p>
                     <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, fontFamily: "var(--font-inter)" }}>
-                      Turn your product image into a scroll-stopping UGC-style video in minutes — powered by Claude and Kling AI.
+                      Turn your product image into a scroll-stopping UGC-style video in minutes — powered by Adur AI.
                     </p>
                   </div>
 

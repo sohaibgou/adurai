@@ -437,7 +437,7 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
                   }}
                 >
                   {analyzing
-                    ? <><Loader2 style={{ width: 13, height: 13, animation: "spin 1s linear infinite" }} /> Analyzing with Claude…</>
+                    ? <><Loader2 style={{ width: 13, height: 13, animation: "spin 1s linear infinite" }} /> Analyzing…</>
                     : <><Zap style={{ width: 13, height: 13 }} /> Run Live Analysis</>
                   }
                 </button>
