@@ -16,6 +16,7 @@ import AnalysisLoadingScreen from "@/components/analysis-loading-screen";
 import { parseCSV, aggregateByCampaign } from "@/lib/parse-csv";
 import type { OnboardingData } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
+import { redirectToCheckout } from "@/lib/checkout";
 import { supabase } from "@/lib/supabase";
 
 const FREE_LIMIT   = 3;
@@ -171,7 +172,7 @@ export default function AnalyzePage() {
           user={user}
           analysisCount={analysisCount}
           onSignOut={async () => { await signOut(); router.push("/"); }}
-          onUpgrade={() => { setPaywallReason("analysis"); setPaywallOpen(true); }}
+          onUpgrade={() => redirectToCheckout(undefined, "starter")}
         />
 
         {/* ── Main ── */}

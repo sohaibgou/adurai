@@ -13,6 +13,7 @@ import EmailVerifyBanner from "@/components/email-verify-banner";
 import VerifyGate from "@/components/verify-gate";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
+import { redirectToCheckout } from "@/lib/checkout";
 import type { AnalysisResult } from "@/lib/types";
 
 /* ── Constants ──────────────────────────────────────────── */
@@ -162,10 +163,7 @@ export default function CreativeStudioPage() {
             await signOut();
             router.push("/");
           }}
-          onUpgrade={() => {
-            setPaywallReason("analysis");
-            setPaywallOpen(true);
-          }}
+          onUpgrade={() => redirectToCheckout(undefined, "starter")}
         />
 
         {/* ═══════════════════════════════════════════════════════
