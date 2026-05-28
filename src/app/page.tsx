@@ -45,7 +45,7 @@ export default function Home() {
   const [error, setError]             = useState<string | null>(null);
   const [onboarding, setOnboarding]   = useState<OnboardingData | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
+  const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy" | "ugc">("analysis");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan, setPaidPlan]       = useState(false);
   const [showLoader, setShowLoader]   = useState(false);
