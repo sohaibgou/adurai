@@ -1669,9 +1669,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
             {/* ── FREE PLAN: full-tab upgrade gate ── */}
             {!isAdmin && ugcPlan === "free" && (
-              <div className="flex-1 flex items-center justify-center p-6 lg:p-10" style={{ background: "#F7F5F2" }}>
+              <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10" style={{ background: "#F7F5F2" }}>
                 <div
-                  className="w-full rounded-3xl overflow-hidden"
+                  className="w-full rounded-2xl sm:rounded-3xl overflow-hidden"
                   style={{
                     maxWidth: 680,
                     background: "linear-gradient(145deg, #18102e 0%, #1e1040 55%, #2d1060 100%)",
@@ -1681,9 +1681,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   {/* Top strip */}
                   <div style={{ height: 3, background: "linear-gradient(90deg, #7c3aed, #a855f7, #ec4899)" }} />
 
-                  <div className="p-8 lg:p-10">
+                  <div className="p-5 sm:p-7 lg:p-10">
                     {/* Badge */}
-                    <div className="flex items-center gap-2 mb-6">
+                    <div className="flex items-center gap-2 mb-5">
                       <span
                         className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
                         style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}
@@ -1692,11 +1692,11 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       </span>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
                       {/* Left: copy */}
-                      <div className="flex-1 space-y-5">
+                      <div className="flex-1 space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="font-heading mb-2" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, color: "#ffffff" }}>
+                          <h2 className="font-heading mb-2" style={{ fontSize: "clamp(22px, 5vw, 28px)", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, color: "#ffffff" }}>
                             Turn products into<br />viral UGC videos
                           </h2>
                           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontFamily: "var(--font-inter)" }}>
@@ -1705,7 +1705,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                         </div>
 
                         {/* Feature list */}
-                        <ul className="space-y-2.5">
+                        <ul className="space-y-2">
                           {[
                             "AI writes a full UGC script for your product",
                             "6 hook styles — Pain Point, Curiosity, Social Proof…",
@@ -1731,29 +1731,33 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                           </span>
                         </div>
 
-                        {/* CTA */}
-                        <button
-                          onClick={() => onPaywall?.("ugc")}
-                          className="flex items-center justify-center gap-2 font-bold text-white cursor-pointer transition-all"
-                          style={{
-                            padding: "14px 28px",
-                            borderRadius: 100,
-                            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                            border: "none",
-                            fontSize: 14,
-                            fontFamily: "var(--font-inter)",
-                            letterSpacing: "-0.01em",
-                            boxShadow: "0 4px 24px rgba(124,58,237,0.50)",
-                            width: "100%",
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(124,58,237,0.65)"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 24px rgba(124,58,237,0.50)"; }}
-                        >
-                          Unlock UGC Video →
-                        </button>
+                        {/* CTA — centred */}
+                        <div className="flex justify-center pt-1">
+                          <button
+                            onClick={() => onPaywall?.("ugc")}
+                            className="flex items-center justify-center gap-2 font-bold text-white cursor-pointer transition-all"
+                            style={{
+                              padding: "13px 36px",
+                              borderRadius: 100,
+                              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                              border: "none",
+                              fontSize: 14,
+                              fontFamily: "var(--font-inter)",
+                              letterSpacing: "-0.01em",
+                              boxShadow: "0 4px 24px rgba(124,58,237,0.50)",
+                              minWidth: 220,
+                              width: "100%",
+                              maxWidth: 320,
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(124,58,237,0.65)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 24px rgba(124,58,237,0.50)"; }}
+                          >
+                            Unlock UGC Video →
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Right: video mockup */}
+                      {/* Right: video mockup — hidden on mobile */}
                       <div className="hidden lg:flex flex-shrink-0 items-center justify-center" style={{ width: 150 }}>
                         <div
                           className="relative flex items-center justify-center rounded-2xl"

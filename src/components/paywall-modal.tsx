@@ -125,16 +125,17 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 20 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
+            className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4 pointer-events-none overflow-y-auto py-4"
           >
             <div
               className="relative w-full pointer-events-auto"
               style={{
                 maxWidth:    isStarterUser ? 460 : 540,
                 background:  "#FFFFFF",
-                borderRadius: 24,
+                borderRadius: 20,
                 boxShadow:   "0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(232,229,224,1)",
                 overflow:    "hidden",
+                margin:      "auto",
               }}
             >
               {/* Gradient top strip */}
@@ -164,7 +165,7 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="px-7 pt-7 pb-8">
+              <div className="px-4 sm:px-7 pt-5 sm:pt-7 pb-6 sm:pb-8">
 
                 {/* Icon + heading */}
                 <div
@@ -247,7 +248,7 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                 {/* ── FREE USER: Starter + Pro side by side ── */}
                 {!isStarterUser && (
                   <>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                       {/* Starter card */}
                       <div
                         className="flex flex-col rounded-2xl p-4"
