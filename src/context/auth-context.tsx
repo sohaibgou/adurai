@@ -130,11 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentUserIdRef = useRef<string | null>(null);
   useEffect(() => { currentUserIdRef.current = user?.id ?? null; }, [user?.id]);
 
-  // ── Show toast when we return from a verification redirect ───────────────
+  // ── Show toast and clear banner when we return from a verification redirect ──
   useEffect(() => {
     if (typeof sessionStorage === "undefined") return;
     if (sessionStorage.getItem("adur_just_verified") === "1") {
       sessionStorage.removeItem("adur_just_verified");
+      // Set verified immediately so the banner is gone before verify-status returns
+      setEmailVerified(true);
+      markVerifiedCalledRef.current = true; // skip the redundant DB fetch
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4200);
     }

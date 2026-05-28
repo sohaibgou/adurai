@@ -132,14 +132,15 @@ export default function ConfirmContent() {
 
         } else {
           // No token at all — already verified or stale link
-          router.replace("/dashboard");
+          window.location.href = "/dashboard";
           return;
         }
 
         await markVerified(session?.access_token);
         setStatus("success");
         setMsg("Email verified! Redirecting…");
-        setTimeout(() => router.replace("/dashboard"), 1200);
+        try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
 
       } catch (err) {
         const message = err instanceof Error ? err.message : "Verification failed.";
@@ -153,7 +154,8 @@ export default function ConfirmContent() {
           }).catch(() => {});
           setStatus("success");
           setMsg("Email already verified! Redirecting…");
-          setTimeout(() => router.replace("/dashboard"), 1200);
+          try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+          setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
 
         } else if (
           message.toLowerCase().includes("expired") ||
