@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -118,8 +117,6 @@ function VerifySuccessToast({ visible }: { visible: boolean }) {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
-
   const [session,       setSession]       = useState<Session | null>(null);
   const [user,          setUser]          = useState<User | null>(null);
   const [loading,       setLoading]       = useState(true);
@@ -144,11 +141,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Core: call /api/auth/mark-verified ────────────────────────────────────
+  //
+  // Guard key stored in sessionStorage to survive full page reloads.
+  // Prevents an infinite redirect loop when the magic link lands on the root page:
+  //   load → runMarkVerified → window.location.href="/dashboard" → reload →
+  //   same stale JWT (email_link_verified: false) → runMarkVerified again → loop
+  //
+  // Flow:
+  //   • Guard absent  → call API, refresh JWT, navigate (guard cleared if refresh ok)
+  //   • Guard present → DB already updated; skip API, let verify-status read DB
+  //
+  const MV_GUARD = "adur_mv_guard";
+
   function runMarkVerified(accessToken: string) {
     if (markVerifiedCalledRef.current) return;
-    markVerifiedCalledRef.current = true;
 
-    // Optimistically mark verified so the banner disappears immediately
+    try {
+      if (sessionStorage.getItem(MV_GUARD) === "1") {
+        // Already ran mark-verified this tab session but the JWT wasn't refreshed.
+        // Set optimistic state and let verify-status (below) confirm from DB.
+        setEmailVerified(true);
+        return; // markVerifiedCalledRef stays false → verify-status will run
+      }
+      sessionStorage.setItem(MV_GUARD, "1");
+    } catch { /* noop */ }
+
+    markVerifiedCalledRef.current = true;
     setEmailVerified(true);
 
     (async () => {
@@ -159,23 +177,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (res.ok) {
-          // Show the success toast immediately (no page reload needed)
           setShowToast(true);
           setTimeout(() => setShowToast(false), 4200);
 
-          // Refresh the JWT so it carries email_link_verified: true.
-          // This is a bonus — the main loop-prevention comes from using router.replace
-          // below (which keeps this auth-context mounted so markVerifiedCalledRef stays true).
-          try { await supabase.auth.refreshSession(); } catch { /* non-critical */ }
+          // Refresh JWT so it carries email_link_verified: true.
+          // If this succeeds the new JWT prevents re-triggering, so we clear the guard.
+          // If it fails the guard stays and breaks the loop on the next load.
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (!refreshErr) {
+            try { sessionStorage.removeItem(MV_GUARD); } catch { /* noop */ }
+          }
+        } else {
+          // API failed → clear guard so it can retry on next load
+          try { sessionStorage.removeItem(MV_GUARD); } catch { /* noop */ }
         }
-      } catch { /* non-critical */ }
+      } catch {
+        // Network error → clear guard so it can retry
+        try { sessionStorage.removeItem(MV_GUARD); } catch { /* noop */ }
+      }
 
-      // ⚠️  IMPORTANT: use router.replace (client-side nav) NOT window.location.replace
-      // (full page reload). A full reload re-mounts AuthProvider, resets markVerifiedCalledRef
-      // to false, and re-triggers runMarkVerified on every load → infinite redirect loop.
-      // Client-side nav keeps this component mounted so the ref remains true.
+      // window.location.href is more reliable than router.replace() when called
+      // from inside a layout provider. The guard above prevents the reload loop.
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      router.replace("/dashboard");
+      window.location.href = "/dashboard";
     })();
   }
 
@@ -255,8 +279,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetch("/api/auth/verify-status")
       .then(r => r.json())
-      .then(({ emailVerified }: { emailVerified: boolean }) => {
-        if (!markVerifiedCalledRef.current) setEmailVerified(emailVerified);
+      .then(({ emailVerified: ev }: { emailVerified: boolean }) => {
+        if (!markVerifiedCalledRef.current) {
+          setEmailVerified(ev);
+          // If DB confirms verified, the guard is no longer needed
+          if (ev) { try { sessionStorage.removeItem(MV_GUARD); } catch { /* noop */ } }
+        }
       })
       .catch(() => setEmailVerified(true)); // fail open
   // eslint-disable-next-line react-hooks/exhaustive-deps
