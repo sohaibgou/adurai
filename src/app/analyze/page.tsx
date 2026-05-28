@@ -355,7 +355,7 @@ export default function AnalyzePage() {
                 {[
                   { num: "01", icon: Upload,   title: "Upload your CSV",          desc: "Export directly from Ads Manager" },
                   { num: "02", icon: BarChart3, title: "AI analyzes campaigns",   desc: "Finds winners, leaks & patterns" },
-                  { num: "03", icon: Palette,   title: "Scale &amp; create ads",  desc: "Battle Plan + winning creatives" },
+                  { num: "03", icon: Palette,   title: "Scale & create ads",  desc: "Battle Plan + winning creatives" },
                 ].map(({ num, icon: Icon, title, desc }) => (
                   <div key={num} className="rounded-2xl p-5" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                     <div className="inline-flex items-center justify-center rounded-lg mb-3" style={{ width: 32, height: 32, background: "linear-gradient(135deg, rgba(255,60,172,0.10), rgba(255,107,53,0.08))", border: "1px solid rgba(255,60,172,0.18)" }}>
