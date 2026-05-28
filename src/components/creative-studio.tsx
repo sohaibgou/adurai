@@ -1696,7 +1696,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       {/* Left: copy */}
                       <div className="flex-1 space-y-5">
                         <div>
-                          <h2 className="font-heading text-white mb-2" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1 }}>
+                          <h2 className="font-heading mb-2" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, color: "#ffffff" }}>
                             Turn products into<br />viral UGC videos
                           </h2>
                           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontFamily: "var(--font-inter)" }}>
