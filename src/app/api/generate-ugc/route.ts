@@ -13,33 +13,15 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { fal } from "@fal-ai/client";
+import { FAL_MODELS, generateVideo } from "@/lib/fal-client";
 
 export const maxDuration = 120;
 export const dynamic     = "force-dynamic";
-
-const SEEDANCE = "bytedance/seedance-2.0/reference-to-video";
-const KLING    = "fal-ai/kling-video/v1.6/pro/image-to-video";
 
 interface ScriptData {
   script:      string;
   videoPrompt: string;
   hook:        string;
-}
-
-interface VideoOutput {
-  data?: { video?: { url?: string } };
-}
-
-/* ── Auto-select video model from hook type ─────────────────────────────── */
-function selectModel(hookType: string): typeof SEEDANCE | typeof KLING {
-  if (hookType === "Testimonial Style" || hookType === "Problem/Solution") {
-    return SEEDANCE; // human UGC feel
-  }
-  if (hookType === "Direct Offer" || hookType === "Shocking Fact") {
-    return KLING; // product hero / showcase
-  }
-  return SEEDANCE; // default
 }
 
 export async function POST(req: NextRequest) {
@@ -66,9 +48,12 @@ export async function POST(req: NextRequest) {
   const mimeType     = imageFile.type || "image/jpeg";
   const imageDataUrl = `data:${mimeType};base64,${base64Image}`;
 
-  /* ── Choose model ───────────────────────────────────────────────────────── */
-  const chosenModel = selectModel(hookType);
-  const isSeedance  = chosenModel === SEEDANCE;
+  /* ── Choose model from hook type ────────────────────────────────────────── */
+  const model = (
+    hookType === "Testimonial Style" || hookType === "Problem/Solution"
+  ) ? FAL_MODELS.UGC_HUMAN : FAL_MODELS.UGC_PRODUCT;
+
+  const isSeedance = model === FAL_MODELS.UGC_HUMAN;
 
   /* ── Step 1: Claude writes UGC script + video prompt ───────────────────── */
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -125,100 +110,18 @@ Return ONLY valid JSON with no markdown:
     return NextResponse.json({ error: "Failed to generate UGC script" }, { status: 500 });
   }
 
-  /* ── Step 2: Video generation ───────────────────────────────────────────── */
-  fal.config({ credentials: process.env.FAL_KEY });
-
-  /* ── Seedance 2.0 ────────────────────────────────────────────────────────── */
-  if (isSeedance) {
-    try {
-      const videoResult = await fal.subscribe(SEEDANCE, {
-        input: {
-          prompt:       scriptData.videoPrompt,
-          image_url:    imageDataUrl,
-          duration:     duration.toString(),
-          aspect_ratio: aspectRatio,
-          resolution:   "1080p",
-        },
-        logs: true,
-        onQueueUpdate: (update: { status: string }) => {
-          console.log("[generate-ugc] Seedance:", update.status);
-        },
-      }) as VideoOutput;
-
-      const videoUrl = videoResult.data?.video?.url;
-      if (!videoUrl) {
-        return NextResponse.json({ error: "Seedance returned no video URL" }, { status: 500 });
-      }
-
-      return NextResponse.json({
-        videoUrl,
-        clip2Url:   null,
-        script:     scriptData.script,
-        hook:       scriptData.hook,
-        duration,
-        needsMerge: false,
-        model:      "seedance",
-      });
-    } catch (e) {
-      console.error("[generate-ugc] Seedance error:", e);
-      return NextResponse.json({ error: "Video generation failed. Please try again." }, { status: 500 });
-    }
-  }
-
-  /* ── Kling V3 Pro ─────────────────────────────────────────────────────────── */
-  // Kling supports "5" or "10" seconds only
-  const klingDuration = duration >= 10 ? "10" : "5";
-  const klingRatio    = aspectRatio === "9:16" ? "9:16" : aspectRatio === "1:1" ? "1:1" : "16:9";
-
+  /* ── Step 2: Generate video via fal.ai ──────────────────────────────────── */
   try {
-    const videoResult = await fal.subscribe(KLING, {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      input: {
-        prompt:          scriptData.videoPrompt,
-        image_url:       imageDataUrl,
-        duration:        klingDuration,
-        aspect_ratio:    klingRatio,
-        generate_audio:  true,
-        negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy, text overlay, watermark, logo, subtitles",
-      } as any,
-      logs: true,
-      onQueueUpdate: (update: { status: string }) => {
-        console.log("[generate-ugc] Kling:", update.status);
-      },
-    }) as VideoOutput;
+    const videoUrl = await generateVideo({
+      model,
+      prompt:      scriptData.videoPrompt,
+      imageUrl:    imageDataUrl,
+      duration,
+      aspectRatio,
+    });
 
-    const videoUrl = videoResult.data?.video?.url;
     if (!videoUrl) {
-      return NextResponse.json({ error: "Kling returned no video URL" }, { status: 500 });
-    }
-
-    /* ── 15 s: generate a second 5 s CTA clip ────────────────────────────── */
-    if (duration === 15) {
-      try {
-        const clip2Result = await fal.subscribe(KLING, {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          input: {
-            prompt:         `${scriptData.videoPrompt} — final CTA moment, product close-up, viewer looking at camera`,
-            image_url:      imageDataUrl,
-            duration:       "5",
-            aspect_ratio:   klingRatio,
-            generate_audio: true,
-          } as any,
-          logs: false,
-        }) as VideoOutput;
-
-        return NextResponse.json({
-          videoUrl,
-          clip2Url:   clip2Result.data?.video?.url ?? null,
-          script:     scriptData.script,
-          hook:       scriptData.hook,
-          duration,
-          needsMerge: true,
-          model:      "kling",
-        });
-      } catch (e2) {
-        console.error("[generate-ugc] Kling clip2 error (falling back to single clip):", e2);
-      }
+      return NextResponse.json({ error: "Video generation returned no URL" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -228,10 +131,10 @@ Return ONLY valid JSON with no markdown:
       hook:       scriptData.hook,
       duration,
       needsMerge: false,
-      model:      "kling",
+      model:      isSeedance ? "seedance" : "kling",
     });
   } catch (e) {
-    console.error("[generate-ugc] Kling error:", e);
+    console.error("[generate-ugc] fal.ai error:", e);
     return NextResponse.json({ error: "Video generation failed. Please try again." }, { status: 500 });
   }
 }
