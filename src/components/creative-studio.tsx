@@ -430,6 +430,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     setUgcUsage(initUgcCount());
   }, []);
 
+  /* ── Sync ugcPlan from subscription props (authoritative over localStorage) ── */
+  useEffect(() => {
+    if (isAdmin) return;
+    if (isProPlan) setUgcPlan("pro");
+    else if (isPaid) setUgcPlan("starter");
+    else setUgcPlan("free");
+  }, [isAdmin, isProPlan, isPaid]);
+
   /* ── Fetch fresh library data whenever Library tab opens ── */
   useEffect(() => {
     if (activeTab === "library") onLibraryOpen?.();

@@ -31,6 +31,7 @@ const STARTER_FEATURES = [
   "Profit Leak calculator",
   "PDF report export",
   "Priority support",
+  "❌ UGC AI videos",
   "❌ Meta account connection",
   "❌ AI Manager & Autopilot",
   "❌ 24/7 monitoring",
@@ -38,6 +39,7 @@ const STARTER_FEATURES = [
 
 const PRO_FEATURES = [
   "Everything in Starter",
+  "30 UGC AI videos/month",
   "Connect Meta Ad Account",
   "AI Manager & Autopilot",
   "24/7 campaign monitoring",
