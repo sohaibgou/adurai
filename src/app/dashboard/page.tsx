@@ -505,7 +505,7 @@ function DashboardContent() {
                           ))}
                         </ul>
                         <button
-                          onClick={() => { setPaywallOpen(true); }}
+                          onClick={() => redirectToCheckout(undefined, "starter")}
                           className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
                           style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", boxShadow: "0 3px 12px rgba(255,60,172,0.30)", fontFamily: "var(--font-inter)" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
@@ -538,7 +538,7 @@ function DashboardContent() {
                           ))}
                         </ul>
                         <button
-                          onClick={() => { setPaywallOpen(true); }}
+                          onClick={() => redirectToCheckout(undefined, "pro")}
                           className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
                           style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.30)", fontFamily: "var(--font-inter)" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
