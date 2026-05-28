@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import AppSidebar from "@/components/app-sidebar";
 import EmailVerifyBanner from "@/components/email-verify-banner";
+import PaywallModal from "@/components/paywall-modal";
 import MetaPanel from "@/components/meta-panel";
 import PendingActions from "@/components/pending-actions";
 import AutopilotSettings from "@/components/autopilot-settings";
@@ -78,6 +79,7 @@ function DashboardContent() {
   const [analysisCount,    setAnalysisCount]    = useState(0);
   const [recentAnalyses,   setRecentAnalyses]   = useState<RecentAnalysis[]>([]);
   const [checkoutLoading,  setCheckoutLoading]  = useState(false);
+  const [paywallOpen,      setPaywallOpen]      = useState(false);
   // null = loading, true = verified, false = needs verification
 
   useEffect(() => {
@@ -152,7 +154,7 @@ function DashboardContent() {
         user={user}
         analysisCount={analysisCount}
         onSignOut={async () => { await signOut(); router.push("/"); }}
-        onUpgrade={async () => { setCheckoutLoading(true); try { await redirectToCheckout(); } finally { setCheckoutLoading(false); } }}
+        onUpgrade={() => setPaywallOpen(true)}
       />
 
       {/* ═══════════════════════════════════════════════════════
@@ -555,6 +557,12 @@ function DashboardContent() {
         </main>
       </div>
       </div>
+
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        currentPlan="free"
+      />
     </div>
   );
 }
