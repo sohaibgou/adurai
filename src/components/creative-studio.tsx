@@ -35,7 +35,7 @@ interface CreativeStudioProps {
   isPaid?:          boolean;
   isAdmin?:         boolean;
   isProPlan?:       boolean;
-  onPaywall?:       (reason: "image" | "copy") => void;
+  onPaywall?:       (reason: "image" | "copy" | "ugc") => void;
   onSaved?:         (id: string) => void;
   onLibraryOpen?:   () => void;   // called when user switches to Library tab
   savedSessions?:   SavedSession[];
@@ -1669,71 +1669,126 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
             {/* ── FREE PLAN: full-tab upgrade gate ── */}
             {!isAdmin && ugcPlan === "free" && (
-              <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#F7F5F2" }}>
+              <div className="flex-1 flex items-center justify-center p-6 lg:p-10" style={{ background: "#F7F5F2" }}>
                 <div
-                  className="flex flex-col items-center text-center gap-6 p-10 rounded-3xl"
+                  className="w-full rounded-3xl overflow-hidden"
                   style={{
-                    background: "#ffffff",
-                    border: "1.5px solid rgba(124,58,237,0.20)",
-                    boxShadow: "0 8px 40px rgba(124,58,237,0.10)",
-                    maxWidth: 480,
-                    width: "100%",
+                    maxWidth: 680,
+                    background: "linear-gradient(145deg, #18102e 0%, #1e1040 55%, #2d1060 100%)",
+                    boxShadow: "0 24px 80px rgba(124,58,237,0.28), 0 0 0 1px rgba(124,58,237,0.18)",
                   }}
                 >
-                  {/* Icon */}
-                  <div
-                    className="flex items-center justify-center rounded-2xl"
-                    style={{
-                      width: 72, height: 72,
-                      background: "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))",
-                      border: "1.5px solid rgba(124,58,237,0.20)",
-                      fontSize: 34,
-                    }}
-                  >
-                    🎬
-                  </div>
+                  {/* Top strip */}
+                  <div style={{ height: 3, background: "linear-gradient(90deg, #7c3aed, #a855f7, #ec4899)" }} />
 
-                  {/* Copy */}
-                  <div className="space-y-2">
-                    <p className="font-heading text-2xl font-black text-[#0a0a0f] tracking-tight" style={{ letterSpacing: "-0.03em" }}>
-                      UGC AI Video
-                    </p>
-                    <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, fontFamily: "var(--font-inter)" }}>
-                      Turn your product image into a scroll-stopping UGC-style video in minutes — powered by Adur AI.
-                    </p>
-                  </div>
+                  <div className="p-8 lg:p-10">
+                    {/* Badge */}
+                    <div className="flex items-center gap-2 mb-6">
+                      <span
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
+                        style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}
+                      >
+                        ✦ Paid Feature
+                      </span>
+                    </div>
 
-                  {/* Plan pills */}
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                      style={{ background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.22)", color: "#FF3CAC" }}
-                    >
-                      ✓ Starter — 3 videos/mo
-                    </span>
-                    <span
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                      style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.22)", color: "#7c3aed" }}
-                    >
-                      ✓ Pro — 30 videos/mo
-                    </span>
-                  </div>
+                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                      {/* Left: copy */}
+                      <div className="flex-1 space-y-5">
+                        <div>
+                          <h2 className="font-heading text-white mb-2" style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1 }}>
+                            Turn products into<br />viral UGC videos
+                          </h2>
+                          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontFamily: "var(--font-inter)" }}>
+                            Upload a product image, pick a style and hook — Adur AI writes the script, generates the video, and delivers a download-ready MP4.
+                          </p>
+                        </div>
 
-                  {/* CTA */}
-                  <button
-                    onClick={() => onPaywall?.("image")}
-                    className="w-full py-3.5 rounded-2xl text-sm font-bold text-white cursor-pointer transition-all"
-                    style={{
-                      background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                      border: "none",
-                      boxShadow: "0 4px 20px rgba(124,58,237,0.32)",
-                      letterSpacing: "-0.01em",
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(124,58,237,0.44)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(124,58,237,0.32)"; (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
-                  >
-                    Upgrade to unlock UGC Video →
-                  </button>
+                        {/* Feature list */}
+                        <ul className="space-y-2.5">
+                          {[
+                            "AI writes a full UGC script for your product",
+                            "6 hook styles — Pain Point, Curiosity, Social Proof…",
+                            "9:16 vertical format ready for TikTok & Reels",
+                            "Download MP4 in seconds",
+                          ].map(f => (
+                            <li key={f} className="flex items-start gap-2.5">
+                              <span style={{ color: "#a855f7", fontSize: 15, marginTop: 1, flexShrink: 0 }}>✓</span>
+                              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.70)", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {/* Plan pills */}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                            style={{ background: "rgba(255,60,172,0.14)", border: "1px solid rgba(255,60,172,0.30)", color: "#f472b6" }}>
+                            Starter — 3 videos / mo
+                          </span>
+                          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                            style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}>
+                            Pro — 30 videos / mo
+                          </span>
+                        </div>
+
+                        {/* CTA */}
+                        <button
+                          onClick={() => onPaywall?.("ugc")}
+                          className="flex items-center justify-center gap-2 font-bold text-white cursor-pointer transition-all"
+                          style={{
+                            padding: "14px 28px",
+                            borderRadius: 100,
+                            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                            border: "none",
+                            fontSize: 14,
+                            fontFamily: "var(--font-inter)",
+                            letterSpacing: "-0.01em",
+                            boxShadow: "0 4px 24px rgba(124,58,237,0.50)",
+                            width: "100%",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(124,58,237,0.65)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 24px rgba(124,58,237,0.50)"; }}
+                        >
+                          Unlock UGC Video →
+                        </button>
+                      </div>
+
+                      {/* Right: video mockup */}
+                      <div className="hidden lg:flex flex-shrink-0 items-center justify-center" style={{ width: 150 }}>
+                        <div
+                          className="relative flex items-center justify-center rounded-2xl"
+                          style={{
+                            width: 120, height: 200,
+                            background: "linear-gradient(180deg, rgba(124,58,237,0.25) 0%, rgba(168,85,247,0.10) 100%)",
+                            border: "1.5px solid rgba(168,85,247,0.30)",
+                          }}
+                        >
+                          {/* fake screen lines */}
+                          <div className="absolute inset-x-4 top-5 space-y-1.5 opacity-30">
+                            {[80, 60, 70, 50].map((w, i) => (
+                              <div key={i} style={{ height: 4, borderRadius: 3, background: "rgba(200,150,255,0.7)", width: `${w}%` }} />
+                            ))}
+                          </div>
+                          {/* lock icon */}
+                          <div
+                            className="flex items-center justify-center rounded-full"
+                            style={{ width: 48, height: 48, background: "rgba(124,58,237,0.50)", border: "1.5px solid rgba(168,85,247,0.50)", backdropFilter: "blur(8px)" }}
+                          >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                          </div>
+                          {/* bottom label */}
+                          <div className="absolute bottom-4 inset-x-3 text-center">
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(200,150,255,0.80)", fontFamily: "var(--font-inter)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                              9:16 · MP4
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

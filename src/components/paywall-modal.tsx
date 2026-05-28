@@ -11,7 +11,7 @@ import { useAuth } from "@/context/auth-context";
 interface PaywallModalProps {
   open:          boolean;
   onClose:       () => void;
-  reason?:       "analysis" | "image" | "copy";
+  reason?:       "analysis" | "image" | "copy" | "ugc";
   currentPlan?:  "free" | "starter" | "pro";
 }
 
@@ -189,14 +189,20 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                 >
                   {isStarterUser
                     ? "Upgrade to Pro"
-                    : reason ? "You've hit your free limit" : "Choose your plan"}
+                    : reason === "ugc"
+                      ? "Unlock UGC AI Video"
+                      : reason
+                        ? "You've hit your free limit"
+                        : "Choose your plan"}
                 </h2>
                 <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.6, fontFamily: "var(--font-inter)", marginBottom: 20 }}>
                   {isStarterUser
                     ? "Unlock 30 UGC AI videos per month, Meta account connection, AI Manager & Autopilot and more."
-                    : reason
-                      ? "Upgrade to keep going — choose the plan that suits you."
-                      : "Start with Starter or go all-in with Pro."}
+                    : reason === "ugc"
+                      ? "Turn your product images into scroll-stopping UGC-style videos — available on Starter and Pro."
+                      : reason
+                        ? "Upgrade to keep going — choose the plan that suits you."
+                        : "Start with Starter or go all-in with Pro."}
                 </p>
 
                 {/* ── STARTER USER: single Pro card ── */}

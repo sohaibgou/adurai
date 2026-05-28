@@ -19,7 +19,7 @@ import type { AnalysisResult } from "@/lib/types";
 
 const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
 
-type PaywallReason = "analysis" | "image" | "copy";
+type PaywallReason = "analysis" | "image" | "copy" | "ugc";
 
 
 /* ── Page ───────────────────────────────────────────────── */
