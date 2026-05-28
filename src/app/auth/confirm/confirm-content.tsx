@@ -40,6 +40,12 @@ export default function ConfirmContent() {
           if (error) throw error;
           session = data.session;
 
+        } else if (typeof window !== "undefined" && window.location.hash.includes("error")) {
+          // Supabase put an error in the hash (e.g. expired OTP, invalid link)
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
+          const desc = hashParams.get("error_description") ?? "Verification link is invalid or has expired.";
+          throw new Error(decodeURIComponent(desc.replace(/\+/g, " ")));
+
         } else if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
           // Implicit / hash flow — #access_token=...
           // createBrowserClient processes the hash asynchronously; wait for it.
