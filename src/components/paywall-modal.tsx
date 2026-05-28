@@ -369,13 +369,15 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                   </>
                 )}
 
-                {/* Sign-in link */}
-                <p className="text-center mt-3" style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
-                  Already have an account?{" "}
-                  <Link href="/login?redirect=checkout" className="font-semibold" style={{ color: "#FF3CAC", textDecoration: "none" }} onClick={handleClose}>
-                    Sign in
-                  </Link>
-                </p>
+                {/* Sign-in link — only for logged-out users */}
+                {!user && (
+                  <p className="text-center mt-3" style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
+                    Already have an account?{" "}
+                    <Link href="/login?redirect=checkout" className="font-semibold" style={{ color: "#FF3CAC", textDecoration: "none" }} onClick={handleClose}>
+                      Sign in
+                    </Link>
+                  </p>
+                )}
 
               </div>
             </div>
