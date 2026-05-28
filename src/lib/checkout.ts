@@ -15,22 +15,33 @@ export async function redirectToCheckout(
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch("/api/create-checkout", {
-    method:  "POST",
-    headers,
-    body:    JSON.stringify({ plan }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/create-checkout", {
+      method:      "POST",
+      credentials: "include",
+      headers,
+      body:        JSON.stringify({ plan }),
+    });
+  } catch {
+    throw new Error("Network error — please check your connection and try again.");
+  }
 
-  const data: { url?: string; error?: string; requiresAuth?: boolean } = await res.json();
+  let data: { url?: string; error?: string; requiresAuth?: boolean };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server error (${res.status}) — please try again.`);
+  }
 
-  if (data.requiresAuth) return false;   // caller should show auth/signup modal
+  if (data.requiresAuth) return false;
 
   if (data.url) {
     window.location.href = data.url;
     return true;
   }
 
-  throw new Error(data.error ?? "Checkout failed");
+  throw new Error(data.error ?? "Checkout failed — please try again.");
 }
 
 /**
