@@ -35,7 +35,7 @@ export default function CreativeStudioPage() {
   const [planName,       setPlanName]       = useState<string | null>(null);
   const [subLoading,     setSubLoading]     = useState(true);
   const [paywallOpen,    setPaywallOpen]    = useState(false);
-  const [paywallReason,  setPaywallReason]  = useState<PaywallReason>("image");
+  const [paywallReason,  setPaywallReason]  = useState<PaywallReason | undefined>(undefined);
 
   // Saved sessions for in-tab history
   const [creatives,  setCreatives]  = useState<SavedSession[]>([]);
@@ -163,7 +163,7 @@ export default function CreativeStudioPage() {
             await signOut();
             router.push("/");
           }}
-          onUpgrade={() => redirectToCheckout(undefined, "starter")}
+          onUpgrade={() => { setPaywallReason(undefined); setPaywallOpen(true); }}
         />
 
         {/* ═══════════════════════════════════════════════════════

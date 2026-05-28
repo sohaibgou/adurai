@@ -42,7 +42,7 @@ export default function AnalyzePage() {
   const [error,         setError]         = useState<string | null>(null);
   const [onboarding,    setOnboarding]    = useState<OnboardingData | null>(null);
   const [paywallOpen,   setPaywallOpen]   = useState(false);
-  const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy" | "ugc">("analysis");
+  const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy" | "ugc" | undefined>(undefined);
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan,      setPaidPlan]      = useState(false);
   const [showLoader,    setShowLoader]    = useState(false);
@@ -172,7 +172,7 @@ export default function AnalyzePage() {
           user={user}
           analysisCount={analysisCount}
           onSignOut={async () => { await signOut(); router.push("/"); }}
-          onUpgrade={() => redirectToCheckout(undefined, "starter")}
+          onUpgrade={() => { setPaywallReason(undefined); setPaywallOpen(true); }}
         />
 
         {/* ── Main ── */}
