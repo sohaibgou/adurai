@@ -96,6 +96,11 @@ export default function CreativeStudioPage() {
           setPlanName(data.plan ?? null);
           // Sync to localStorage so components can gate features client-side
           try { localStorage.setItem("adur_plan", data.plan ?? "starter"); } catch { /* noop */ }
+        } else {
+          // No active subscription — reset so stale localStorage never grants access
+          setPaidPlan(false);
+          setPlanName(null);
+          try { localStorage.removeItem("adur_plan"); } catch { /* noop */ }
         }
       } catch { /* treat as free */ } finally {
         setSubLoading(false);

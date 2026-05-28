@@ -66,6 +66,9 @@ export default function AnalyzePage() {
         if (data) {
           setPaidPlan(true);
           try { localStorage.setItem("adur_plan", "starter"); } catch {}
+        } else {
+          setPaidPlan(false);
+          try { localStorage.removeItem("adur_plan"); } catch {}
         }
         setSubLoading(false);
       });
