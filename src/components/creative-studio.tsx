@@ -131,12 +131,12 @@ const UGC_STYLES = [
 
 /* ── Avatar presets ─────────────────────────────────────────── */
 const AVATAR_PRESETS = [
-  { id: "sarah",  name: "Sarah",  style: "Casual · Female",       emoji: "👩",   bg: "linear-gradient(135deg,#fce7f3,#fbcfe8)" },
-  { id: "maya",   name: "Maya",   style: "Professional · Female", emoji: "👩‍💼",  bg: "linear-gradient(135deg,#ede9fe,#ddd6fe)" },
-  { id: "zoe",    name: "Zoe",    style: "Trendy · Female",       emoji: "✨",   bg: "linear-gradient(135deg,#fef9c3,#fde68a)" },
-  { id: "alex",   name: "Alex",   style: "Casual · Male",         emoji: "👨",   bg: "linear-gradient(135deg,#dbeafe,#bfdbfe)" },
-  { id: "jordan", name: "Jordan", style: "Professional · Male",   emoji: "👨‍💼",  bg: "linear-gradient(135deg,#d1fae5,#a7f3d0)" },
-  { id: "marcus", name: "Marcus", style: "Tech · Male",           emoji: "🧑‍💻",  bg: "linear-gradient(135deg,#f1f5f9,#e2e8f0)" },
+  { id: "sarah",  name: "Sarah",  style: "Casual · Female",       photo: "https://randomuser.me/api/portraits/women/44.jpg" },
+  { id: "maya",   name: "Maya",   style: "Professional · Female", photo: "https://randomuser.me/api/portraits/women/71.jpg" },
+  { id: "zoe",    name: "Zoe",    style: "Trendy · Female",       photo: "https://randomuser.me/api/portraits/women/23.jpg" },
+  { id: "alex",   name: "Alex",   style: "Casual · Male",         photo: "https://randomuser.me/api/portraits/men/32.jpg"   },
+  { id: "jordan", name: "Jordan", style: "Professional · Male",   photo: "https://randomuser.me/api/portraits/men/60.jpg"   },
+  { id: "marcus", name: "Marcus", style: "Tech · Male",           photo: "https://randomuser.me/api/portraits/men/44.jpg"   },
 ] as const;
 
 // Monthly generation limits per plan
@@ -405,7 +405,12 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "pro">("free");
   const [ugcUsage,       setUgcUsage]         = useState(0);
   // Avatar UGC extras
-  const [ugcAvatar,      setUgcAvatar]        = useState<string>("sarah");
+  const [ugcAvatar,           setUgcAvatar]          = useState<string>("sarah");
+  const [ugcAvatarCustomFile, setUgcAvatarCustomFile] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [ugcAvatarModalOpen,  setUgcAvatarModalOpen]  = useState(false);
+  const [ugcAvatarModalSel,   setUgcAvatarModalSel]   = useState<string>("sarah");
+  const [ugcAvatarModalCustom, setUgcAvatarModalCustom] = useState<{ file: File; previewUrl: string } | null>(null);
+  const ugcAvatarFileRef = useRef<HTMLInputElement>(null);
   const [ugcInputMode,   setUgcInputMode]     = useState<"image" | "url">("image");
   const [ugcProductUrl,  setUgcProductUrl]    = useState("");
   const [ugcHasVoiceover, setUgcHasVoiceover] = useState(false);
@@ -747,6 +752,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       fd.append("language",           ugcLang);
       fd.append("duration",           String(ugcDuration));
       fd.append("aspectRatio",        ugcRatio);
+
+      // Avatar image — custom upload takes priority over preset photo URL
+      if (ugcAvatarCustomFile) {
+        fd.append("avatarImageFile", ugcAvatarCustomFile.file, ugcAvatarCustomFile.file.name || "avatar.jpg");
+      } else {
+        const preset = AVATAR_PRESETS.find(a => a.id === ugcAvatar);
+        if (preset) fd.append("avatarImageUrl", preset.photo);
+      }
 
       const res  = await fetch("/api/generate-avatar-ugc", { method: "POST", body: fd });
       const data = await res.json() as {
@@ -1834,30 +1847,31 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
               {/* ─ Section 0: Avatar selector ─ */}
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CHOOSE AVATAR</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {AVATAR_PRESETS.map(av => {
-                    const sel = ugcAvatar === av.id;
-                    return (
-                      <button
-                        key={av.id}
-                        onClick={() => setUgcAvatar(av.id)}
-                        className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all cursor-pointer"
-                        style={{
-                          background:  sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
-                          borderColor: sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
-                        }}
-                      >
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                          style={{ background: av.bg, flexShrink: 0 }}
-                        >
-                          {av.emoji}
-                        </div>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f", lineHeight: 1.2 }}>{av.name}</p>
-                        <p style={{ fontSize: 9, color: "#9ca3af", lineHeight: 1.2, textAlign: "center" }}>{av.style}</p>
-                      </button>
-                    );
-                  })}
+
+                {/* Selected avatar preview */}
+                <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ugcAvatarCustomFile?.previewUrl ?? (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.photo ?? "")}
+                    alt="Selected avatar"
+                    className="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
+                    style={{ borderColor: "rgba(124,58,237,0.35)" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f" }}>
+                      {ugcAvatarCustomFile ? "Custom avatar" : (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.name ?? ugcAvatar)}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#9ca3af" }}>
+                      {ugcAvatarCustomFile ? "Your uploaded photo" : (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.style ?? "")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setUgcAvatarModalSel(ugcAvatar); setUgcAvatarModalCustom(ugcAvatarCustomFile); setUgcAvatarModalOpen(true); }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                    style={{ background: "rgba(124,58,237,0.08)", color: "#7c3aed", border: "1.5px solid rgba(124,58,237,0.22)" }}
+                  >
+                    Change
+                  </button>
                 </div>
               </div>
 
@@ -2425,6 +2439,160 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
             )} {/* end (isAdmin || ugcPlan !== "free") right panel */}
 
           </motion.div>
+        )}
+
+        {/* ════════════════════════════════════════════
+            AVATAR SELECTION MODAL
+        ════════════════════════════════════════════ */}
+        {ugcAvatarModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+            onClick={e => { if (e.target === e.currentTarget) setUgcAvatarModalOpen(false); }}
+          >
+            <div className="w-full bg-white rounded-2xl shadow-2xl overflow-hidden" style={{ maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f5]">
+                <div>
+                  <p className="text-base font-bold text-[#0a0a0f]">Choose Your Avatar</p>
+                  <p className="text-xs text-[#9ca3af] mt-0.5">Select a pre-built creator or upload your own photo</p>
+                </div>
+                <button
+                  onClick={() => setUgcAvatarModalOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F7F5F2] transition-colors cursor-pointer"
+                  style={{ color: "#9ca3af" }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="overflow-y-auto p-5 space-y-5">
+
+                {/* Pre-built avatars */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">PRE-BUILT CREATORS</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {AVATAR_PRESETS.map(av => {
+                      const sel = ugcAvatarModalSel === av.id && !ugcAvatarModalCustom;
+                      return (
+                        <button
+                          key={av.id}
+                          onClick={() => { setUgcAvatarModalSel(av.id); setUgcAvatarModalCustom(null); }}
+                          className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer"
+                          style={{
+                            background:  sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
+                            borderColor: sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
+                          }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={av.photo}
+                            alt={av.name}
+                            className="w-16 h-16 rounded-full object-cover"
+                            style={{ border: `2px solid ${sel ? "rgba(124,58,237,0.40)" : "#E8E5E0"}` }}
+                          />
+                          <p style={{ fontSize: 12, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f" }}>{av.name}</p>
+                          <p style={{ fontSize: 10, color: "#9ca3af", textAlign: "center", lineHeight: 1.3 }}>{av.style}</p>
+                          {sel && (
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "#7c3aed", background: "rgba(124,58,237,0.10)", padding: "2px 8px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                              Selected
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: "#E8E5E0" }} />
+                  <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">or upload your own</span>
+                  <div className="flex-1 h-px" style={{ background: "#E8E5E0" }} />
+                </div>
+
+                {/* Custom avatar upload */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CUSTOM AVATAR</p>
+
+                  {ugcAvatarModalCustom ? (
+                    <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ugcAvatarModalCustom.previewUrl} alt="Custom" className="w-14 h-14 rounded-full object-cover border-2" style={{ borderColor: "rgba(124,58,237,0.35)" }} />
+                      <div className="flex-1 min-w-0">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Custom avatar ready
+                        </span>
+                        <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcAvatarModalCustom.file.name}</p>
+                      </div>
+                      <button
+                        onClick={() => setUgcAvatarModalCustom(null)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => ugcAvatarFileRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
+                        <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
+                      </div>
+                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload a photo of yourself</p>
+                      <p className="text-[11px] text-[#9ca3af]">JPG, PNG or WEBP · Clear face photo works best</p>
+                    </div>
+                  )}
+                  <input
+                    ref={ugcAvatarFileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setUgcAvatarModalCustom({ file: f, previewUrl: URL.createObjectURL(f) });
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-4 border-t border-[#f0f0f5] flex items-center gap-3">
+                <button
+                  onClick={() => setUgcAvatarModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all"
+                  style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Commit selection: either custom upload or preset
+                    if (ugcAvatarModalCustom) {
+                      if (ugcAvatarCustomFile) URL.revokeObjectURL(ugcAvatarCustomFile.previewUrl);
+                      setUgcAvatarCustomFile(ugcAvatarModalCustom);
+                      setUgcAvatar(ugcAvatarModalSel);
+                    } else {
+                      if (ugcAvatarCustomFile) URL.revokeObjectURL(ugcAvatarCustomFile.previewUrl);
+                      setUgcAvatarCustomFile(null);
+                      setUgcAvatar(ugcAvatarModalSel);
+                    }
+                    setUgcAvatarModalOpen(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer transition-all"
+                  style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 4px 16px rgba(124,58,237,0.30)" }}
+                >
+                  Use This Avatar →
+                </button>
+              </div>
+
+            </div>
+          </div>
         )}
 
         {/* ════════════════════════════════════════════

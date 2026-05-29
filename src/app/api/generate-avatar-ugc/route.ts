@@ -71,15 +71,17 @@ export async function POST(req: NextRequest) {
   try { formData = await req.formData(); }
   catch { return NextResponse.json({ error: "Invalid form data" }, { status: 400 }); }
 
-  const imageFile    = formData.get("image")              as File   | null;
-  const productUrl   = (formData.get("productUrl")   as string | null)?.trim() || null;
-  const avatarId     = (formData.get("avatarId")     as string) || "sarah";
-  const productDesc  = (formData.get("productDescription") as string | null)?.trim() || "";
-  const hookType     = (formData.get("hookType")     as string) || "Problem/Solution";
-  const creatorStyle = (formData.get("creatorStyle") as string) || "Natural/Authentic";
-  const language     = (formData.get("language")     as string) || "English";
-  const duration     = parseInt(formData.get("duration")     as string || "10", 10);
-  const aspectRatio  = (formData.get("aspectRatio")  as string) || "9:16";
+  const imageFile        = formData.get("image")              as File   | null;
+  const productUrl       = (formData.get("productUrl")        as string | null)?.trim() || null;
+  const avatarImageFile  = formData.get("avatarImageFile")    as File   | null;
+  const avatarImageUrl   = (formData.get("avatarImageUrl")    as string | null)?.trim() || null;
+  const avatarId         = (formData.get("avatarId")          as string) || "sarah";
+  const productDesc      = (formData.get("productDescription") as string | null)?.trim() || "";
+  const hookType         = (formData.get("hookType")          as string) || "Problem/Solution";
+  const creatorStyle     = (formData.get("creatorStyle")      as string) || "Natural/Authentic";
+  const language         = (formData.get("language")          as string) || "English";
+  const duration         = parseInt(formData.get("duration")  as string || "10", 10);
+  const aspectRatio      = (formData.get("aspectRatio")       as string) || "9:16";
 
   if (!imageFile && !productUrl) {
     return NextResponse.json({ error: "Provide either a product image or a product URL" }, { status: 400 });
@@ -90,12 +92,30 @@ export async function POST(req: NextRequest) {
 
   const avatar = AVATAR_PRESETS[avatarId] ?? AVATAR_PRESETS["sarah"];
 
-  /* ── 2. Resolve product image URL ──────────────────────────────────────── */
   fal.config({ credentials: process.env.FAL_KEY });
+
+  /* ── 2a. Resolve AVATAR image URL (used as start_image_url for Kling) ──── */
+  // Priority: custom upload > preset photo URL > fallback to product image
+  let avatarStartUrl: string | null = null;
+
+  if (avatarImageFile) {
+    try {
+      const bytes = await avatarImageFile.arrayBuffer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob  = new Blob([new Uint8Array(bytes) as any], { type: avatarImageFile.type || "image/jpeg" });
+      const file  = new File([blob], avatarImageFile.name || "avatar.jpg", { type: avatarImageFile.type || "image/jpeg" });
+      avatarStartUrl = await fal.storage.upload(file);
+    } catch (e) {
+      console.error("[generate-avatar-ugc] avatar upload error:", e);
+    }
+  } else if (avatarImageUrl) {
+    avatarStartUrl = avatarImageUrl; // randomuser.me URL is already public
+  }
+
+  /* ── 2b. Resolve PRODUCT image URL ─────────────────────────────────────── */
   let productImageUrl: string;
 
   if (productUrl) {
-    // Screenshot the URL via our own /api/screenshot-url endpoint
     try {
       const proto   = req.headers.get("x-forwarded-proto") ?? "https";
       const host    = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost:3000";
@@ -113,19 +133,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not screenshot the product URL. Try uploading an image instead." }, { status: 422 });
     }
   } else {
-    // Upload the product image file to fal storage
     try {
       const bytes  = await imageFile!.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const mime   = imageFile!.type || "image/jpeg";
-      const blob   = new Blob([buffer], { type: mime });
-      const file   = new File([blob], imageFile!.name || "product.jpg", { type: mime });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob   = new Blob([new Uint8Array(bytes) as any], { type: imageFile!.type || "image/jpeg" });
+      const file   = new File([blob], imageFile!.name || "product.jpg", { type: imageFile!.type || "image/jpeg" });
       productImageUrl = await fal.storage.upload(file);
     } catch (e) {
-      console.error("[generate-avatar-ugc] image upload error:", e);
+      console.error("[generate-avatar-ugc] product image upload error:", e);
       return NextResponse.json({ error: "Failed to upload product image" }, { status: 500 });
     }
   }
+
+  // Kling start frame: avatar photo if available, else product image
+  const klingStartUrl = avatarStartUrl ?? productImageUrl;
 
   /* ── 3. Claude — script + avatar video prompt ───────────────────────────── */
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -191,7 +212,7 @@ Return ONLY valid JSON with no markdown:
   try {
     const url = await generateAvatarVideo({
       prompt:      scriptData.videoPrompt,
-      imageUrl:    productImageUrl,
+      imageUrl:    klingStartUrl,
       duration,
       aspectRatio,
     });
