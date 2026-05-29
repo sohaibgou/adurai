@@ -129,6 +129,16 @@ const UGC_STYLES = [
   "Luxury/Premium",
 ] as const;
 
+/* ── Avatar presets ─────────────────────────────────────────── */
+const AVATAR_PRESETS = [
+  { id: "sarah",  name: "Sarah",  style: "Casual · Female",       emoji: "👩",   bg: "linear-gradient(135deg,#fce7f3,#fbcfe8)" },
+  { id: "maya",   name: "Maya",   style: "Professional · Female", emoji: "👩‍💼",  bg: "linear-gradient(135deg,#ede9fe,#ddd6fe)" },
+  { id: "zoe",    name: "Zoe",    style: "Trendy · Female",       emoji: "✨",   bg: "linear-gradient(135deg,#fef9c3,#fde68a)" },
+  { id: "alex",   name: "Alex",   style: "Casual · Male",         emoji: "👨",   bg: "linear-gradient(135deg,#dbeafe,#bfdbfe)" },
+  { id: "jordan", name: "Jordan", style: "Professional · Male",   emoji: "👨‍💼",  bg: "linear-gradient(135deg,#d1fae5,#a7f3d0)" },
+  { id: "marcus", name: "Marcus", style: "Tech · Male",           emoji: "🧑‍💻",  bg: "linear-gradient(135deg,#f1f5f9,#e2e8f0)" },
+] as const;
+
 // Monthly generation limits per plan
 const UGC_LIMIT: Record<string, number> = { free: 0, starter: 3, pro: 30 };
 
@@ -394,6 +404,12 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [ugcScriptCopied, setUgcScriptCopied] = useState(false);
   const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "pro">("free");
   const [ugcUsage,       setUgcUsage]         = useState(0);
+  // Avatar UGC extras
+  const [ugcAvatar,      setUgcAvatar]        = useState<string>("sarah");
+  const [ugcInputMode,   setUgcInputMode]     = useState<"image" | "url">("image");
+  const [ugcProductUrl,  setUgcProductUrl]    = useState("");
+  const [ugcHasVoiceover, setUgcHasVoiceover] = useState(false);
+  const [ugcHasLipsync,  setUgcHasLipsync]    = useState(false);
 
   /* ── Progress bar (60 s window for 4 parallel images) ── */
   useEffect(() => {
@@ -687,17 +703,18 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     setUgcImage(null);
   }
 
-  /* ── Generate UGC video ─────────────────────────── */
+  /* ── Generate Avatar UGC video ─────────────────────────── */
   async function generateUgc() {
-    if (!ugcImage || ugcLoading) return;
+    const hasProduct = ugcInputMode === "image" ? !!ugcImage : !!ugcProductUrl.trim();
+    if (!hasProduct || ugcLoading) return;
 
     // Re-read plan + count fresh from localStorage (guards against stale closure)
     const currentPlan  = isAdmin ? "pro" : getUgcPlan();
     const currentCount = isAdmin ? 0      : initUgcCount();
     const limit        = isAdmin ? Infinity : (UGC_LIMIT[currentPlan] ?? 0);
 
-    if (!isAdmin && currentPlan === "free")       return; // blocked by UI
-    if (!isAdmin && currentCount >= limit)         return; // blocked by UI
+    if (!isAdmin && currentPlan === "free")  return;
+    if (!isAdmin && currentCount >= limit)   return;
 
     setUgcLoading(true);
     setUgcError(null);
@@ -706,14 +723,24 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     setUgcScript(null);
     setUgcHookLine(null);
     setUgcNeedsMerge(false);
+    setUgcHasVoiceover(false);
+    setUgcHasLipsync(false);
     setUgcProgress(0);
     setUgcStage(1); // ✍️ Writing script
 
-    const stageTimer = setTimeout(() => setUgcStage(2), 7_000); // 🎬 Generating
+    // Stage timers: script→7s, avatar video→15s, voiceover→stage from server, lipsync→server
+    const t2 = setTimeout(() => setUgcStage(2), 7_000);
+    const t3 = setTimeout(() => setUgcStage(3), 90_000);
+    const t4 = setTimeout(() => setUgcStage(4), 130_000);
 
     try {
       const fd = new FormData();
-      fd.append("image",              ugcImage.file, ugcImage.file.name || "product.jpg");
+      if (ugcInputMode === "image" && ugcImage) {
+        fd.append("image", ugcImage.file, ugcImage.file.name || "product.jpg");
+      } else {
+        fd.append("productUrl", ugcProductUrl.trim());
+      }
+      fd.append("avatarId",           ugcAvatar);
       fd.append("productDescription", ugcProduct);
       fd.append("hookType",           ugcHook);
       fd.append("creatorStyle",       ugcStyle);
@@ -721,38 +748,36 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       fd.append("duration",           String(ugcDuration));
       fd.append("aspectRatio",        ugcRatio);
 
-      const res  = await fetch("/api/generate-ugc", { method: "POST", body: fd });
+      const res  = await fetch("/api/generate-avatar-ugc", { method: "POST", body: fd });
       const data = await res.json() as {
-        videoUrl?:  string;
-        clip2Url?:  string | null;
-        script?:    string;
-        hook?:      string;
-        duration?:  number;
-        needsMerge?: boolean;
-        error?:     string;
+        videoUrl?:      string;
+        audioUrl?:      string | null;
+        script?:        string;
+        hook?:          string;
+        duration?:      number;
+        hasVoiceover?:  boolean;
+        hasLipsync?:    boolean;
+        error?:         string;
       };
 
-      clearTimeout(stageTimer);
+      clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
       if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);
 
-      setUgcStage(3); // 🔊 Adding audio
-      await new Promise(r => setTimeout(r, 1_800));
-
       setUgcVideoUrl(data.videoUrl ?? null);
-      setUgcClip2Url(data.clip2Url ?? null);
       setUgcScript(data.script ?? null);
       setUgcHookLine(data.hook ?? null);
-      setUgcNeedsMerge(data.needsMerge ?? false);
+      setUgcHasVoiceover(data.hasVoiceover ?? false);
+      setUgcHasLipsync(data.hasLipsync ?? false);
+      setUgcNeedsMerge(false);
       setUgcProgress(100);
-      setUgcStage(4); // ✅ Done
+      setUgcStage(5); // ✅ Done
       setUgcScriptOpen(true);
-      // Increment monthly counter
       if (!isAdmin) {
         const next = incrementUgcCount();
         setUgcUsage(next);
       }
     } catch (err) {
-      clearTimeout(stageTimer);
+      clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
       setUgcError(err instanceof Error ? err.message : "Generation failed. Please try again.");
       setUgcStage(0);
     } finally {
@@ -1802,46 +1827,106 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
             <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5] overflow-y-auto">
 
               <div>
-                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">UGC Video</h2>
-                <p className="text-sm text-[#6b7280] mt-1">Generate authentic UGC-style videos with AI</p>
+                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">AI Avatar Ads</h2>
+                <p className="text-sm text-[#6b7280] mt-1">Pick an avatar · add your product · get a UGC video</p>
               </div>
 
-              {/* ─ Section 1: Product Setup ─ */}
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">YOUR PRODUCT</p>
+              {/* ─ Section 0: Avatar selector ─ */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CHOOSE AVATAR</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {AVATAR_PRESETS.map(av => {
+                    const sel = ugcAvatar === av.id;
+                    return (
+                      <button
+                        key={av.id}
+                        onClick={() => setUgcAvatar(av.id)}
+                        className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all cursor-pointer"
+                        style={{
+                          background:  sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
+                          borderColor: sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
+                        }}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                          style={{ background: av.bg, flexShrink: 0 }}
+                        >
+                          {av.emoji}
+                        </div>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f", lineHeight: 1.2 }}>{av.name}</p>
+                        <p style={{ fontSize: 9, color: "#9ca3af", lineHeight: 1.2, textAlign: "center" }}>{av.style}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                {/* Image upload */}
-                {ugcImage ? (
-                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={ugcImage.previewUrl} alt="Product" className="w-14 h-14 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Ready
-                      </span>
-                      <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcImage.file.name}</p>
-                    </div>
-                    <button onClick={clearUgcImage} className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer">
-                      <X className="w-4 h-4" />
+              {/* ─ Section 1: Product input ─ */}
+              <div className="space-y-3">
+                {/* Image / URL toggle */}
+                <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#F7F5F2", border: "1px solid #E8E5E0" }}>
+                  {(["image", "url"] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setUgcInputMode(mode)}
+                      className="flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                      style={{
+                        background:  ugcInputMode === mode ? "#fff"     : "transparent",
+                        color:       ugcInputMode === mode ? "#7c3aed"  : "#9ca3af",
+                        boxShadow:   ugcInputMode === mode ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                      }}
+                    >
+                      {mode === "image" ? "📸 Upload Image" : "🔗 Website URL"}
                     </button>
-                  </div>
+                  ))}
+                </div>
+
+                {ugcInputMode === "image" ? (
+                  <>
+                    {ugcImage ? (
+                      <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ugcImage.previewUrl} alt="Product" className="w-14 h-14 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Ready
+                          </span>
+                          <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcImage.file.name}</p>
+                        </div>
+                        <button onClick={clearUgcImage} className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => ugcImageRef.current?.click()}
+                        onDrop={handleUgcDrop}
+                        onDragOver={e => e.preventDefault()}
+                        className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
+                          <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-[#0a0a0f]">Upload product image</p>
+                          <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-snug">JPG, PNG or WEBP</p>
+                        </div>
+                      </div>
+                    )}
+                    <input ref={ugcImageRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUgcImageChange} />
+                  </>
                 ) : (
-                  <div
-                    onClick={() => ugcImageRef.current?.click()}
-                    onDrop={handleUgcDrop}
-                    onDragOver={e => e.preventDefault()}
-                    className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
-                      <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload your product image</p>
-                      <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-snug max-w-[200px]">The AI will generate a UGC video featuring your product</p>
-                    </div>
+                  <div className="space-y-1.5">
+                    <input
+                      type="url"
+                      value={ugcProductUrl}
+                      onChange={e => setUgcProductUrl(e.target.value)}
+                      placeholder="https://yourproduct.com"
+                      className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all placeholder:text-[#9ca3af]"
+                    />
+                    <p className="text-[10px] text-[#9ca3af]">We&apos;ll screenshot the page and use it as the product visual</p>
                   </div>
                 )}
-                <input ref={ugcImageRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUgcImageChange} />
 
                 {/* Product description */}
                 <div className="space-y-1.5">
@@ -1970,7 +2055,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 const used        = isAdmin ? 0     : ugcUsage;
                 const exhausted   = !isAdmin && used >= limit;
                 const canAccess   = isAdmin || plan !== "free";
-                const btnDisabled = !ugcImage || !ugcProduct.trim() || ugcLoading || exhausted;
+                const hasProduct   = ugcInputMode === "image" ? !!ugcImage : !!ugcProductUrl.trim();
+                const btnDisabled = !hasProduct || !ugcProduct.trim() || ugcLoading || exhausted;
 
                 return (
                   <div className="mt-auto space-y-2">
@@ -2051,7 +2137,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                         >
                           {ugcLoading
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-                            : <><Video className="w-4 h-4" /> Generate UGC Video</>
+                            : <><Video className="w-4 h-4" /> Generate Avatar Ad</>
                           }
                         </button>
 
@@ -2063,8 +2149,11 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                           }
                         </p>
 
-                        {!ugcImage && (
+                        {!ugcImage && ugcInputMode === "image" && (
                           <p className="text-[11px] text-[#9ca3af] text-center">↑ Upload a product image to enable generation</p>
+                        )}
+                        {!ugcProductUrl.trim() && ugcInputMode === "url" && (
+                          <p className="text-[11px] text-[#9ca3af] text-center">↑ Enter your product URL to enable generation</p>
                         )}
                       </>
                     )}
@@ -2132,8 +2221,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                       <Video className="w-8 h-8" style={{ color: "rgba(124,58,237,0.45)" }} />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-bold text-[#0a0a0f]">Your UGC video will appear here</p>
-                      <p className="text-xs text-[#9ca3af] mt-1">Upload your product and click Generate</p>
+                      <p className="text-sm font-bold text-[#0a0a0f]">Your avatar ad will appear here</p>
+                      <p className="text-xs text-[#9ca3af] mt-1">Pick an avatar, add your product, click Generate</p>
                     </div>
                     <div className="flex flex-wrap justify-center gap-2">
                       {["Perfect for Meta Feed", "Instagram Stories", "TikTok Ads"].map(label => (
@@ -2160,7 +2249,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <p className="text-sm font-semibold text-[#0a0a0f] text-center max-w-xs">{ugcError}</p>
                     <button
                       onClick={generateUgc}
-                      disabled={!ugcImage}
+                      disabled={ugcInputMode === "image" ? !ugcImage : !ugcProductUrl.trim()}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
                       style={{ background: "#7c3aed" }}
                     >
@@ -2179,10 +2268,11 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     {/* Stage steps */}
                     <div className="w-full max-w-sm space-y-3">
                       {[
-                        { stage: 1, icon: "✍️", label: "Writing your UGC script…" },
-                        { stage: 2, icon: "🎬", label: "Generating your video…"   },
-                        { stage: 3, icon: "🔊", label: "Adding audio…"            },
-                        { stage: 4, icon: "✅", label: "Your UGC is ready!"       },
+                        { stage: 1, icon: "✍️", label: "Writing UGC script…"      },
+                        { stage: 2, icon: "🎥", label: "Generating avatar video…"  },
+                        { stage: 3, icon: "🎙️", label: "Generating voiceover…"    },
+                        { stage: 4, icon: "👄", label: "Syncing lips to audio…"   },
+                        { stage: 5, icon: "✅", label: "Your avatar ad is ready!"  },
                       ].map(step => {
                         const isActive = ugcStage === step.stage;
                         const isDone   = ugcStage > step.stage;
@@ -2218,7 +2308,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                             style={{ width: `${ugcProgress}%`, background: "linear-gradient(90deg,#7c3aed,#a855f7)" }}
                           />
                         </div>
-                        <p className="text-[11px] text-[#9ca3af] text-center">This takes 60–120 seconds — please keep this tab open</p>
+                        <p className="text-[11px] text-[#9ca3af] text-center">This takes 2–3 minutes — please keep this tab open</p>
                       </div>
                     )}
                   </motion.div>
@@ -2232,17 +2322,18 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     className="space-y-5"
                   >
                     {/* Video title */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
-                        <p className="text-sm font-bold text-[#0a0a0f]">{ugcHook} UGC — {ugcDuration}s</p>
+                        <p className="text-sm font-bold text-[#0a0a0f]">
+                          {AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.name ?? ugcAvatar} · {ugcHook} · {ugcDuration}s
+                        </p>
                         <p className="text-xs text-[#9ca3af] mt-0.5">{ugcStyle} · {ugcRatio} · {ugcLang}</p>
                       </div>
-                      <span
-                        className="px-2.5 py-1 rounded-full text-[10px] font-bold"
-                        style={{ background: "rgba(22,163,74,0.10)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.22)" }}
-                      >
-                        ✅ Ready
-                      </span>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(22,163,74,0.10)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.22)" }}>✅ Ready</span>
+                        {ugcHasVoiceover && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.10)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.22)" }}>🎙️ Voice</span>}
+                        {ugcHasLipsync   && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(59,130,246,0.10)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.22)" }}>👄 Synced</span>}
+                      </div>
                     </div>
 
                     {/* Video player */}
