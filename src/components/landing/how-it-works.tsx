@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import FadeIn from "@/components/fade-in";
 import { ArrowRight, Upload, BarChart3, Link2, Zap } from "lucide-react";
 
@@ -505,8 +506,8 @@ export default function HowItWorks() {
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#28C940" }} />
                   <span style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>
                     Not ready to connect?{" "}
-                    <button
-                      onClick={() => document.getElementById("onboarding-form")?.scrollIntoView({ behavior: "smooth" })}
+                    <Link
+                      href="/signup"
                       style={{
                         background: "none",
                         border: "none",
@@ -520,8 +521,8 @@ export default function HowItWorks() {
                         textUnderlineOffset: 2,
                       }}
                     >
-                      Start with a CSV upload →
-                    </button>
+                      Start Free →
+                    </Link>
                   </span>
                 </div>
               </>

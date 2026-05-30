@@ -44,14 +44,16 @@ export async function generateSpeech(
         voice_settings: {
           stability:        0.50,
           similarity_boost: 0.75,
-          style:            0.20,
+          style:            0.50,
           use_speaker_boost: true,
         },
       }),
     });
 
     if (!res.ok) {
-      console.error("[elevenlabs] TTS error:", res.status, await res.text());
+      const body = await res.text();
+      // 401=invalid key · 422=invalid voice ID · 429=quota exceeded
+      console.error(`[elevenlabs] TTS ${res.status}:`, body.slice(0, 300));
       return null;
     }
 

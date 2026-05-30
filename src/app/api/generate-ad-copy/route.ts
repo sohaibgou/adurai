@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEmailVerified } from "@/lib/require-email-verified";
+import { checkUsage } from "@/lib/check-usage";
+import { supabaseAdmin } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
@@ -13,8 +14,9 @@ interface AdCopyVariant {
 }
 
 export async function POST(req: NextRequest) {
-  const check = await requireEmailVerified(req);
-  if (check instanceof NextResponse) return check;
+  const usageResult = await checkUsage(req, "copy");
+  if (usageResult instanceof NextResponse) return usageResult;
+  const { user, plan } = usageResult;
 
   const { productDescription, targetAudience, mainBenefit, language } = await req.json() as {
     productDescription: string;
@@ -91,5 +93,10 @@ No markdown, no explanation, no code fences — just the raw JSON array.`,
   }
 
   console.log("SUCCESS — returning", variants.length, "variants");
+
+  if (plan === "free") {
+    try { await supabaseAdmin.rpc("increment_user_copy", { p_user_id: user.id }); } catch { /**/ }
+  }
+
   return NextResponse.json({ variants });
 }

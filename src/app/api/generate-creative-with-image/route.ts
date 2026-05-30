@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEmailVerified } from "@/lib/require-email-verified";
+import { checkUsage } from "@/lib/check-usage";
+import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -113,6 +114,39 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
   },
 ];
 
+/* ── Arabic copy (text-only) — used to overlay RTL text onto no-text images ── */
+async function generateArabicCopy(apiKey: string, userPrompt: string): Promise<{ headline: string; subheadline: string; cta: string }[]> {
+  try {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body:    JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a professional Arabic advertising copywriter. Generate 4 Arabic ad copy sets for this brief: "${userPrompt}"
+
+Angles (in order): Hero Product Shot, Lifestyle & Emotion, Social Proof, Pattern Interrupt.
+
+Return ONLY a valid JSON array with exactly 4 objects. No markdown, no explanation. Each object:
+- headline: Arabic headline (5-8 words, bold and punchy)
+- subheadline: Arabic subheadline (8-12 words, supporting the headline)
+- cta: Arabic CTA button text (2-4 words)`,
+            }],
+          }],
+        }),
+      },
+    );
+    const json    = await res.json() as { candidates?: { content: { parts: { text?: string }[] } }[] };
+    const raw     = json.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text?.trim() ?? "";
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+    return JSON.parse(cleaned) as { headline: string; subheadline: string; cta: string }[];
+  } catch {
+    return [];
+  }
+}
+
 /* ── Raw REST call to Gemini (nanobanana approach) ── */
 async function generateAdImage(
   apiKey:    string,
@@ -171,8 +205,9 @@ async function generateAdImage(
 
 export async function POST(req: NextRequest) {
   console.log("━━━ /api/generate-creative-with-image ━━━");
-  const check = await requireEmailVerified(req);
-  if (check instanceof NextResponse) return check;
+  const usageResult = await checkUsage(req, "image");
+  if (usageResult instanceof NextResponse) return usageResult;
+  const { user, plan } = usageResult;
 
   let formData: FormData;
   try {
@@ -183,6 +218,8 @@ export async function POST(req: NextRequest) {
 
   const imageFile = formData.get("image")   as File | null;
   const prompt    = (formData.get("prompt") as string | null) ?? "";
+  const isArabic  = (formData.get("isArabic") as string | null) === "true";
+  const lang      = ((formData.get("language") as string | null) ?? "English").trim();
 
   if (!imageFile || imageFile.size === 0) {
     return NextResponse.json({ error: "No image provided." }, { status: 400 });
@@ -193,28 +230,36 @@ export async function POST(req: NextRequest) {
   const mimeType    = imageFile.type || "image/jpeg";
   const apiKey      = process.env.GOOGLE_AI_KEY!;
 
-  console.log(`Image: ${imageFile.name} ${imageFile.size}b | prompt: "${prompt}"`);
+  // Arabic → render NO text (added later as RTL overlay). Other languages → force on-image copy into that language.
+  const langClause = isArabic
+    ? "\n\nCRITICAL OVERRIDE: Ignore the AD COPY instructions above — render the image with absolutely NO text, letters, words, numbers, or written characters anywhere. Pure visual only. Text is added separately as an overlay."
+    : `\n\nLANGUAGE — CRITICAL: Every word of on-image text (headline, subheadline, CTA, badges, ratings labels, and any other written characters) MUST be written in ${lang}, and ${lang} only — not English (unless the requested language is English) or any other language. Spelling must be flawless and native.`;
+
+  console.log(`Image: ${imageFile.name} ${imageFile.size}b | lang: ${lang} | prompt: "${prompt}"`);
 
   const t0 = Date.now();
 
-  const results = await Promise.all(
-    ANGLES.map(async (a, i) => {
-      const t      = Date.now();
-      const brief  = prompt.trim() || "premium product ad";
-      const result = await generateAdImage(apiKey, a.prompt(brief), { mimeType, data: base64Image });
-      if (!result) {
-        console.log(`[cwi][${i}] ${a.angle} — no image after ${Date.now() - t}ms`);
-        return null;
-      }
-      console.log(`[cwi][${i}] ✓ ${a.angle} — ${Date.now() - t}ms`);
-      return {
-        url:       `data:${result.mimeType};base64,${result.data}`,
-        angle:     a.angle,
-        headline:  a.headline,
-        rationale: a.rationale,
-      };
-    }),
-  );
+  const [results, arabicTexts] = await Promise.all([
+    Promise.all(
+      ANGLES.map(async (a, i) => {
+        const t      = Date.now();
+        const brief  = prompt.trim() || "premium product ad";
+        const result = await generateAdImage(apiKey, a.prompt(brief) + langClause, { mimeType, data: base64Image });
+        if (!result) {
+          console.log(`[cwi][${i}] ${a.angle} — no image after ${Date.now() - t}ms`);
+          return null;
+        }
+        console.log(`[cwi][${i}] ✓ ${a.angle} — ${Date.now() - t}ms`);
+        return {
+          url:       `data:${result.mimeType};base64,${result.data}`,
+          angle:     a.angle,
+          headline:  a.headline,
+          rationale: a.rationale,
+        };
+      }),
+    ),
+    isArabic ? generateArabicCopy(apiKey, prompt.trim() || "premium product ad") : Promise.resolve([]),
+  ]);
 
   const images = results.filter(Boolean);
   console.log(`[cwi] Done in ${Date.now() - t0}ms — ${images.length}/4 images`);
@@ -223,5 +268,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No images generated. Check GOOGLE_AI_KEY." }, { status: 500 });
   }
 
-  return NextResponse.json({ images, briefs: [] });
+  if (plan === "free") {
+    try { await supabaseAdmin.rpc("increment_user_image", { p_user_id: user.id }); } catch { /**/ }
+  }
+
+  return NextResponse.json({ images, briefs: [], ...(isArabic ? { arabicTexts } : {}) });
 }

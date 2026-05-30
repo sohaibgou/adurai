@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("creatives")
-    .select("id, created_at, image_urls, copy_variants, prompt")
+    .select("id, created_at, image_urls, copy_variants, prompt, video_url, media_type")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
-    .limit(24); // last 24 sessions
+    .limit(50);
 
   if (error) {
     console.error("[creatives/list] DB query error:", error.message);

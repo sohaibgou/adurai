@@ -15,6 +15,22 @@ import {
   Image,
   FileText,
   Video,
+  Smartphone,
+  Monitor,
+  Camera,
+  Square,
+  User,
+  Users,
+  Star,
+  Link2,
+  Globe,
+  Search,
+  ChevronDown,
+  Lock,
+  Zap,
+  Crown,
+  Pencil,
+  ShoppingBag,
 } from "lucide-react";
 import type { CampaignSummary } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
@@ -27,6 +43,8 @@ export interface SavedSession {
   image_urls:    Array<{ url: string; angle?: string; headline?: string }>;
   copy_variants?: AdCopyVariant[];
   prompt?:       string;
+  video_url?:    string;
+  media_type?:   "image" | "video" | "copy";
 }
 
 interface CreativeStudioProps {
@@ -72,6 +90,15 @@ interface ArabicTextData {
   headline:    string;
   subheadline: string;
   cta:         string;
+}
+
+interface ProductInfo {
+  title:       string;
+  description: string;
+  image:       string;
+  logo:        string;
+  publisher:   string;
+  url:         string;
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -129,15 +156,74 @@ const UGC_STYLES = [
   "Luxury/Premium",
 ] as const;
 
-/* ── Avatar presets ─────────────────────────────────────────── */
+/* ── Avatar presets ─────────────────────────────────────────────────────────
+   apiId maps to the 6 voice/video presets in generate-avatar-ugc/route.ts.
+   Extra UI avatars reuse an existing apiId so the backend stays unchanged.
+─────────────────────────────────────────────────────────────────────────── */
 const AVATAR_PRESETS = [
-  { id: "sarah",  name: "Sarah",  style: "Casual · Female",       photo: "https://randomuser.me/api/portraits/women/44.jpg" },
-  { id: "maya",   name: "Maya",   style: "Professional · Female", photo: "https://randomuser.me/api/portraits/women/71.jpg" },
-  { id: "zoe",    name: "Zoe",    style: "Trendy · Female",       photo: "https://randomuser.me/api/portraits/women/23.jpg" },
-  { id: "alex",   name: "Alex",   style: "Casual · Male",         photo: "https://randomuser.me/api/portraits/men/32.jpg"   },
-  { id: "jordan", name: "Jordan", style: "Professional · Male",   photo: "https://randomuser.me/api/portraits/men/60.jpg"   },
-  { id: "marcus", name: "Marcus", style: "Tech · Male",           photo: "https://randomuser.me/api/portraits/men/44.jpg"   },
-] as const;
+  // ── Female ────────────────────────────────────────────────────────────
+  {
+    id: "sarah",   apiId: "sarah",  name: "Sarah",   gender: "female" as const,
+    style: "Casual",
+    photo: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "maya",    apiId: "maya",   name: "Maya",    gender: "female" as const,
+    style: "Professional",
+    photo: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "zoe",     apiId: "zoe",    name: "Zoe",     gender: "female" as const,
+    style: "Trendy",
+    photo: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "adriana", apiId: "zoe",    name: "Adriana", gender: "female" as const,
+    style: "Street",
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "sofia",   apiId: "maya",   name: "Sofia",   gender: "female" as const,
+    style: "Soft",
+    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "mei",     apiId: "sarah",  name: "Mei",     gender: "female" as const,
+    style: "Minimal",
+    photo: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  // ── Male ──────────────────────────────────────────────────────────────
+  {
+    id: "alex",    apiId: "alex",   name: "Alex",    gender: "male" as const,
+    style: "Casual",
+    photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "jordan",  apiId: "jordan", name: "Jordan",  gender: "male" as const,
+    style: "Professional",
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "marcus",  apiId: "marcus", name: "Marcus",  gender: "male" as const,
+    style: "Tech",
+    photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "jayden",  apiId: "alex",   name: "Jayden",  gender: "male" as const,
+    style: "Street",
+    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "stefan",  apiId: "jordan", name: "Stefan",  gender: "male" as const,
+    style: "Smart",
+    photo: "https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+  {
+    id: "liam",    apiId: "marcus", name: "Liam",    gender: "male" as const,
+    style: "Modern",
+    photo: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop&auto=format&q=80",
+  },
+];
 
 // Monthly generation limits per plan
 const UGC_LIMIT: Record<string, number> = { free: 0, starter: 3, pro: 30 };
@@ -358,16 +444,24 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
   const [imageUsage,         setImageUsage]         = useState(0);
   const [copyUsage,          setCopyUsage]          = useState(0);
+  // Server-authoritative usage (synced on mount)
+  const [serverImageUsage,   setServerImageUsage]   = useState<number | null>(null);
+  const [serverCopyUsage,    setServerCopyUsage]    = useState<number | null>(null);
+  const [serverUgcUsage,     setServerUgcUsage]     = useState<number | null>(null);
+  const [serverUgcLimit,     setServerUgcLimit]     = useState<number | null>(null);
   const [savingToHub,        setSavingToHub]        = useState(false);
   const [savingCopyToHub,    setSavingCopyToHub]    = useState(false);
   const [saveStatus,         setSaveStatus]         = useState<"idle" | "saving" | "ok" | "err">("idle");
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());
+  const [libFilter,          setLibFilter]          = useState<"all"|"videos"|"images"|"copy">("all");
+  const [libHoveredId,       setLibHoveredId]       = useState<string|null>(null);
 
 
   // Derived history lists — fully guarded against null/undefined from DB
-  const _sessions     = Array.isArray(savedSessions) ? savedSessions : [];
-  const imageSessions = _sessions.filter((s) => Array.isArray(s.image_urls) && s.image_urls.length > 0);
-  const copySessions  = _sessions.filter((s) => Array.isArray(s.copy_variants) && s.copy_variants.length > 0);
+  const _sessions      = Array.isArray(savedSessions) ? savedSessions : [];
+  const videoSessions  = _sessions.filter((s) => s.media_type === "video" && !!s.video_url);
+  const imageSessions  = _sessions.filter((s) => s.media_type !== "video" && Array.isArray(s.image_urls) && s.image_urls.length > 0);
+  const copySessions   = _sessions.filter((s) => s.media_type !== "video" && Array.isArray(s.copy_variants) && s.copy_variants.length > 0);
 
   function toggleHistory(id: string) {
     setExpandedHistoryIds((prev) => {
@@ -378,7 +472,6 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   }
 
   const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const ugcProgressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ════════════════════════════════════════════════════════
      UGC VIDEO TAB STATE
@@ -411,8 +504,27 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [ugcAvatarModalSel,   setUgcAvatarModalSel]   = useState<string>("sarah");
   const [ugcAvatarModalCustom, setUgcAvatarModalCustom] = useState<{ file: File; previewUrl: string } | null>(null);
   const ugcAvatarFileRef = useRef<HTMLInputElement>(null);
+  const [avatarSearch,        setAvatarSearch]        = useState("");
+  const [avatarGenderFilter,  setAvatarGenderFilter]  = useState<"all" | "male" | "female">("all");
+  const [avatarCategory,      setAvatarCategory]      = useState<"all" | "mine">("all");
   const [ugcInputMode,   setUgcInputMode]     = useState<"image" | "url">("image");
   const [ugcProductUrl,  setUgcProductUrl]    = useState("");
+  // Direct product image (og:image) pulled from the pasted URL — used as the
+  // real product reference so we don't fall back to a lossy page screenshot.
+  const [ugcProductImageUrl, setUgcProductImageUrl] = useState("");
+  const productUrlInputRef = useRef<HTMLInputElement>(null);
+  const [ugcResolution,  setUgcResolution]    = useState<"480p" | "720p" | "1080p">("720p");
+
+  // Product / App info modal
+  const [productModalOpen,   setProductModalOpen]   = useState(false);
+  const [productModalMode,   setProductModalMode]   = useState<"main" | "manual">("main");
+  const [productUrlDraft,    setProductUrlDraft]    = useState("");
+  const [fetchingInfo,       setFetchingInfo]       = useState(false);
+  const [fetchInfoErr,       setFetchInfoErr]       = useState<string | null>(null);
+  const [fetchedInfo,        setFetchedInfo]        = useState<ProductInfo | null>(null);
+  const [confirmedProductTitle, setConfirmedProductTitle] = useState<string>("");
+  const [manualName,         setManualName]         = useState("");
+  const [manualDesc,         setManualDesc]         = useState("");
   const [ugcHasVoiceover, setUgcHasVoiceover] = useState(false);
   const [ugcHasLipsync,  setUgcHasLipsync]    = useState(false);
 
@@ -430,18 +542,16 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
-  /* ── UGC video stage-2 progress bar ─────────────── */
+  /* ── UGC progress is driven by real backend NDJSON events, but the video
+        stage has a long (2–3 min) gap between events. Gently creep the bar
+        forward so it never looks frozen; real events snap it to the truth. ── */
   useEffect(() => {
-    if (ugcStage !== 2) {
-      if (ugcProgressRef.current) { clearInterval(ugcProgressRef.current); ugcProgressRef.current = null; }
-      return;
-    }
-    const start = Date.now();
-    ugcProgressRef.current = setInterval(() => {
-      setUgcProgress(Math.min(88, ((Date.now() - start) / 100_000) * 100));
-    }, 300);
-    return () => { if (ugcProgressRef.current) { clearInterval(ugcProgressRef.current); ugcProgressRef.current = null; } };
-  }, [ugcStage]);
+    if (!ugcLoading) return;
+    const id = setInterval(() => {
+      setUgcProgress((p) => (p >= 95 ? p : Math.min(95, p + 0.4)));
+    }, 1500);
+    return () => clearInterval(id);
+  }, [ugcLoading]);
 
   /* ── Hydrate usage counts from localStorage (user-scoped) ── */
   useEffect(() => {
@@ -479,6 +589,40 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     else if (isPaid) setUgcPlan("starter");
     else setUgcPlan("free");
   }, [isAdmin, isProPlan, isPaid]);
+
+  /* ── Fetch server-side usage counts (authoritative — prevents localStorage bypass) ── */
+  useEffect(() => {
+    const token = session?.access_token;
+    if (!token) return;
+    (async () => {
+      try {
+        const res  = await fetch("/api/usage", { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json() as {
+          imageCount?:   number;
+          copyCount?:    number;
+          ugcCount?:     number;
+          ugcLimit?:     number | null;
+        };
+        if (typeof data.imageCount === "number") {
+          setServerImageUsage(data.imageCount);
+          setImageUsage(data.imageCount);
+          try { localStorage.setItem("adur_image_count", String(data.imageCount)); } catch { /**/ }
+        }
+        if (typeof data.copyCount === "number") {
+          setServerCopyUsage(data.copyCount);
+          setCopyUsage(data.copyCount);
+          try { localStorage.setItem("adur_copy_count", String(data.copyCount)); } catch { /**/ }
+        }
+        if (typeof data.ugcCount === "number") {
+          setServerUgcUsage(data.ugcCount);
+          setUgcUsage(data.ugcCount);
+        }
+        setServerUgcLimit(data.ugcLimit ?? null);
+      } catch { /**/ }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.access_token]);
 
   /* ── Fetch fresh library data whenever Library tab opens ── */
   useEffect(() => {
@@ -572,12 +716,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   async function callGenerateApi(
     p: string,
     arabicMode: boolean,
+    language: string,
   ): Promise<{ images: CreativeImage[]; briefs: CreativeBrief[]; arabicTexts?: ArabicTextData[] }> {
     if (refImage) {
       const fd = new FormData();
       fd.append("image",    refImage.file, refImage.file.name || "product.jpg");
       fd.append("prompt",   p.trim());
       fd.append("isArabic", String(arabicMode));
+      fd.append("language", language);
       const res  = await fetch("/api/generate-creative-with-image", { method: "POST", body: fd });
       const data = await res.json() as { images?: CreativeImage[]; briefs?: CreativeBrief[]; arabicTexts?: ArabicTextData[]; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
@@ -587,7 +733,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     const res  = await fetch("/api/generate-creative", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ prompt: p.trim(), isArabic: arabicMode }),
+      body:    JSON.stringify({ prompt: p.trim(), isArabic: arabicMode, language }),
     });
     const data = await res.json() as {
       images?:      CreativeImage[];
@@ -595,22 +741,31 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       arabicTexts?: ArabicTextData[];
       error?:       string;
     };
-    if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+    if (!res.ok || data.error) {
+      const err = data as { error?: string; code?: string };
+      if (res.status === 403 && (err.code === "LIMIT_EXCEEDED" || err.code === "PLAN_REQUIRED")) {
+        onPaywall?.("image");
+        throw new Error("__paywall__");
+      }
+      throw new Error(data.error ?? `Error ${res.status}`);
+    }
     return { images: data.images ?? [], briefs: data.briefs ?? [], arabicTexts: data.arabicTexts };
   }
 
   async function generate() {
     if (!prompt.trim() || loading) return;
-    if (!isAdmin && !isPaid && getImageCount() >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
+    // Client-side pre-check (server will also enforce — this is just UX)
+    if (!isAdmin && !isPaid && imageUsage >= CREATIVE_LIMIT) { onPaywall?.("image"); return; }
 
-    const arabicMode = /arabic/i.test(prompt);
+    // Arabic uses the no-text image + RTL overlay path; selected language drives copy language.
+    const arabicMode = barLang === "Arabic" || /arabic/i.test(prompt);
     setIsArabicMode(arabicMode);
     setArabicTexts([]);
     setLoading(true); setError(null); setImages([]); setBriefs([]); setRegenMap({});
 
     try {
       const { images: newImages, briefs: newBriefs, arabicTexts: newArabicTexts } =
-        await callGenerateApi(prompt, arabicMode);
+        await callGenerateApi(prompt, arabicMode, barLang);
 
       // If Arabic mode, composite each image with the Arabic text overlay
       let finalImages = newImages;
@@ -634,13 +789,19 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       setBriefs(newBriefs);
       setPromptUsed(prompt.trim());
       setProgress(100);
-      if (!isAdmin && !isPaid) { const next = incrementImageCount(); setImageUsage(next); }
+      if (!isAdmin && !isPaid) {
+        const next = incrementImageCount();
+        setImageUsage(next);
+        setServerImageUsage(next);
+      }
       // Save to creative hub (best-effort, non-blocking)
       saveToHub(finalImages, prompt.trim());
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed. Please try again.";
-      console.error("[creative-studio] generate error:", msg);
-      setError(msg);
+      if (msg !== "__paywall__") {
+        console.error("[creative-studio] generate error:", msg);
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -694,6 +855,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   function readUgcImage(file: File) {
     if (file.size > 10 * 1024 * 1024) { alert("Image must be under 10 MB."); return; }
     setUgcImage({ file, previewUrl: URL.createObjectURL(file) });
+    setUgcInputMode("image");
+    setConfirmedProductTitle(file.name.replace(/\.[^.]+$/, "") || "Product image");
+    setUgcProductUrl("");
   }
   function handleUgcImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (f) readUgcImage(f); e.target.value = "";
@@ -708,18 +872,73 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     setUgcImage(null);
   }
 
-  /* ── Generate Avatar UGC video ─────────────────────────── */
+  /* ── Product / App URL fetch ─────────────────────────────── */
+  async function fetchProductInfo(url: string) {
+    const full = url.startsWith("http") ? url : `https://${url}`;
+    setFetchingInfo(true);
+    setFetchInfoErr(null);
+    setFetchedInfo(null);
+    try {
+      const res  = await fetch("/api/fetch-product-info", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ url: full }),
+      });
+      const data = await res.json() as ProductInfo & { error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Failed to fetch");
+      setFetchedInfo(data);
+    } catch (e) {
+      setFetchInfoErr(e instanceof Error ? e.message : "Could not fetch info from that URL.");
+    } finally {
+      setFetchingInfo(false);
+    }
+  }
+
+  function confirmFetchedProduct() {
+    if (!fetchedInfo) return;
+    const desc = [fetchedInfo.title, fetchedInfo.description].filter(Boolean).join(". ");
+    setUgcProduct(desc);
+    setUgcProductUrl(fetchedInfo.url);
+    setUgcProductImageUrl(fetchedInfo.image || fetchedInfo.logo || "");
+    setUgcInputMode("url");
+    setConfirmedProductTitle(fetchedInfo.title || fetchedInfo.publisher || fetchedInfo.url);
+    setProductModalOpen(false);
+    setFetchedInfo(null);
+    setProductUrlDraft("");
+  }
+
+  function clearConfirmedProduct() {
+    setUgcProduct("");
+    setUgcProductUrl("");
+    setUgcProductImageUrl("");
+    setUgcInputMode("image");
+    setConfirmedProductTitle("");
+    setFetchedInfo(null);
+    setProductUrlDraft("");
+    setManualName(""); setManualDesc("");
+    // Also clear uploaded image if any
+    if (ugcImage) { URL.revokeObjectURL(ugcImage.previewUrl); setUgcImage(null); }
+  }
+
+  function confirmManualProduct() {
+    if (!manualName.trim() && !manualDesc.trim()) return;
+    const desc = [manualName.trim(), manualDesc.trim()].filter(Boolean).join(". ");
+    setUgcProduct(desc);
+    setConfirmedProductTitle(manualName.trim() || "Custom product");
+    setProductModalOpen(false);
+    setProductModalMode("main");
+    setManualName(""); setManualDesc("");
+  }
+
+  /* ── Generate Avatar UGC video ─────────────────────────────── */
   async function generateUgc() {
     const hasProduct = ugcInputMode === "image" ? !!ugcImage : !!ugcProductUrl.trim();
     if (!hasProduct || ugcLoading) return;
 
-    // Re-read plan + count fresh from localStorage (guards against stale closure)
-    const currentPlan  = isAdmin ? "pro" : getUgcPlan();
-    const currentCount = isAdmin ? 0      : initUgcCount();
-    const limit        = isAdmin ? Infinity : (UGC_LIMIT[currentPlan] ?? 0);
-
-    if (!isAdmin && currentPlan === "free")  return;
-    if (!isAdmin && currentCount >= limit)   return;
+    // Client-side pre-check (server is the authoritative gate)
+    if (!isAdmin && ugcPlan === "free") { onPaywall?.("ugc"); return; }
+    const ugcLimitNum = isAdmin ? Infinity : (UGC_LIMIT[ugcPlan] ?? 0);
+    if (!isAdmin && ugcUsage >= ugcLimitNum) { onPaywall?.("ugc"); return; }
 
     setUgcLoading(true);
     setUgcError(null);
@@ -733,25 +952,26 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     setUgcProgress(0);
     setUgcStage(1); // ✍️ Writing script
 
-    // Stage timers: script→7s, avatar video→15s, voiceover→stage from server, lipsync→server
-    const t2 = setTimeout(() => setUgcStage(2), 7_000);
-    const t3 = setTimeout(() => setUgcStage(3), 90_000);
-    const t4 = setTimeout(() => setUgcStage(4), 130_000);
-
     try {
       const fd = new FormData();
       if (ugcInputMode === "image" && ugcImage) {
         fd.append("image", ugcImage.file, ugcImage.file.name || "product.jpg");
       } else {
         fd.append("productUrl", ugcProductUrl.trim());
+        // Real product image from the pasted link — backend uses it directly
+        // instead of screenshotting the whole page.
+        if (ugcProductImageUrl.trim()) fd.append("productImageUrl", ugcProductImageUrl.trim());
       }
-      fd.append("avatarId",           ugcAvatar);
+      // Map UI avatar ID → API preset ID (extra UI avatars share a base voice/video preset)
+      const avatarApiId = AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.apiId ?? ugcAvatar;
+      fd.append("avatarId",           avatarApiId);
       fd.append("productDescription", ugcProduct);
       fd.append("hookType",           ugcHook);
       fd.append("creatorStyle",       ugcStyle);
       fd.append("language",           ugcLang);
       fd.append("duration",           String(ugcDuration));
       fd.append("aspectRatio",        ugcRatio);
+      fd.append("resolution",         ugcResolution);
 
       // Avatar image — custom upload takes priority over preset photo URL
       if (ugcAvatarCustomFile) {
@@ -761,26 +981,67 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
         if (preset) fd.append("avatarImageUrl", preset.photo);
       }
 
-      const res  = await fetch("/api/generate-avatar-ugc", { method: "POST", body: fd });
-      const data = await res.json() as {
-        videoUrl?:      string;
-        audioUrl?:      string | null;
-        script?:        string;
-        hook?:          string;
-        duration?:      number;
-        hasVoiceover?:  boolean;
-        hasLipsync?:    boolean;
-        error?:         string;
-      };
+      const res = await fetch("/api/generate-avatar-ugc", { method: "POST", body: fd });
 
-      clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
-      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);
+      // Plan / usage / validation errors come back as a plain JSON body (non-200,
+      // no stream). The success path is an NDJSON stream of progress events.
+      if (!res.ok || !res.body) {
+        let data: { error?: string; code?: string } = {};
+        try { data = await res.json(); } catch { /* non-JSON body */ }
+        if (res.status === 403 && (data.code === "PLAN_REQUIRED" || data.code === "UGC_MONTHLY_LIMIT")) {
+          onPaywall?.("ugc");
+          setUgcStage(0);
+          return;
+        }
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
 
-      setUgcVideoUrl(data.videoUrl ?? null);
-      setUgcScript(data.script ?? null);
-      setUgcHookLine(data.hook ?? null);
-      setUgcHasVoiceover(data.hasVoiceover ?? false);
-      setUgcHasLipsync(data.hasLipsync ?? false);
+      // ── Read the NDJSON progress stream ──
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let result: {
+        videoUrl?: string; script?: string; hook?: string;
+        hasVoiceover?: boolean; hasLipsync?: boolean;
+      } | null = null;
+
+      streamLoop: while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line) continue;
+
+          let msg: {
+            type: string; stage?: number; progress?: number; error?: string;
+            videoUrl?: string; script?: string; hook?: string;
+            hasVoiceover?: boolean; hasLipsync?: boolean;
+          };
+          try { msg = JSON.parse(line); } catch { continue; }
+
+          if (msg.type === "progress") {
+            if (typeof msg.stage === "number")    setUgcStage(msg.stage);
+            if (typeof msg.progress === "number") setUgcProgress(msg.progress);
+          } else if (msg.type === "done") {
+            result = msg;
+            break streamLoop;
+          } else if (msg.type === "error") {
+            throw new Error(msg.error ?? "Generation failed. Please try again.");
+          }
+        }
+      }
+
+      if (!result?.videoUrl) throw new Error("Generation did not complete. Please try again.");
+
+      setUgcVideoUrl(result.videoUrl ?? null);
+      setUgcScript(result.script ?? null);
+      setUgcHookLine(result.hook ?? null);
+      setUgcHasVoiceover(result.hasVoiceover ?? false);
+      setUgcHasLipsync(result.hasLipsync ?? false);
       setUgcNeedsMerge(false);
       setUgcProgress(100);
       setUgcStage(5); // ✅ Done
@@ -788,9 +1049,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
       if (!isAdmin) {
         const next = incrementUgcCount();
         setUgcUsage(next);
+        setServerUgcUsage(next);
       }
     } catch (err) {
-      clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
       setUgcError(err instanceof Error ? err.message : "Generation failed. Please try again.");
       setUgcStage(0);
     } finally {
@@ -812,7 +1073,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
 
   async function generateAdCopy() {
     if (!copyProduct.trim() || copyLoading) return;
-    if (!isAdmin && !isPaid && getCopyCount() >= CREATIVE_LIMIT) { onPaywall?.("copy"); return; }
+    // Client-side pre-check (server also enforces)
+    if (!isAdmin && !isPaid && copyUsage >= CREATIVE_LIMIT) { onPaywall?.("copy"); return; }
     setCopyLoading(true); setCopyError(null); setCopyVariants([]);
     try {
       const res  = await fetch("/api/generate-ad-copy", {
@@ -825,11 +1087,21 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
           language:           copyLang,
         }),
       });
-      const data = await res.json() as { variants?: AdCopyVariant[]; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+      const data = await res.json() as { variants?: AdCopyVariant[]; error?: string; code?: string };
+      if (!res.ok || data.error) {
+        if (res.status === 403 && (data.code === "LIMIT_EXCEEDED" || data.code === "PLAN_REQUIRED")) {
+          onPaywall?.("copy");
+          return;
+        }
+        throw new Error(data.error ?? `Error ${res.status}`);
+      }
       const variants = data.variants ?? [];
       setCopyVariants(variants);
-      if (!isAdmin && !isPaid) { const next = incrementCopyCount(); setCopyUsage(next); }
+      if (!isAdmin && !isPaid) {
+        const next = incrementCopyCount();
+        setCopyUsage(next);
+        setServerCopyUsage(next);
+      }
       // Build a human-readable description for the library card
       const desc = [copyProduct, copyAudience && `for ${copyAudience}`, copyBenefit && `— ${copyBenefit}`]
         .filter(Boolean).join(" ");
@@ -854,2005 +1126,1690 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     });
   }
 
+  /* ── Prompt-bar extra state ─────────────────────── */
+  const [barLang,  setBarLang]  = useState("English");
+  const [openDD,   setOpenDD]   = useState<string | null>(null);
+
+  // Route bar textarea to the right per-tab state
+  const barValue =
+    activeTab === "creative" ? prompt :
+    activeTab === "adcopy"   ? copyProduct :
+    activeTab === "ugc"      ? ugcProduct  : "";
+
+  function setBarValue(v: string) {
+    if (activeTab === "creative") setPrompt(v);
+    else if (activeTab === "adcopy") setCopyProduct(v);
+    else if (activeTab === "ugc")    setUgcProduct(v);
+  }
+
+  // Language per-tab
+  const activeLang =
+    activeTab === "adcopy" ? copyLang :
+    activeTab === "ugc"    ? ugcLang  : barLang;
+
+  function setActiveLang(v: string) {
+    if (activeTab === "adcopy") setCopyLang(v);
+    else if (activeTab === "ugc") setUgcLang(v);
+    else setBarLang(v);
+  }
+
+  // Format: for video uses ugcRatio, image is fixed 1:1 Meta
+  const imageFormatLabel =
+    ugcRatio === "9:16" ? "Mobile" : "Desktop";
+
+  function handleGenerate() {
+    if (activeTab === "creative") generate();
+    else if (activeTab === "adcopy") generateAdCopy();
+    else if (activeTab === "ugc") generateUgc();
+  }
+
+  const genBtnLabel =
+    activeTab === "creative" ? "Generate 4 Ads" :
+    activeTab === "adcopy"   ? "Generate Copy"  :
+    activeTab === "ugc"      ? "Generate Video" : "";
+
+  const isGenerating = loading || copyLoading || ugcLoading;
+
+  // Dropdown helper
+  function toggleDD(id: string) { setOpenDD(prev => prev === id ? null : id); }
+
+  // Close dropdowns on outside click
+  // (handled inline via onBlur on parent)
+
+
   /* ── Render ──────────────────────────────────────── */
+  const S = {
+    bg:      "#0F0F1C",
+    bg2:     "#16162A",
+    bg3:     "#1E1E30",
+    bg4:     "#27273C",
+    ink:     "#EEEEF5",
+    ink2:    "#9090AC",
+    ink3:    "#52526A",
+    border:  "rgba(255,255,255,0.07)",
+    border2: "rgba(255,255,255,0.13)",
+    accent:  "#FF3CAC",
+    accent2: "#FF6B35",
+    grad:    "linear-gradient(135deg,#FF3CAC 0%,#FF6B35 100%)",
+    glow:    "0 4px 24px rgba(255,60,172,0.3)",
+  } as const;
+
+  // Resolve avatar photo for current selection
+  const selectedAvatarPreset = AVATAR_PRESETS.find(a => a.id === ugcAvatar);
+  const avatarDisplayPhoto   = ugcAvatarCustomFile?.previewUrl ?? selectedAvatarPreset?.photo;
+  const avatarDisplayName    = ugcAvatarCustomFile ? "Custom" : (selectedAvatarPreset?.name ?? "Sarah");
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="card overflow-hidden"
+    <div
+      onClick={() => setOpenDD(null)}
+      style={{
+        background: `radial-gradient(ellipse 110% 55% at 50% -5%, rgba(255,60,172,0.08) 0%, transparent 55%), ${S.bg}`,
+        height: "100%",
+        display: "flex", flexDirection: "column",
+        fontFamily: "'Geist',system-ui,sans-serif", color: S.ink,
+        overflow: "hidden",
+      }}
     >
-      {/* ── Tab bar ── */}
-      <div className="flex border-b border-[#f0f0f5] bg-white px-6 pt-5">
-        <div className="flex gap-1 p-1 rounded-xl bg-[#F7F5F2]">
-          {/* Creative tab */}
-          <button
-            onClick={() => setActiveTab("creative")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-            style={{
-              background: activeTab === "creative" ? "#ffffff" : "transparent",
-              color:      activeTab === "creative" ? "#0a0a0f"  : "#6b7280",
-              boxShadow:  activeTab === "creative" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-            }}
-          >
-            <Image className="w-3.5 h-3.5" /> Creative
-          </button>
+      {/* ── Progress line (top of content) ── */}
+      <style>{`
+        @keyframes csProgress{0%{width:0%}40%{width:55%}80%{width:85%}100%{width:100%}}
+        @keyframes csSpin{to{transform:rotate(360deg)}}
+        @keyframes csShimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+        .cs-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.03) 75%);background-size:400px 100%;animation:csShimmer 1.4s ease-in-out infinite}
+        .cs-canvas::-webkit-scrollbar{width:3px}
+        .cs-canvas::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:10px}
+        @media (max-width:860px){.cs-results-grid{grid-template-columns:repeat(2,1fr)!important}}
+      `}</style>
+      {isGenerating && (
+        <div style={{ height: 2, flexShrink: 0, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: S.grad, animation: "csProgress 3s ease forwards" }} />
+        </div>
+      )}
 
-          {/* Ad Copy tab */}
-          <button
-            onClick={() => setActiveTab("adcopy")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-            style={{
-              background: activeTab === "adcopy" ? "#ffffff" : "transparent",
-              color:      activeTab === "adcopy" ? "#0a0a0f"  : "#6b7280",
-              boxShadow:  activeTab === "adcopy" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-            }}
-          >
-            <FileText className="w-3.5 h-3.5" /> Ad Copy
-          </button>
-
-          {/* UGC Video tab */}
-          <button
-            onClick={() => setActiveTab("ugc")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-            style={{
-              background: activeTab === "ugc" ? "#ffffff" : "transparent",
-              color:      activeTab === "ugc" ? "#7c3aed"  : "#6b7280",
-              boxShadow:  activeTab === "ugc" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-            }}
-          >
-            <Video className="w-3.5 h-3.5" />
-            UGC Video
-            <span
+      {/* ── Tab bar (flex-shrink:0, top of component) ── */}
+      <div style={{
+        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        borderBottom: `1px solid ${S.border}`, padding: "8px 20px", gap: 16,
+        background: S.bg,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 10, padding: 3 }}>
+          {([
+            { id: "creative", label: "Image Ads" },
+            { id: "adcopy",   label: "Copy" },
+            { id: "ugc",      label: "Video Ads", pro: true },
+            { id: "library",  label: "My Ads", count: _sessions.length },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              onClick={(e) => { e.stopPropagation(); setActiveTab(t.id); }}
               style={{
-                fontSize: 8, fontWeight: 800, letterSpacing: "0.06em",
-                padding: "2px 5px", borderRadius: 100,
-                background: activeTab === "ugc"
-                  ? "linear-gradient(135deg,#7c3aed,#a855f7)"
-                  : "rgba(124,58,237,0.12)",
-                color: activeTab === "ugc" ? "#fff" : "#7c3aed",
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 14px", borderRadius: 7, border: "none",
+                fontSize: 12, fontWeight: 500, cursor: "pointer",
+                fontFamily: "inherit", whiteSpace: "nowrap", transition: "all 0.15s",
+                background: activeTab === t.id ? S.bg4 : "none",
+                color:      activeTab === t.id ? S.ink  : S.ink2,
+                boxShadow:  activeTab === t.id ? "0 1px 4px rgba(0,0,0,0.5)" : "none",
               }}
             >
-              PRO
-            </span>
-          </button>
-
-          {/* Library tab */}
-          <button
-            onClick={() => setActiveTab("library")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-            style={{
-              background: activeTab === "library" ? "#ffffff" : "transparent",
-              color:      activeTab === "library" ? "#0a0a0f"  : "#6b7280",
-              boxShadow:  activeTab === "library" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-            }}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            Library
-            {_sessions.length > 0 && (
-              <span
-                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none"
-                style={{
-                  minWidth: 18, height: 18, padding: "0 5px",
-                  background: activeTab === "library" ? "linear-gradient(135deg,#FF3CAC,#FF6B35)" : "rgba(255,60,172,0.12)",
-                  color: activeTab === "library" ? "#fff" : "#FF3CAC",
-                }}
-              >
-                {_sessions.length}
-              </span>
-            )}
-          </button>
+              {t.label}
+              {"pro" in t && t.pro && <span style={{ fontSize: 9, fontWeight: 700, background: S.grad, color: "#fff", padding: "1px 5px", borderRadius: 4 }}>PRO</span>}
+              {"count" in t && (t.count ?? 0) > 0 && <span style={{ fontSize: 9, fontWeight: 700, background: "rgba(255,60,172,0.15)", color: S.accent, padding: "1px 5px", borderRadius: 4 }}>{t.count}</span>}
+            </button>
+          ))}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      {/* ── Scrollable canvas (flex:1) ── */}
+      <div className="cs-canvas" style={{
+        flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden",
+        padding: "0 28px",
+      }}>
+      {/* ════ IMAGE ADS TAB ════ */}
+      {activeTab === "creative" && (
+        <motion.div key="creative" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
 
-        {/* ════════════════════════════════════════════
-            CREATIVE TAB
-        ════════════════════════════════════════════ */}
-        {activeTab === "creative" && (
-          <motion.div
-            key="creative"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col lg:flex-row min-h-[640px]"
-          >
-            {/* LEFT — Controls */}
-            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-6 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5]">
+          {/* Error */}
+          {error && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", margin: "16px 0", color: "#fca5a5", fontSize: 13 }}>⚠️ {error}</div>}
 
-              <div>
-                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">
-                  Creative Studio
-                </h2>
-                <p className="text-sm text-[#6b7280] mt-1">
-                  Generate 4 scroll-stopping ad creatives
+          {/* Loading — skeleton cards */}
+          {loading && (
+            <div style={{ paddingTop: 28, paddingBottom: 24 }}>
+              {/* Label row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div className="cs-shimmer" style={{ width: 130, height: 10, borderRadius: 6 }} />
+                <div className="cs-shimmer" style={{ width: 54, height: 22, borderRadius: 6 }} />
+              </div>
+              {/* 4-card skeleton grid — centered, large */}
+              <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+                <div className="cs-results-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                  {[0,1,2,3].map(i => (
+                    <div key={i} style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "1", position: "relative" }}>
+                      <div className="cs-shimmer" style={{ width: "100%", height: "100%", background: "rgba(255,255,255,0.04)", borderRadius: 12 }} />
+                      {/* angle badge skeleton */}
+                      <div className="cs-shimmer" style={{ position: "absolute", top: 8, left: 8, width: 44, height: 14, borderRadius: 4 }} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: S.accent, opacity: 0.8, animation: "csSpin 1.5s linear infinite" }} />
+                  <span style={{ fontSize: 12, color: S.ink2, fontWeight: 500 }}>Generating 4 ad variants…</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image results */}
+          {!loading && images.length > 0 && (
+            <div style={{ marginBottom: 24, paddingTop: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: S.ink3 }}>YOUR GENERATED ADS</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {saveStatus === "ok" && <span style={{ fontSize: 11, color: "#4ade80" }}>✓ Saved</span>}
+                  <button onClick={() => { setImages([]); setBriefs([]); }} style={{ background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: S.ink2, cursor: "pointer" }}>↺ Reset</button>
+                </div>
+              </div>
+              {/* Cards — 1:1, large & centred */}
+              <div style={{ maxWidth: 1080, margin: "0 auto", paddingBottom: 24 }}>
+                <div className="cs-results-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                  {images.map((img, idx) => (
+                    <div key={idx} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)} style={{ borderRadius: 12, overflow: "hidden", position: "relative", border: `1px solid ${hoveredIdx===idx ? S.border2 : S.border}`, cursor: "pointer", aspectRatio: "1", transition: "transform 0.2s, box-shadow 0.2s", transform: hoveredIdx===idx ? "translateY(-3px) scale(1.015)" : "none", boxShadow: hoveredIdx===idx ? "0 12px 32px rgba(0,0,0,0.55)" : "none" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt={img.angle ?? `Ad ${idx+1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {regenMap[idx] && <div style={{ position: "absolute", inset: 0, background: "rgba(15,15,24,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid rgba(255,60,172,0.3)", borderTopColor: S.accent, animation: "csSpin 1s linear infinite" }} /></div>}
+                      {img.angle && <span style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", color: "rgba(255,255,255,0.7)", fontSize: 8, fontWeight: 700, padding: "2px 5px", borderRadius: 4, letterSpacing: "0.06em" }}>{img.angle.toUpperCase()}</span>}
+                      {hoveredIdx===idx && (
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "14px 7px 7px", background: "linear-gradient(0deg,rgba(0,0,0,0.85) 0%,transparent 100%)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>{img.angle ?? `Variant ${String.fromCharCode(65+idx)}`}</span>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button onClick={() => regenerateOne(idx)} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="Regenerate"><RefreshCw className="w-3 h-3" /></button>
+                            <button onClick={() => downloadImage(img, idx)} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="Download"><Download className="w-3 h-3" /></button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Empty state — full Higgsfield-style centered input ── */}
+          {!loading && images.length === 0 && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 0 48px", textAlign: "center" }}>
+
+              {/* Headline */}
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.2)", color: S.accent, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 100, marginBottom: 16 }}>
+                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: S.accent, display: "inline-block" }} /> Image Ads
+                </div>
+                <h1 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.05, color: S.ink, marginBottom: 10 }}>
+                  Turn any product into{" "}
+                  <span style={{ background: S.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>scroll-stopping ads.</span>
+                </h1>
+                <p style={{ fontSize: 13, color: S.ink2, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
+                  Upload your product image, describe the style — get 4 Meta-ready 1:1 ad variants.
                 </p>
               </div>
 
-              {/* Image upload */}
-              <div className="space-y-2">
-                {refImage ? (
-                  <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={refImage.previewUrl}
-                      alt="Product"
-                      className="w-16 h-16 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block" />
-                        Ready
-                      </span>
-                      <p className="text-xs text-[#6b7280] mt-1 truncate">{refImage.file.name}</p>
-                    </div>
-                    <button
-                      onClick={clearImage}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => imageInputRef.current?.click()}
-                    onDrop={handleDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDragEnter={(e) => e.preventDefault()}
-                    className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#FF3CAC]/40 hover:bg-[#FF3CAC]/[0.03] transition-all duration-200 cursor-pointer group"
-                  >
-                    <div className="w-11 h-11 rounded-2xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#FF3CAC]/8 transition-colors">
-                      <Upload className="w-5 h-5 text-[#9ca3af] group-hover:text-[#FF3CAC] transition-colors" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload your product image</p>
-                      <p className="text-xs text-[#9ca3af] mt-0.5">JPG, PNG, WEBP</p>
-                    </div>
-                  </div>
-                )}
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
-              </div>
+              {/* ── Higgsfield-style centered input card ── */}
+              <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 660, background: "rgba(255,255,255,0.028)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "visible", boxShadow: "0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
 
-              {/* Prompt */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-[#0a0a0f]">Describe your ad</label>
-                  {/arabic/i.test(prompt) && (
-                    <span
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                      style={{ background: "rgba(255,60,172,0.10)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.22)" }}
-                    >
-                      🌙 Arabic overlay
+                {/* ── Options row ── */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
+
+                  {/* Add Image */}
+                  <button onClick={() => imageInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, background: refImage ? "rgba(255,60,172,0.10)" : "rgba(255,255,255,0.05)", border: `1px solid ${refImage ? S.accent : "rgba(255,255,255,0.10)"}`, borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 500, color: refImage ? S.accent : S.ink2, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", transition: "all 0.15s" }}>
+                    <Camera className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> {refImage ? "Image added ✓" : "Add Image"}
+                  </button>
+
+                  <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+
+                  {/* Format — fixed 1:1 Meta Ads (no selector) */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 500, color: S.ink3, userSelect: "none" }}>
+                    <Square className="w-3 h-3" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink2, fontWeight: 600, marginLeft: 2 }}>1:1 Meta</span>
+                  </div>
+
+                  {/* Language */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleDD("lang-dd-c"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "lang-dd-c" ? "rgba(255,60,172,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${openDD === "lang-dd-c" ? S.accent : "rgba(255,255,255,0.08)"}`, borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 500, color: openDD === "lang-dd-c" ? S.accent : S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+                    <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
+                    {openDD === "lang-dd-c" && (
+                      <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
+                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                          <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                            {label} {activeLang === val && <Check className="w-3 h-3" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Textarea + Generate row ── */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 16px" }}>
+                  {/* Image thumb — required indicator when missing */}
+                  {refImage ? (
+                    <div style={{ width: 42, height: 42, borderRadius: 8, overflow: "hidden", border: `1px solid ${S.accent}`, flexShrink: 0, position: "relative", boxShadow: "0 0 8px rgba(255,60,172,0.25)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={refImage.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <button onClick={clearImage} style={{ position: "absolute", top: 1, right: 1, width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", fontSize: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>×</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => imageInputRef.current?.click()} style={{ width: 42, height: 42, borderRadius: 8, border: `2px dashed rgba(255,60,172,0.4)`, background: "rgba(255,60,172,0.04)", color: S.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }} title="Add product image (required)"><ImageIcon className="w-5 h-5" /></button>
+                  )}
+                  <textarea
+                    value={barValue}
+                    onChange={(e) => setBarValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+                    placeholder={refImage ? "Describe your ad style… e.g. Bold dark background, Dubai luxury lifestyle." : "Add your product image first, then describe the ad style…"}
+                    style={{ flex: 1, background: "transparent", border: "none", color: S.ink, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.5, height: 46, fontFamily: "inherit", padding: 0 }}
+                  />
+                  {!isPaid && (
+                    <span style={{ fontSize: 10, color: S.ink3, whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {Math.max(0, CREATIVE_LIMIT - imageUsage)} left
                     </span>
                   )}
-                </div>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate();
-                  }}
-                  placeholder="e.g. Premium supplement for men, dark powerful background, bold headline"
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
-                />
-              </div>
-
-              {/* Usage bar + Generate button */}
-              <div className="flex flex-col gap-3">
-
-                {/* ── Usage bar — always visible for free users ── */}
-                {!isPaid && (() => {
-                  const used       = Math.min(imageUsage, CREATIVE_LIMIT);
-                  const remaining  = CREATIVE_LIMIT - used;
-                  const exhausted  = remaining <= 0;
-                  const lastOne    = remaining === 1;
-                  return (
-                    <div
-                      style={{
-                        background:   exhausted ? "rgba(225,112,85,0.05)" : "rgba(255,60,172,0.04)",
-                        border:       `1px solid ${exhausted ? "rgba(225,112,85,0.20)" : "rgba(255,60,172,0.15)"}`,
-                        borderRadius: 14,
-                        padding:      "12px 14px",
-                      }}
-                    >
-                      {/* Top row */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ fontSize: 18, lineHeight: 1 }}>
-                            {exhausted ? "🔒" : lastOne ? "⚡" : "🎨"}
-                          </span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: exhausted ? "#e17055" : "#0D0D12", fontFamily: "var(--font-inter)" }}>
-                            {exhausted
-                              ? "No free generations left"
-                              : `${remaining} free generation${remaining === 1 ? "" : "s"} remaining`}
-                          </span>
-                        </div>
-                        {lastOne && !exhausted && (
-                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FF3CAC", background: "rgba(255,60,172,0.10)", padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Last free
-                          </span>
-                        )}
-                        {exhausted && !isAdmin && (
-                          <button
-                            onClick={() => onPaywall?.("image")}
-                            style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", padding: "4px 12px", borderRadius: 100, border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}
-                          >
-                            Upgrade →
-                          </button>
-                        )}
-                      </div>
-                      {/* 3 progress pills */}
-                      <div style={{ display: "flex", gap: 5 }}>
-                        {[0, 1, 2].map((i) => (
-                          <div
-                            key={i}
-                            style={{
-                              flex:         1,
-                              height:       6,
-                              borderRadius: 100,
-                              background:   i < used
-                                ? (exhausted ? "#e17055" : "linear-gradient(90deg,#FF3CAC,#FF6B35)")
-                                : "#E8E5E0",
-                              transition:   "background 0.35s ease",
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {!exhausted && (
-                        <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
-                          {used} of {CREATIVE_LIMIT} free uses
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Generate / Upgrade button */}
-                {!isAdmin && !isPaid && imageUsage >= CREATIVE_LIMIT ? (
                   <button
-                    onClick={() => onPaywall?.("image")}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold cursor-pointer"
-                    style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", color: "#fff", boxShadow: "0 4px 20px rgba(255,60,172,0.32)", border: "none" }}
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !barValue.trim() || !refImage}
+                    title={!refImage ? "Add a product image first" : undefined}
+                    style={{ display: "flex", alignItems: "center", gap: 7, background: isGenerating || !refImage ? S.bg4 : S.grad, border: "none", borderRadius: 12, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "0 22px", height: 46, cursor: isGenerating || !refImage ? "not-allowed" : "pointer", boxShadow: isGenerating || !refImage ? "none" : "0 4px 20px rgba(255,60,172,0.4)", opacity: isGenerating || !refImage ? 0.45 : 1, whiteSpace: "nowrap", flexShrink: 0, transition: "opacity 0.15s, box-shadow 0.15s" }}
                   >
-                    <Sparkles className="w-4 h-4" /> Upgrade to Starter — $19/mo
-                  </button>
-                ) : (
-                  <button
-                    onClick={generate}
-                    disabled={!prompt.trim() || loading}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background: (!prompt.trim() || loading) ? "#e8e8f0" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
-                      color:      (!prompt.trim() || loading) ? "#9ca3af" : "#ffffff",
-                      boxShadow:  (!prompt.trim() || loading) ? "none" : "0 4px 20px rgba(255,60,172,0.3)",
-                      border:     "none",
-                    }}
-                  >
-                    {loading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                      : <><Sparkles className="w-4 h-4" /> Generate 4 Creatives</>
+                    {isGenerating
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ flexShrink: 0 }} /> Generating…</>
+                      : <><Sparkles className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> Generate 4 Ads</>
                     }
                   </button>
-                )}
-
-                {!loading && images.length === 0 && !error && (
-                  <p className="text-xs text-[#9ca3af] text-center leading-relaxed">
-                    Adur designs 4 unique creative concepts — Hero Shot, Lifestyle, Social Proof, and Pattern Interrupt
-                  </p>
-                )}
+                </div>
               </div>
             </div>
+          )}
+        </motion.div>
+      )}
 
-            {/* RIGHT — Output */}
-            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
-              <AnimatePresence mode="wait">
+      {/* ════ COPY TAB ════ */}
+      {activeTab === "adcopy" && (
+        <motion.div key="adcopy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
 
-                {/* ── Loading ── */}
-                {loading && (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col gap-5"
-                  >
-                    {/* 2×2 skeleton grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="flex flex-col gap-2">
-                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#e8e8f5] to-[#dcdcf0] animate-pulse" />
-                          <div className="h-3.5 rounded-lg bg-[#e8e8f0] animate-pulse w-2/3" />
-                          <div className="h-3   rounded-lg bg-[#ebebf5] animate-pulse w-1/2" />
-                        </div>
-                      ))}
+          {/* Error */}
+          {copyError && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", margin: "16px 0", color: "#fca5a5", fontSize: 13 }}>⚠️ {copyError}</div>}
+
+          {/* Loading — skeleton copy cards */}
+          {copyLoading && (
+            <div style={{ paddingTop: 28, paddingBottom: 24 }}>
+              {/* Header skeleton */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div className="cs-shimmer" style={{ width: 130, height: 10, borderRadius: 6 }} />
+                <div className="cs-shimmer" style={{ width: 48, height: 22, borderRadius: 6 }} />
+              </div>
+              {/* 3-col card grid (5 cards) */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16 }}>
+                    {/* Hook badge */}
+                    <div className="cs-shimmer" style={{ width: 88, height: 18, borderRadius: 100, marginBottom: 12 }} />
+                    {/* Headline lines */}
+                    <div className="cs-shimmer" style={{ width: "100%", height: 14, borderRadius: 5, marginBottom: 6 }} />
+                    <div className="cs-shimmer" style={{ width: "68%", height: 14, borderRadius: 5, marginBottom: 14 }} />
+                    {/* Body lines */}
+                    {[100,95,88,82,72].map((w, j) => (
+                      <div key={j} className="cs-shimmer" style={{ width: `${w}%`, height: 10, borderRadius: 4, marginBottom: 5 }} />
+                    ))}
+                    {/* CTA row */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+                      <div className="cs-shimmer" style={{ width: 84, height: 26, borderRadius: 100 }} />
+                      <div className="cs-shimmer" style={{ width: 58, height: 26, borderRadius: 7 }} />
                     </div>
-                    {/* Status */}
-                    <div className="text-center space-y-2">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 text-[#FF3CAC] animate-spin" />
-                        <p className="text-sm font-semibold text-[#0a0a0f]">
-                          Adur is designing 4 creative concepts...
-                        </p>
-                      </div>
-                      <p className="text-xs text-[#9ca3af]">This takes about 30–60 seconds</p>
-                      <div className="w-48 h-1 rounded-full bg-[#e0e0f0] overflow-hidden mx-auto">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width:      `${progress}%`,
-                            background: "linear-gradient(90deg, #FF3CAC, #FF6B35)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ── Error ── */}
-                {!loading && error && (
-                  <motion.div
-                    key="error"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-5"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">
-                      ⚠️
-                    </div>
-                    <p className="text-sm font-semibold text-[#0a0a0f]">
-                      Generation failed. Please try again.
-                    </p>
-                    <button
-                      onClick={generate}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                      style={{ background: "#FF3CAC" }}
-                    >
-                      <RefreshCw className="w-4 h-4" /> Try Again
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* ── Empty ── */}
-                {!loading && !error && images.length === 0 && (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-5"
-                  >
-                    <div className="grid grid-cols-2 gap-3 w-full">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="aspect-square rounded-2xl bg-[#ebebf3] border-2 border-dashed border-[#dcdcec] flex items-center justify-center"
-                        >
-                          <ImageIcon className="w-5 h-5 text-[#c4c4d8]" />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-[#0a0a0f]">
-                        4 creative concepts will appear here
-                      </p>
-                      <p className="text-xs text-[#9ca3af] mt-1">
-                        Hero Shot · Lifestyle · Social Proof · Pattern Interrupt
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ── 2×2 Image grid ── */}
-                {!loading && images.length > 0 && (
-                  <motion.div
-                    key="images"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    {/* Save status pill */}
-                    {saveStatus !== "idle" && (
-                      <div className="flex items-center gap-1.5 mb-3 px-1">
-                        {saveStatus === "saving" && <><Loader2 className="w-3 h-3 text-[#FF3CAC] animate-spin" /><span className="text-[11px] text-[#9ca3af] font-medium">Saving to Library…</span></>}
-                        {saveStatus === "ok"     && <><Check   className="w-3 h-3 text-[#16a34a]" /><span className="text-[11px] text-[#16a34a] font-semibold">Saved to Library ✓</span></>}
-                        {saveStatus === "err"    && <><X       className="w-3 h-3 text-red-500" /><span className="text-[11px] text-red-500 font-semibold">Save failed — run the DB migration first</span></>}
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-4">
-                      {images.map((img, i) => {
-                        const isRegen = regenMap[i] ?? false;
-                        const isHover = hoveredIdx === i && !isRegen;
-                        const color   = ANGLE_COLORS[i % ANGLE_COLORS.length];
-
-                        return (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, scale: 0.97 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{
-                              delay:    i * 0.08,
-                              duration: 0.35,
-                              ease:     [0.22, 1, 0.36, 1],
-                            }}
-                            className="flex flex-col gap-2"
-                          >
-                            {/* Angle badge */}
-                            {img.angle && (
-                              <span
-                                className="self-start inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border leading-none"
-                                style={{
-                                  background:  color.bg,
-                                  color:       color.text,
-                                  borderColor: color.border,
-                                }}
-                              >
-                                {img.angle}
-                              </span>
-                            )}
-
-                            {/* Image — always 1:1 square */}
-                            <div
-                              className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#e0e0ec] shadow-sm"
-                              onMouseEnter={() => setHoveredIdx(i)}
-                              onMouseLeave={() => setHoveredIdx(null)}
-                            >
-                              {isRegen ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-[#f0f0f8]">
-                                  <Loader2 className="w-5 h-5 text-[#FF3CAC] animate-spin" />
-                                </div>
-                              ) : (
-                                <>
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={img.url}
-                                    alt={img.angle ?? `Creative ${i + 1}`}
-                                    className="absolute inset-0 w-full h-full object-fill"
-                                  />
-                                  <AnimatePresence>
-                                    {isHover && (
-                                      <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="absolute inset-0 flex items-center justify-center"
-                                        style={{
-                                          background:    "rgba(10,10,15,0.45)",
-                                          backdropFilter: "blur(2px)",
-                                        }}
-                                      >
-                                        <button
-                                          onClick={() => downloadImage(img, i)}
-                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#0a0a0f] text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer shadow-lg"
-                                        >
-                                          <Download className="w-3.5 h-3.5" /> Download
-                                        </button>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </>
-                              )}
-                            </div>
-
-                            {/* Headline */}
-                            {img.headline && (
-                              <p className="text-xs font-bold text-[#0a0a0f] leading-snug line-clamp-2">
-                                {img.headline}
-                              </p>
-                            )}
-
-                            {/* Why it works */}
-                            {img.rationale && (
-                              <p className="text-[10px] text-[#9ca3af] leading-relaxed line-clamp-2">
-                                {img.rationale}
-                              </p>
-                            )}
-
-                            {/* Action buttons */}
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => downloadImage(img, i)}
-                                disabled={isRegen}
-                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-colors cursor-pointer disabled:opacity-40"
-                                style={{
-                                  background: "rgba(255,60,172,0.08)",
-                                  color:      "#FF3CAC",
-                                  border:     "1px solid rgba(255,60,172,0.15)",
-                                }}
-                              >
-                                <Download className="w-3 h-3" /> Download
-                              </button>
-                              <button
-                                onClick={() => regenerateOne(i)}
-                                disabled={isRegen}
-                                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border border-[#E8E5E0] bg-white text-[#6b7280] hover:text-[#0a0a0f] hover:border-[#d1d5db] transition-colors cursor-pointer disabled:opacity-40"
-                              >
-                                <RefreshCw className={`w-3 h-3 ${isRegen ? "animate-spin" : ""}`} />
-                                Regenerate
-                              </button>
-                            </div>
-
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-
+                  </div>
+                ))}
+              </div>
+              {/* Status row */}
+              <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: S.accent, opacity: 0.9, animation: "csSpin 1.5s linear infinite" }} />
+                <span style={{ fontSize: 12, color: S.ink2, fontWeight: 500 }}>Writing 5 ad copy variants…</span>
+              </div>
             </div>
-          </motion.div>
-        )}
+          )}
 
-        {/* ════════════════════════════════════════════
-            AD COPY TAB
-        ════════════════════════════════════════════ */}
-        {activeTab === "adcopy" && (
-          <motion.div
-            key="adcopy"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col lg:flex-row min-h-[640px]"
-          >
-            {/* LEFT — Inputs */}
-            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5]">
-
-              <div>
-                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">Ad Copy</h2>
-                <p className="text-sm text-[#6b7280] mt-1">Generate 5 high-converting ad variants</p>
+          {/* Copy variants — when generated */}
+          {!copyLoading && copyVariants.length > 0 && (
+            <div style={{ paddingTop: 24, marginBottom: 32 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>GENERATED COPY</div>
+                <button onClick={() => setCopyVariants([])} style={{ fontSize: 11, color: S.accent, background: "none", border: "none", cursor: "pointer" }}>↺ Clear</button>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#0a0a0f]">Describe your product</label>
-                <textarea
-                  value={copyProduct}
-                  onChange={(e) => setCopyProduct(e.target.value)}
-                  placeholder="e.g. Collagen supplement for women 35+, unflavoured powder, 30-day supply"
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#0a0a0f]">Who is your target customer?</label>
-                <input
-                  type="text"
-                  value={copyAudience}
-                  onChange={(e) => setCopyAudience(e.target.value)}
-                  placeholder="e.g. Women 35-55, health-conscious, busy moms"
-                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#0a0a0f]">What is the #1 benefit?</label>
-                <input
-                  type="text"
-                  value={copyBenefit}
-                  onChange={(e) => setCopyBenefit(e.target.value)}
-                  placeholder="e.g. Reduces joint pain and improves skin within 30 days"
-                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all placeholder:text-[#9ca3af]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#0a0a0f]">Language</label>
-                <select
-                  value={copyLang}
-                  onChange={(e) => setCopyLang(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/25 focus:border-[#FF3CAC]/40 transition-all cursor-pointer"
-                >
-                  {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </div>
-
-              {/* Usage bar + Generate button */}
-              <div className="flex flex-col gap-3 mt-auto">
-
-                {/* ── Usage bar — always visible for free users ── */}
-                {!isPaid && (() => {
-                  const used      = Math.min(copyUsage, CREATIVE_LIMIT);
-                  const remaining = CREATIVE_LIMIT - used;
-                  const exhausted = remaining <= 0;
-                  const lastOne   = remaining === 1;
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                {copyVariants.map((v, idx) => {
+                  const hc = hookColor(v.hookType);
                   return (
-                    <div
-                      style={{
-                        background:   exhausted ? "rgba(225,112,85,0.05)" : "rgba(255,60,172,0.04)",
-                        border:       `1px solid ${exhausted ? "rgba(225,112,85,0.20)" : "rgba(255,60,172,0.15)"}`,
-                        borderRadius: 14,
-                        padding:      "12px 14px",
-                      }}
-                    >
-                      {/* Top row */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ fontSize: 18, lineHeight: 1 }}>
-                            {exhausted ? "🔒" : lastOne ? "⚡" : "✍️"}
-                          </span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: exhausted ? "#e17055" : "#0D0D12", fontFamily: "var(--font-inter)" }}>
-                            {exhausted
-                              ? "No free generations left"
-                              : `${remaining} free generation${remaining === 1 ? "" : "s"} remaining`}
-                          </span>
-                        </div>
-                        {lastOne && !exhausted && (
-                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FF3CAC", background: "rgba(255,60,172,0.10)", padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
-                            Last free
-                          </span>
-                        )}
-                        {exhausted && !isAdmin && (
-                          <button
-                            onClick={() => onPaywall?.("copy")}
-                            style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", padding: "4px 12px", borderRadius: 100, border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}
-                          >
-                            Upgrade →
-                          </button>
-                        )}
-                      </div>
-                      {/* 3 progress pills */}
-                      <div style={{ display: "flex", gap: 5 }}>
-                        {[0, 1, 2].map((i) => (
-                          <div
-                            key={i}
-                            style={{
-                              flex:         1,
-                              height:       6,
-                              borderRadius: 100,
-                              background:   i < used
-                                ? (exhausted ? "#e17055" : "linear-gradient(90deg,#FF3CAC,#FF6B35)")
-                                : "#E8E5E0",
-                              transition:   "background 0.35s ease",
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {!exhausted && (
-                        <p style={{ fontSize: 11, color: "#A8A5A0", marginTop: 7, fontFamily: "var(--font-inter)" }}>
-                          {used} of {CREATIVE_LIMIT} free uses
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Generate / Upgrade button */}
-                {!isAdmin && !isPaid && copyUsage >= CREATIVE_LIMIT ? (
-                  <button
-                    onClick={() => onPaywall?.("copy")}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold cursor-pointer"
-                    style={{ background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", color: "#fff", boxShadow: "0 4px 20px rgba(255,60,172,0.32)", border: "none" }}
-                  >
-                    <Sparkles className="w-4 h-4" /> Upgrade to Starter — $19/mo
-                  </button>
-                ) : (
-                  <button
-                    onClick={generateAdCopy}
-                    disabled={!copyProduct.trim() || copyLoading}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background: (!copyProduct.trim() || copyLoading) ? "#e8e8f0" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
-                      color:      (!copyProduct.trim() || copyLoading) ? "#9ca3af" : "#ffffff",
-                      boxShadow:  (!copyProduct.trim() || copyLoading) ? "none" : "0 4px 20px rgba(255,60,172,0.3)",
-                      border:     "none",
-                    }}
-                  >
-                    {copyLoading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing...</>
-                      : <><Sparkles className="w-4 h-4" /> Generate Ad Copy</>
-                    }
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT — Results */}
-            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
-              <AnimatePresence mode="wait">
-
-                {copyLoading && (
-                  <motion.div
-                    key="copy-loading"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-4"
-                  >
-                    <Loader2 className="w-8 h-8 text-[#FF3CAC] animate-spin" />
-                    <p className="text-sm font-semibold text-[#0a0a0f]">Adur is writing your ad copy...</p>
-                    <p className="text-xs text-[#9ca3af]">Crafting 5 high-converting variants…</p>
-                  </motion.div>
-                )}
-
-                {!copyLoading && copyError && (
-                  <motion.div
-                    key="copy-error"
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-3"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">⚠️</div>
-                    <p className="text-sm font-semibold text-red-600 text-center">{copyError}</p>
-                    <button
-                      onClick={generateAdCopy}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                      style={{ background: "#FF3CAC" }}
-                    >
-                      <RefreshCw className="w-4 h-4" /> Try Again
-                    </button>
-                  </motion.div>
-                )}
-
-                {!copyLoading && !copyError && copyVariants.length === 0 && (
-                  <motion.div
-                    key="copy-empty"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-4"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-[#ebebf3] flex items-center justify-center">
-                      <FileText className="w-7 h-7 text-[#c4c4d8]" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-[#0a0a0f]">5 ad variants will appear here</p>
-                      <p className="text-xs text-[#9ca3af] mt-1">Fill in your product details and click Generate</p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {!copyLoading && copyVariants.length > 0 && (
-                  <motion.div
-                    key="copy-variants"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="space-y-3"
-                  >
-                    {/* Save status pill */}
-                    {saveStatus !== "idle" && (
-                      <div className="flex items-center gap-1.5 pb-1 px-1">
-                        {saveStatus === "saving" && <><Loader2 className="w-3 h-3 text-[#FF3CAC] animate-spin" /><span className="text-[11px] text-[#9ca3af] font-medium">Saving to Library…</span></>}
-                        {saveStatus === "ok"     && <><Check   className="w-3 h-3 text-[#16a34a]" /><span className="text-[11px] text-[#16a34a] font-semibold">Saved to Library ✓</span></>}
-                        {saveStatus === "err"    && <><X       className="w-3 h-3 text-red-500" /><span className="text-[11px] text-red-500 font-semibold">Save failed — run the DB migration first</span></>}
-                      </div>
-                    )}
-                    {copyVariants.map((v, i) => {
-                      const color    = hookColor(v.hookType);
-                      const isCopied = copiedIdx === i;
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.07, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                          className="bg-white rounded-2xl border border-[#f0f0f5] p-4 space-y-3"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span
-                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border"
-                              style={{ background: color.bg, color: color.text, borderColor: color.border }}
-                            >
-                              {v.hookType}
-                            </span>
-                            <button
-                              onClick={() => copyToClipboard(v, i)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                              style={{
-                                background:  isCopied ? "#ecfdf5" : "#f8f8fc",
-                                color:       isCopied ? "#059669" : "#6b7280",
-                                border:      `1px solid ${isCopied ? "#a7f3d0" : "#e8e8f0"}`,
-                              }}
-                            >
-                              {isCopied
-                                ? <><Check className="w-3 h-3" /> Copied</>
-                                : <><Copy  className="w-3 h-3" /> Copy</>
-                              }
-                            </button>
-                          </div>
-
-                          <p className="text-sm text-[#0a0a0f] leading-relaxed whitespace-pre-line">{v.primaryText}</p>
-
-                          <div className="px-3 py-2.5 rounded-xl bg-[#F7F5F2] border border-[#f0f0f5] space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9ca3af]">Headline</p>
-                            <p className="text-base font-bold text-[#0a0a0f] leading-snug">{v.headline}</p>
-                            {v.description && (
-                              <p className="text-xs text-[#6b7280] italic leading-relaxed pt-0.5">{v.description}</p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#9ca3af]">CTA</span>
-                            <span
-                              className="px-3 py-1 rounded-full text-xs font-bold"
-                              style={{
-                                background: "rgba(255,60,172,0.08)",
-                                color:      "#FF3CAC",
-                                border:     "1px solid rgba(255,60,172,0.15)",
-                              }}
-                            >
-                              {v.cta}
-                            </span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ════════════════════════════════════════════
-            UGC VIDEO TAB
-        ════════════════════════════════════════════ */}
-        {activeTab === "ugc" && (
-          <motion.div
-            key="ugc"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col lg:flex-row"
-            style={{ minHeight: 720 }}
-          >
-
-            {/* ── FREE PLAN: full-tab upgrade gate ── */}
-            {!isAdmin && ugcPlan === "free" && (
-              <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10" style={{ background: "#F7F5F2" }}>
-                <div
-                  className="w-full rounded-2xl sm:rounded-3xl overflow-hidden"
-                  style={{
-                    maxWidth: 680,
-                    background: "linear-gradient(145deg, #18102e 0%, #1e1040 55%, #2d1060 100%)",
-                    boxShadow: "0 24px 80px rgba(124,58,237,0.28), 0 0 0 1px rgba(124,58,237,0.18)",
-                  }}
-                >
-                  {/* Top strip */}
-                  <div style={{ height: 3, background: "linear-gradient(90deg, #7c3aed, #a855f7, #ec4899)" }} />
-
-                  <div className="p-5 sm:p-7 lg:p-10">
-                    {/* Badge */}
-                    <div className="flex items-center gap-2 mb-5">
-                      <span
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
-                        style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}
-                      >
-                        ✦ Paid Feature
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-                      {/* Left: copy */}
-                      <div className="flex-1 space-y-4 sm:space-y-5">
-                        <div>
-                          <h2 className="font-heading mb-2" style={{ fontSize: "clamp(22px, 5vw, 28px)", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.1, color: "#ffffff" }}>
-                            Turn products into<br />viral UGC videos
-                          </h2>
-                          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontFamily: "var(--font-inter)" }}>
-                            Upload a product image, pick a style and hook — Adur AI writes the script, generates the video, and delivers a download-ready MP4.
-                          </p>
-                        </div>
-
-                        {/* Feature list */}
-                        <ul className="space-y-2">
-                          {[
-                            "AI writes a full UGC script for your product",
-                            "6 hook styles — Pain Point, Curiosity, Social Proof…",
-                            "9:16 vertical format ready for TikTok & Reels",
-                            "Download MP4 in seconds",
-                          ].map(f => (
-                            <li key={f} className="flex items-start gap-2.5">
-                              <span style={{ color: "#a855f7", fontSize: 15, marginTop: 1, flexShrink: 0 }}>✓</span>
-                              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.70)", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>{f}</span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        {/* Plan pills */}
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                            style={{ background: "rgba(255,60,172,0.14)", border: "1px solid rgba(255,60,172,0.30)", color: "#f472b6" }}>
-                            Starter — 3 videos / mo
-                          </span>
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                            style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}>
-                            Pro — 30 videos / mo
-                          </span>
-                        </div>
-
-                        {/* CTA — centred */}
-                        <div className="flex justify-center pt-1">
-                          <button
-                            onClick={() => onPaywall?.("ugc")}
-                            className="flex items-center justify-center gap-2 font-bold text-white cursor-pointer transition-all"
-                            style={{
-                              padding: "13px 36px",
-                              borderRadius: 100,
-                              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                              border: "none",
-                              fontSize: 14,
-                              fontFamily: "var(--font-inter)",
-                              letterSpacing: "-0.01em",
-                              boxShadow: "0 4px 24px rgba(124,58,237,0.50)",
-                              minWidth: 220,
-                              width: "100%",
-                              maxWidth: 320,
-                            }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(124,58,237,0.65)"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 24px rgba(124,58,237,0.50)"; }}
-                          >
-                            Unlock UGC Video →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Right: video mockup — hidden on mobile */}
-                      <div className="hidden lg:flex flex-shrink-0 items-center justify-center" style={{ width: 150 }}>
-                        <div
-                          className="relative flex items-center justify-center rounded-2xl"
-                          style={{
-                            width: 120, height: 200,
-                            background: "linear-gradient(180deg, rgba(124,58,237,0.25) 0%, rgba(168,85,247,0.10) 100%)",
-                            border: "1.5px solid rgba(168,85,247,0.30)",
-                          }}
-                        >
-                          {/* fake screen lines */}
-                          <div className="absolute inset-x-4 top-5 space-y-1.5 opacity-30">
-                            {[80, 60, 70, 50].map((w, i) => (
-                              <div key={i} style={{ height: 4, borderRadius: 3, background: "rgba(200,150,255,0.7)", width: `${w}%` }} />
-                            ))}
-                          </div>
-                          {/* lock icon */}
-                          <div
-                            className="flex items-center justify-center rounded-full"
-                            style={{ width: 48, height: 48, background: "rgba(124,58,237,0.50)", border: "1.5px solid rgba(168,85,247,0.50)", backdropFilter: "blur(8px)" }}
-                          >
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                          </div>
-                          {/* bottom label */}
-                          <div className="absolute bottom-4 inset-x-3 text-center">
-                            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(200,150,255,0.80)", fontFamily: "var(--font-inter)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                              9:16 · MP4
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── LEFT: Controls (Starter / Pro only) ── */}
-            {(isAdmin || ugcPlan !== "free") && (
-            <div className="w-full lg:w-[40%] bg-white flex flex-col gap-5 p-6 border-b lg:border-b-0 lg:border-r border-[#f0f0f5] overflow-y-auto">
-
-              <div>
-                <h2 className="font-heading text-xl font-bold text-[#0a0a0f] leading-tight tracking-tight">AI Avatar Ads</h2>
-                <p className="text-sm text-[#6b7280] mt-1">Pick an avatar · add your product · get a UGC video</p>
-              </div>
-
-              {/* ─ Section 0: Avatar selector ─ */}
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CHOOSE AVATAR</p>
-
-                {/* Selected avatar preview */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ugcAvatarCustomFile?.previewUrl ?? (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.photo ?? "")}
-                    alt="Selected avatar"
-                    className="w-12 h-12 rounded-full object-cover border-2 flex-shrink-0"
-                    style={{ borderColor: "rgba(124,58,237,0.35)" }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f" }}>
-                      {ugcAvatarCustomFile ? "Custom avatar" : (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.name ?? ugcAvatar)}
-                    </p>
-                    <p style={{ fontSize: 11, color: "#9ca3af" }}>
-                      {ugcAvatarCustomFile ? "Your uploaded photo" : (AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.style ?? "")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => { setUgcAvatarModalSel(ugcAvatar); setUgcAvatarModalCustom(ugcAvatarCustomFile); setUgcAvatarModalOpen(true); }}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all"
-                    style={{ background: "rgba(124,58,237,0.08)", color: "#7c3aed", border: "1.5px solid rgba(124,58,237,0.22)" }}
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-
-              {/* ─ Section 1: Product input ─ */}
-              <div className="space-y-3">
-                {/* Image / URL toggle */}
-                <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#F7F5F2", border: "1px solid #E8E5E0" }}>
-                  {(["image", "url"] as const).map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => setUgcInputMode(mode)}
-                      className="flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                      style={{
-                        background:  ugcInputMode === mode ? "#fff"     : "transparent",
-                        color:       ugcInputMode === mode ? "#7c3aed"  : "#9ca3af",
-                        boxShadow:   ugcInputMode === mode ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                      }}
-                    >
-                      {mode === "image" ? "📸 Upload Image" : "🔗 Website URL"}
-                    </button>
-                  ))}
-                </div>
-
-                {ugcInputMode === "image" ? (
-                  <>
-                    {ugcImage ? (
-                      <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={ugcImage.previewUrl} alt="Product" className="w-14 h-14 rounded-xl object-cover border border-[#e0e0f0] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Ready
-                          </span>
-                          <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcImage.file.name}</p>
-                        </div>
-                        <button onClick={clearUgcImage} className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer">
-                          <X className="w-4 h-4" />
+                    <div key={idx} style={{ background: S.bg2, border: `1px solid ${S.border}`, borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>Variant {String.fromCharCode(65 + idx)} — {v.hookType}</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3, color: S.ink }}>{v.headline}</div>
+                      <div style={{ fontSize: 12, color: S.ink2, lineHeight: 1.55, flex: 1 }}>{v.primaryText}</div>
+                      {v.description && <div style={{ fontSize: 11, color: S.ink3, lineHeight: 1.5 }}>{v.description}</div>}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                        <span style={{ display: "inline-flex", background: S.grad, color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 12px", borderRadius: 100 }}>{v.cta}</span>
+                        <button onClick={() => copyToClipboard(v, idx)} style={{ display: "flex", alignItems: "center", gap: 4, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: copiedIdx === idx ? "#4ade80" : S.ink2, cursor: "pointer" }}>
+                          {copiedIdx === idx ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                         </button>
                       </div>
-                    ) : (
-                      <div
-                        onClick={() => ugcImageRef.current?.click()}
-                        onDrop={handleUgcDrop}
-                        onDragOver={e => e.preventDefault()}
-                        className="flex flex-col items-center justify-center gap-2.5 p-6 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
-                          <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-semibold text-[#0a0a0f]">Upload product image</p>
-                          <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-snug">JPG, PNG or WEBP</p>
-                        </div>
-                      </div>
-                    )}
-                    <input ref={ugcImageRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUgcImageChange} />
-                  </>
-                ) : (
-                  <div className="space-y-1.5">
-                    <input
-                      type="url"
-                      value={ugcProductUrl}
-                      onChange={e => setUgcProductUrl(e.target.value)}
-                      placeholder="https://yourproduct.com"
-                      className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all placeholder:text-[#9ca3af]"
-                    />
-                    <p className="text-[10px] text-[#9ca3af]">We&apos;ll screenshot the page and use it as the product visual</p>
-                  </div>
-                )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                {/* Product description */}
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">DESCRIBE YOUR PRODUCT</p>
-                  <textarea
-                    value={ugcProduct}
-                    onChange={e => setUgcProduct(e.target.value)}
-                    placeholder="e.g. Premium supplement for men that boosts energy and confidence. 299 DH. Natural ingredients."
-                    rows={3}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all placeholder:text-[#9ca3af] leading-relaxed"
-                  />
+          {/* ── Empty state — Higgsfield centered ── */}
+          {!copyLoading && copyVariants.length === 0 && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 0 48px", textAlign: "center" }}>
+
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.2)", color: S.accent, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 100, marginBottom: 16 }}>
+                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: S.accent, display: "inline-block" }} /> AI Copywriter
                 </div>
+                <h1 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.05, color: S.ink, marginBottom: 10 }}>
+                  Ad copy that{" "}
+                  <span style={{ background: S.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>actually converts.</span>
+                </h1>
+                <p style={{ fontSize: 13, color: S.ink2, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
+                  Describe your product in one line — get 5 proven variants in any language.
+                </p>
               </div>
 
-              {/* ─ Section 2: Video Style ─ */}
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">HOOK TYPE</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {UGC_HOOKS.map(h => {
-                    const sel = ugcHook === h.id;
-                    return (
-                      <button
-                        key={h.id}
-                        onClick={() => setUgcHook(h.id)}
-                        className="text-left p-3 rounded-xl border-2 transition-all cursor-pointer"
-                        style={{
-                          background:   sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
-                          borderColor:  sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
-                        }}
-                      >
-                        <span style={{ fontSize: 18, lineHeight: 1 }}>{h.icon}</span>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f", marginTop: 5, lineHeight: 1.2 }}>{h.label}</p>
-                        <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 3, lineHeight: 1.35 }}>{h.desc}</p>
+              {/* Centered input card */}
+              <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 660, background: "rgba(255,255,255,0.028)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "visible", boxShadow: "0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                {/* Options row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
+                  {/* Lang */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleDD("lang-dd-copy"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "lang-dd-copy" ? "rgba(255,60,172,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${openDD === "lang-dd-copy" ? S.accent : "rgba(255,255,255,0.08)"}`, borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 500, color: openDD === "lang-dd-copy" ? S.accent : S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+                    <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
+                    {openDD === "lang-dd-copy" && (
+                      <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
+                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                          <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                            {label} {activeLang === val && <Check className="w-3 h-3" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Textarea + Generate */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 16px" }}>
+                  <textarea
+                    value={barValue}
+                    onChange={(e) => setBarValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+                    placeholder="Describe your product… e.g. Anti-aging serum. Visible results in 7 days."
+                    style={{ flex: 1, background: "transparent", border: "none", color: S.ink, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.5, height: 46, fontFamily: "inherit", padding: 0 }}
+                  />
+                  {!isPaid && <span style={{ fontSize: 10, color: S.ink3, whiteSpace: "nowrap", flexShrink: 0 }}>{Math.max(0, CREATIVE_LIMIT - copyUsage)} left</span>}
+                  <button onClick={handleGenerate} disabled={isGenerating || !barValue.trim()} style={{ display: "flex", alignItems: "center", gap: 7, background: isGenerating ? S.bg4 : S.grad, border: "none", borderRadius: 12, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "0 22px", height: 46, cursor: isGenerating ? "not-allowed" : "pointer", boxShadow: isGenerating ? "none" : "0 4px 20px rgba(255,60,172,0.4)", opacity: isGenerating ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0, transition: "opacity 0.15s" }}>
+                    {isGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ flexShrink: 0 }} /> Generating…</> : <><Sparkles className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> Generate Copy</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ════ VIDEO ADS TAB ════ */}
+      {activeTab === "ugc" && (
+        <motion.div key="ugc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
+
+          {/* Error */}
+          {ugcError && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", margin: "16px 0", color: "#fca5a5", fontSize: 13 }}>⚠️ {ugcError}</div>}
+
+          {/* Loading — pipeline stepper */}
+          {ugcLoading && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 20px" }}>
+              {/* Pipeline card */}
+              <div style={{ width: "100%", maxWidth: 420, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "24px 28px", marginBottom: 24 }}>
+                {[
+                  { stage: 1, label: "Writing your script…",     sub: "Adur is crafting your hook, script & scene" },
+                  { stage: 2, label: "Staging your creator…",    sub: "Placing your product naturally in hand" },
+                  { stage: 3, label: "Filming your video…",      sub: "Adur is bringing your creator to life" },
+                  { stage: 4, label: "Finishing up…",            sub: "Polishing & saving your video" },
+                ].map(({ stage, label, sub }, i) => {
+                  const isActive = ugcStage === stage;
+                  const isDone   = ugcStage > stage;
+                  return (
+                    <div key={stage} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: i < 3 ? 18 : 0 }}>
+                      {/* Step indicator */}
+                      <div style={{ position: "relative", flexShrink: 0, marginTop: 2 }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: "50%",
+                          background: isDone ? "rgba(74,222,128,0.15)" : isActive ? "rgba(255,60,172,0.15)" : "rgba(255,255,255,0.04)",
+                          border: `2px solid ${isDone ? "#4ade80" : isActive ? S.accent : "rgba(255,255,255,0.1)"}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "all 0.3s",
+                        }}>
+                          {isDone
+                            ? <Check className="w-3.5 h-3.5" style={{ color: "#4ade80" }} />
+                            : isActive
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: S.accent }} />
+                              : <span style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "block" }} />
+                          }
+                        </div>
+                        {/* Connector line */}
+                        {i < 3 && (
+                          <div style={{ position: "absolute", top: 30, left: "50%", transform: "translateX(-50%)", width: 2, height: 18, background: isDone ? "rgba(74,222,128,0.3)" : "rgba(255,255,255,0.06)", marginTop: -2 }} />
+                        )}
+                      </div>
+                      {/* Text */}
+                      <div style={{ paddingTop: 3 }}>
+                        <div style={{ fontSize: 13, fontWeight: isActive ? 700 : isDone ? 500 : 400, color: isDone ? "#4ade80" : isActive ? S.ink : S.ink3, transition: "all 0.3s" }}>
+                          {label}
+                        </div>
+                        {isActive && (
+                          <div style={{ fontSize: 11, color: S.ink3, marginTop: 2, lineHeight: 1.4 }}>{sub}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Progress bar */}
+              <div style={{ width: 320, background: S.bg3, borderRadius: 100, height: 3, overflow: "hidden", marginBottom: 10 }}>
+                <div style={{ height: "100%", background: S.grad, width: `${ugcProgress}%`, transition: "width 0.5s ease", borderRadius: 100 }} />
+              </div>
+              <div style={{ fontSize: 11, color: S.ink3 }}>
+                {ugcProgress > 0 ? `${Math.round(ugcProgress)}% · ` : ""}This can take 2–3 minutes
+              </div>
+            </div>
+          )}
+
+          {/* UGC result */}
+          {!ugcLoading && ugcVideoUrl && (
+            <div style={{ paddingTop: 24, marginBottom: 32, maxWidth: 760 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>YOUR UGC VIDEO</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <a href={ugcVideoUrl} download="adur-ugc.mp4" style={{ display: "flex", alignItems: "center", gap: 5, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 8, padding: "7px 12px", fontSize: 12, color: S.ink2, textDecoration: "none" }}>⬇ Download</a>
+                  <button
+                    onClick={() => { setUgcVideoUrl(null); setUgcClip2Url(null); setUgcScript(null); setUgcHookLine(null); setUgcError(null); setUgcStage(0); setUgcProgress(0); }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, background: S.grad, border: "none", borderRadius: 8, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,60,172,0.32)", transition: "transform 0.15s, box-shadow 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,60,172,0.45)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,60,172,0.32)"; }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Generate New Video
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 20, alignItems: "stretch" }}>
+                <video controls src={ugcVideoUrl} style={{ borderRadius: 14, border: `1px solid ${S.border}`, background: "#000", width: 280, flexShrink: 0, aspectRatio: ugcRatio === "9:16" ? "9/16" : ugcRatio === "1:1" ? "1/1" : "16/9", objectFit: "cover" }} />
+                {ugcScript && (
+                  <div style={{ flex: 1, minWidth: 0, maxWidth: 440, background: S.bg2, border: `1px solid ${S.border}`, borderRadius: 14, padding: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: S.ink3 }}>SCRIPT</div>
+                      <button onClick={() => { navigator.clipboard.writeText(ugcScript); setUgcScriptCopied(true); setTimeout(() => setUgcScriptCopied(false), 2000); }} style={{ display: "flex", alignItems: "center", gap: 4, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: ugcScriptCopied ? "#4ade80" : S.ink2, cursor: "pointer" }}>
+                        {ugcScriptCopied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                       </button>
+                    </div>
+                    {ugcHookLine && <div style={{ fontSize: 13, fontWeight: 700, color: S.ink, marginBottom: 8, lineHeight: 1.4, borderLeft: `3px solid ${S.accent}`, paddingLeft: 10 }}>{ugcHookLine}</div>}
+                    <div style={{ fontSize: 12, color: S.ink2, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{ugcScript}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Free users: full UGC lock screen ── */}
+          {!ugcLoading && !ugcVideoUrl && !isAdmin && ugcPlan === "free" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px 48px", textAlign: "center" }}>
+              {/* Lock icon */}
+              <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(255,60,172,0.1)", border: "1px solid rgba(255,60,172,0.22)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+                <Lock className="w-7 h-7" style={{ color: "#FF3CAC" }} />
+              </div>
+              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: S.ink, marginBottom: 8 }}>UGC Video Ads</h2>
+              <p style={{ fontSize: 13, color: S.ink2, maxWidth: 360, lineHeight: 1.65, marginBottom: 32 }}>
+                Turn your product into scroll-stopping lip-synced UGC ads. Available on Starter and Pro.
+              </p>
+              {/* Two plan cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, width: "100%", maxWidth: 460, marginBottom: 18 }}>
+                {/* Starter */}
+                <div style={{ background: "rgba(255,60,172,0.05)", border: "1.5px solid rgba(255,60,172,0.22)", borderRadius: 16, padding: 18, textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                    <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>Starter</span>
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: S.ink, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                    $19<span style={{ fontSize: 11, fontWeight: 400, color: S.ink2 }}>/mo</span>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 2 }}>3 UGC videos / month</div>
+                  <div style={{ fontSize: 11, color: S.ink2, marginBottom: 16, lineHeight: 1.4 }}>Unlimited images &amp; copy</div>
+                  <button onClick={() => onPaywall?.("ugc")} style={{ width: "100%", background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "10px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,60,172,0.3)" }}>
+                    Get Starter →
+                  </button>
+                </div>
+                {/* Pro */}
+                <div style={{ background: "rgba(124,58,237,0.06)", border: "1.5px solid rgba(124,58,237,0.28)", borderRadius: 16, padding: 18, textAlign: "left", position: "relative" }}>
+                  <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Most Powerful</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, marginTop: 4 }}>
+                    <Crown className="w-3.5 h-3.5" style={{ color: "#7c3aed", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em" }}>Pro</span>
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: S.ink, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                    $99<span style={{ fontSize: 11, fontWeight: 400, color: S.ink2 }}>/mo</span>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 2 }}>30 UGC videos / month</div>
+                  <div style={{ fontSize: 11, color: S.ink2, marginBottom: 16, lineHeight: 1.4 }}>+ AI Manager &amp; Autopilot</div>
+                  <button onClick={() => onPaywall?.("ugc")} style={{ width: "100%", background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "10px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.3)" }}>
+                    Get Pro →
+                  </button>
+                </div>
+              </div>
+              <p style={{ fontSize: 11, color: S.ink3 }}>Cancel anytime · Instant access</p>
+            </div>
+          )}
+
+          {/* ── Empty state — Higgsfield centered (paid users only) ── */}
+          {!ugcLoading && !ugcVideoUrl && (isAdmin || ugcPlan !== "free") && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 0 48px", textAlign: "center" }}>
+
+              {/* Hero */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.2)", color: S.accent, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 100, marginBottom: 14 }}>
+                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: S.accent, display: "inline-block" }} /> AI Video Studio
+                </div>
+                <h1 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.05, color: S.ink, marginBottom: 10 }}>
+                  <span style={{ background: S.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>UGC videos</span> in 60 seconds.
+                </h1>
+                <p style={{ fontSize: 13, color: S.ink2, lineHeight: 1.6, maxWidth: 400, margin: "0 auto" }}>
+                  Pick an avatar, describe your product — generate a lip-synced UGC ad.
+                </p>
+              </div>
+
+              {/* Monthly usage pill for paid plans */}
+              {!isAdmin && (
+                <div style={{ marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100, padding: "5px 14px" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: ugcUsage >= (UGC_LIMIT[ugcPlan] ?? 0) ? "#F87171" : "#4ade80", display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: S.ink2, fontWeight: 500 }}>
+                    {ugcUsage} / {UGC_LIMIT[ugcPlan] ?? 0} UGC videos used this month
+                  </span>
+                </div>
+              )}
+
+              {/* Avatar selector */}
+              <div style={{ width: "100%", maxWidth: 660, display: "flex", alignItems: "center", gap: 12, marginBottom: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "10px 16px" }}>
+                {avatarDisplayPhoto ? (
+                  <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", border: `2px solid ${S.accent}`, flexShrink: 0, boxShadow: "0 0 10px rgba(255,60,172,0.3)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatarDisplayPhoto} alt={avatarDisplayName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  </div>
+                ) : (
+                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: S.bg3, border: `2px dashed ${S.border2}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: S.ink3 }}><User className="w-5 h-5" /></div>
+                )}
+                <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: S.ink }}>{avatarDisplayName}</div>
+                  <div style={{ fontSize: 11, color: S.ink3 }}>{ugcAvatarCustomFile ? "Custom avatar" : (selectedAvatarPreset?.style ?? "No avatar selected")}</div>
+                </div>
+                <button onClick={() => { setUgcAvatarModalSel(ugcAvatar); setUgcAvatarModalCustom(ugcAvatarCustomFile); setUgcAvatarModalOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: S.ink2, cursor: "pointer", flexShrink: 0, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  <User className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> {avatarDisplayPhoto ? "Change Avatar" : "Select Avatar"}
+                </button>
+              </div>
+
+              {/* Main input card */}
+              <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 660, background: "rgba(255,255,255,0.028)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "visible", boxShadow: "0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+
+                {/* Options row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
+
+                  {/* ── Product chip ── */}
+                  {(confirmedProductTitle || ugcImage) ? (
+                    /* Product is set — compact chip */
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,60,172,0.08)", border: `1px solid ${S.accent}`, borderRadius: 8, padding: "4px 10px 4px 6px", maxWidth: 180 }}>
+                      {ugcImage ? (
+                        <div style={{ width: 24, height: 24, borderRadius: 5, overflow: "hidden", flexShrink: 0 }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={ugcImage.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                      ) : (
+                        <Link2 className="w-3.5 h-3.5" style={{ flexShrink: 0, color: S.accent }} />
+                      )}
+                      <span style={{ fontSize: 11, fontWeight: 600, color: S.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                        {confirmedProductTitle || "Product"}
+                      </span>
+                      <button onClick={clearConfirmedProduct} style={{ background: "none", border: "none", color: S.accent, cursor: "pointer", fontSize: 12, padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+                    </div>
+                  ) : (
+                    /* No product yet — dashed add button */
+                    <button
+                      onClick={() => { setFetchedInfo(null); setProductUrlDraft(""); setFetchInfoErr(null); setProductModalOpen(true); }}
+                      style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.03)", border: "1.5px dashed rgba(255,255,255,0.15)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 500, color: S.ink3, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", transition: "all 0.15s" }}
+                    >
+                      + Add Product
+                    </button>
+                  )}
+
+                  <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+
+                  {/* ── Format (Higgsfield-style card dropdown) ── */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleDD("ugc-fmt-dd"); }} style={{ display: "flex", alignItems: "center", gap: 6, background: openDD === "ugc-fmt-dd" ? "rgba(255,60,172,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${openDD === "ugc-fmt-dd" ? S.accent : "rgba(255,255,255,0.08)"}`, borderRadius: 8, padding: "5px 11px", fontSize: 12, fontWeight: 600, color: openDD === "ugc-fmt-dd" ? S.accent : S.ink, cursor: "pointer", position: "relative", userSelect: "none" }}>
+                    {ugcRatio === "9:16" ? <Smartphone className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> : <Monitor className="w-3.5 h-3.5" style={{ flexShrink: 0 }} />}
+                    <span>{ugcRatio === "9:16" ? "Mobile" : "Desktop"}</span>
+                    <span style={{ opacity: 0.4, fontSize: 10 }}>▾</span>
+                    {openDD === "ugc-fmt-dd" && (
+                      <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, background: "#111120", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 16, padding: 8, width: 340, boxShadow: "0 20px 60px rgba(0,0,0,0.8)", zIndex: 400 }}>
+                        {([
+                          { ratio: "16:9" as const, label: "Desktop", Icon: Monitor,    desc: "UGC ad for your website or desktop app", preview: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=200&h=110&fit=crop&auto=format&q=75",  tw: 90, th: 58 },
+                          { ratio: "9:16" as const, label: "Mobile",  Icon: Smartphone, desc: "Vertical UGC for TikTok, Reels & Stories", preview: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=355&fit=crop&auto=format&q=75", tw: 46, th: 76 },
+                        ] as const).map(({ ratio, label, Icon, desc, preview, tw, th }) => {
+                          const active = ugcRatio === ratio;
+                          return (
+                            <div
+                              key={ratio}
+                              onClick={() => { setUgcRatio(ratio); setOpenDD(null); }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "10px 12px", borderRadius: 12, cursor: "pointer", background: active ? "rgba(255,255,255,0.07)" : "none", marginBottom: 4, transition: "background 0.12s" }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+                                  <Icon className="w-4 h-4" style={{ color: active ? "#FF3CAC" : "#9090AC", flexShrink: 0 }} />
+                                  <span style={{ fontSize: 14, fontWeight: 700, color: "#EEEEF5" }}>{label}</span>
+                                </div>
+                                <div style={{ fontSize: 11, color: "#52526A", lineHeight: 1.4 }}>{desc}</div>
+                              </div>
+                              <div style={{ width: tw, height: th, borderRadius: 9, overflow: "hidden", flexShrink: 0, background: "#1E1E30", border: active ? "1.5px solid #FF3CAC" : "1.5px solid rgba(255,255,255,0.06)", boxSizing: "border-box" }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Duration */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleDD("dur-dd-c"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "dur-dd-c" ? "rgba(255,60,172,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${openDD === "dur-dd-c" ? S.accent : "rgba(255,255,255,0.08)"}`, borderRadius: 8, padding: "5px 11px", fontSize: 12, fontWeight: 500, color: S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+                    <span style={{ color: S.ink, fontWeight: 600 }}>{ugcDuration}s</span> <span style={{ opacity: 0.4, fontSize: 10, marginLeft: 2 }}>▾</span>
+                    {openDD === "dur-dd-c" && (
+                      <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 90, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
+                        {[5,10,15].map(d => (
+                          <div key={d} onClick={(e) => { e.stopPropagation(); setUgcDuration(d as 5|10|15); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: ugcDuration === d ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                            {d}s {ugcDuration === d && <span style={{ fontSize: 10 }}>✓</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lang */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleDD("lang-dd-ugc"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "lang-dd-ugc" ? "rgba(255,60,172,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${openDD === "lang-dd-ugc" ? S.accent : "rgba(255,255,255,0.08)"}`, borderRadius: 8, padding: "5px 11px", fontSize: 12, fontWeight: 500, color: openDD === "lang-dd-ugc" ? S.accent : S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+                    <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
+                    {openDD === "lang-dd-ugc" && (
+                      <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
+                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                          <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                            {label} {activeLang === val && <Check className="w-3 h-3" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quality / Resolution */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "4px 6px", flexShrink: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: S.ink3, padding: "0 4px" }}>Quality</span>
+                    {(["480p", "720p", "1080p"] as const).map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setUgcResolution(r)}
+                        title={r === "480p" ? "Fast & lightweight" : r === "720p" ? "Recommended" : "Maximum quality (slower)"}
+                        style={{ background: ugcResolution === r ? S.grad : "transparent", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: ugcResolution === r ? 700 : 500, color: ugcResolution === r ? "#fff" : S.ink3, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", whiteSpace: "nowrap" }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Textarea + Generate row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px 16px" }}>
+                  <textarea
+                    value={barValue}
+                    onChange={(e) => setBarValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+                    placeholder={confirmedProductTitle ? `Describe the ad for "${confirmedProductTitle}"…` : "Add a product above, then describe your ad…"}
+                    style={{ flex: 1, background: "transparent", border: "none", color: S.ink, fontSize: 14, outline: "none", resize: "none", lineHeight: 1.5, height: 46, fontFamily: "inherit", padding: 0 }}
+                  />
+                  <button
+                    onClick={handleGenerate}
+                    disabled={ugcLoading || (!barValue.trim() && !(ugcInputMode === "url" && ugcProductUrl.trim()))}
+                    style={{ display: "flex", alignItems: "center", gap: 7, background: ugcLoading ? S.bg4 : S.grad, border: "none", borderRadius: 12, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "0 22px", height: 46, cursor: ugcLoading ? "not-allowed" : "pointer", boxShadow: ugcLoading ? "none" : "0 4px 20px rgba(255,60,172,0.4)", opacity: ugcLoading ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0, transition: "opacity 0.15s" }}
+                  >
+                    {ugcLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ flexShrink: 0 }} /> Generating…</> : <><Sparkles className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> Generate Video</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ════ LIBRARY TAB ════ */}
+      {activeTab === "library" && (
+        <motion.div key="library" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+          <div style={{ paddingTop: 28, paddingBottom: 40 }}>
+
+            {/* ── Library header ── */}
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: S.ink, marginBottom: 4 }}>My Ads</h2>
+                <div style={{ fontSize: 12, color: S.ink3 }}>
+                  {_sessions.length === 0 ? "No saved creatives yet" : `${videoSessions.length} video${videoSessions.length !== 1 ? "s" : ""} · ${imageSessions.length} image${imageSessions.length !== 1 ? "s" : ""} · ${copySessions.length} copy`}
+                </div>
+              </div>
+              {/* Filter pills */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {([["all","All"], ["videos","Videos 🎬"], ["images","Images"], ["copy","Copy"]] as const).map(([key, label]) => {
+                  const count = key === "all" ? _sessions.length : key === "videos" ? videoSessions.length : key === "images" ? imageSessions.length : copySessions.length;
+                  const active = libFilter === key;
+                  return (
+                    <button key={key} onClick={() => setLibFilter(key)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, border: `1px solid ${active ? S.accent : S.border}`, background: active ? "rgba(255,60,172,0.1)" : S.bg3, color: active ? S.accent : S.ink2, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+                      {label}
+                      {count > 0 && <span style={{ background: active ? S.accent : "rgba(255,255,255,0.1)", color: active ? "#fff" : S.ink3, fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 100 }}>{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Video Ads grid ── */}
+            {(libFilter === "all" || libFilter === "videos") && videoSessions.length > 0 && (
+              <div style={{ marginBottom: 36 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>VIDEO ADS</div>
+                  <div style={{ flex: 1, height: 1, background: S.border }} />
+                  <div style={{ fontSize: 10, color: S.ink3 }}>{videoSessions.length} video{videoSessions.length !== 1 ? "s" : ""}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                  {videoSessions.map((sess) => {
+                    const isHov = libHoveredId === `vid-${sess.id}`;
+                    const hook  = sess.copy_variants?.[0]?.headline ?? "";
+                    const script = sess.copy_variants?.[0]?.primaryText ?? "";
+                    return (
+                      <div
+                        key={sess.id}
+                        onMouseEnter={() => setLibHoveredId(`vid-${sess.id}`)}
+                        onMouseLeave={() => setLibHoveredId(null)}
+                        style={{ background: S.bg2, border: `1px solid ${isHov ? "rgba(255,60,172,0.35)" : S.border}`, borderRadius: 16, overflow: "hidden", transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s", transform: isHov ? "translateY(-2px)" : "none", boxShadow: isHov ? "0 12px 40px rgba(0,0,0,0.4)" : "none" }}
+                      >
+                        {/* Video player */}
+                        <div style={{ position: "relative", background: "#000", aspectRatio: "9/16", maxHeight: 280, overflow: "hidden" }}>
+                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                          <video
+                            src={sess.video_url}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                          {/* Download button */}
+                          <a
+                            href={sess.video_url}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download video"
+                            style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 8, background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff", textDecoration: "none", backdropFilter: "blur(4px)" }}
+                          >⬇</a>
+                          {/* UGC badge */}
+                          <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 700, background: "linear-gradient(135deg,#ff3cac,#784ba0)", color: "#fff", padding: "3px 7px", borderRadius: 6 }}>UGC</span>
+                        </div>
+
+                        {/* Info */}
+                        <div style={{ padding: "12px 14px 14px" }}>
+                          {hook && (
+                            <div style={{ fontSize: 11, fontWeight: 700, color: S.ink, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {hook}
+                            </div>
+                          )}
+                          {script && (
+                            <div style={{ fontSize: 10, color: S.ink3, lineHeight: 1.4, marginBottom: 8, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                              {script}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 10, color: S.ink3 }}>{timeAgo(sess.created_at)}</span>
+                            <span style={{ fontSize: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${S.border}`, color: S.ink3, padding: "2px 7px", borderRadius: 100 }}>
+                              {sess.prompt ? sess.prompt.slice(0, 24) + (sess.prompt.length > 24 ? "…" : "") : "Video Ad"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CREATOR STYLE</p>
-                  <select
-                    value={ugcStyle}
-                    onChange={e => setUgcStyle(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#E8E5E0] bg-[#F7F5F2] text-[#0a0a0f] text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed]/20 focus:border-[#7c3aed]/40 transition-all cursor-pointer"
-                  >
-                    {UGC_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
               </div>
+            )}
 
-              {/* ─ Section 4: Settings ─ */}
-              <div className="space-y-4">
-                {/* Language */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">LANGUAGE</p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {["English", "French", "Arabic", "Darija"].map(lang => (
-                      <button
-                        key={lang}
-                        onClick={() => setUgcLang(lang)}
-                        className="py-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
-                        style={{
-                          background:  ugcLang === lang ? "rgba(124,58,237,0.10)" : "#F7F5F2",
-                          color:       ugcLang === lang ? "#7c3aed" : "#6b7280",
-                          border:      `1.5px solid ${ugcLang === lang ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
-                        }}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
+            {/* ── Image Ads grid ── */}
+            {(libFilter === "all" || libFilter === "images") && imageSessions.length > 0 && (
+              <div style={{ marginBottom: 36 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>IMAGE ADS</div>
+                  <div style={{ flex: 1, height: 1, background: S.border }} />
+                  <div style={{ fontSize: 10, color: S.ink3 }}>{imageSessions.length} batch{imageSessions.length !== 1 ? "es" : ""}</div>
                 </div>
-
-                {/* Duration */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">DURATION</p>
-                  <div className="flex gap-2">
-                    {([5, 10, 15] as const).map(d => (
-                      <button
-                        key={d}
-                        onClick={() => setUgcDuration(d)}
-                        className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
-                        style={{
-                          background:  ugcDuration === d ? "rgba(124,58,237,0.10)" : "#F7F5F2",
-                          color:       ugcDuration === d ? "#7c3aed" : "#6b7280",
-                          border:      `2px solid ${ugcDuration === d ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
-                        }}
-                      >
-                        {d}s
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Aspect ratio */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">ASPECT RATIO</p>
-                  <div className="flex gap-2">
-                    {(["9:16", "1:1", "16:9"] as const).map(ratio => {
-                      const labels = { "9:16": "Story", "1:1": "Feed", "16:9": "Landscape" };
-                      return (
-                        <button
-                          key={ratio}
-                          onClick={() => setUgcRatio(ratio)}
-                          className="flex-1 py-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer text-center"
-                          style={{
-                            background:  ugcRatio === ratio ? "rgba(124,58,237,0.10)" : "#F7F5F2",
-                            color:       ugcRatio === ratio ? "#7c3aed" : "#6b7280",
-                            border:      `1.5px solid ${ugcRatio === ratio ? "rgba(124,58,237,0.35)" : "#E8E5E0"}`,
-                          }}
-                        >
-                          <span style={{ fontSize: 9, display: "block", opacity: 0.7 }}>{ratio}</span>
-                          {labels[ratio]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* ─ Generate button / usage gate ─ */}
-              {(() => {
-                const plan        = isAdmin ? "pro" : ugcPlan;
-                const limit       = isAdmin ? 30    : (UGC_LIMIT[plan] ?? 0);
-                const used        = isAdmin ? 0     : ugcUsage;
-                const exhausted   = !isAdmin && used >= limit;
-                const canAccess   = isAdmin || plan !== "free";
-                const hasProduct   = ugcInputMode === "image" ? !!ugcImage : !!ugcProductUrl.trim();
-                const btnDisabled = !hasProduct || !ugcProduct.trim() || ugcLoading || exhausted;
-
-                return (
-                  <div className="mt-auto space-y-2">
-                    {/* Free plan — fully locked */}
-                    {!canAccess && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                  {imageSessions.map((sess) => {
+                    const isHov = libHoveredId === sess.id;
+                    const isExp = expandedHistoryIds.has(sess.id);
+                    return (
                       <div
-                        className="rounded-2xl p-5 text-center space-y-3"
-                        style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.18)" }}
+                        key={sess.id}
+                        onMouseEnter={() => setLibHoveredId(sess.id)}
+                        onMouseLeave={() => setLibHoveredId(null)}
+                        style={{ background: S.bg2, border: `1px solid ${isHov ? "rgba(255,60,172,0.35)" : S.border}`, borderRadius: 16, overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s", transform: isHov ? "translateY(-2px)" : "none", boxShadow: isHov ? "0 12px 40px rgba(0,0,0,0.4)" : "none" }}
+                        onClick={() => toggleHistory(sess.id)}
                       >
-                        <div style={{ fontSize: 26 }}>🔒</div>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>UGC Video</p>
-                          <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", marginTop: 4, lineHeight: 1.5 }}>
-                            Available on Starter and Pro plans
-                          </p>
+                        {/* 2×2 thumbnail mosaic */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: S.bg3 }}>
+                          {sess.image_urls.slice(0, 4).map((img, i) => (
+                            <div key={i} style={{ aspectRatio: "1", overflow: "hidden", background: S.bg3, position: "relative" }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img.url} alt={img.angle ?? `Ad ${i+1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            </div>
+                          ))}
+                          {/* Fill empty slots */}
+                          {Array.from({ length: Math.max(0, 4 - sess.image_urls.length) }).map((_, i) => (
+                            <div key={`empty-${i}`} style={{ aspectRatio: "1", background: S.bg3 }} />
+                          ))}
                         </div>
-                        <button
-                          onClick={() => onPaywall?.("image")}
-                          className="w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer"
-                          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none" }}
-                        >
-                          Upgrade to Starter →
-                        </button>
-                      </div>
-                    )}
 
-                    {/* Starter exhausted — upgrade to Pro */}
-                    {canAccess && exhausted && plan === "starter" && (
-                      <div
-                        className="rounded-2xl p-4 text-center space-y-2.5"
-                        style={{ background: "rgba(225,112,85,0.06)", border: "1px solid rgba(225,112,85,0.22)" }}
-                      >
-                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>
-                          Monthly limit reached
-                        </p>
-                        <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
-                          You&apos;ve used all {limit} UGC videos this month. Upgrade to Pro for 30/month.
-                        </p>
-                        <button
-                          onClick={() => onPaywall?.("image")}
-                          className="w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer"
-                          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none" }}
-                        >
-                          Upgrade to Pro — 30/month →
-                        </button>
-                      </div>
-                    )}
+                        {/* Info */}
+                        <div style={{ padding: "12px 14px 14px" }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.3 }}>
+                            {sess.prompt || "Image Ad"}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 11, color: S.ink3 }}>{timeAgo(sess.created_at)}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${S.border}`, color: S.ink3, padding: "2px 7px", borderRadius: 100 }}>
+                                {sess.image_urls.length} images
+                              </span>
+                              <span style={{ fontSize: 10, color: S.ink3, opacity: 0.5 }}>{isExp ? "▲" : "▼"}</span>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* Pro exhausted — show reset date */}
-                    {canAccess && exhausted && plan === "pro" && (
-                      <div
-                        className="rounded-2xl p-4 text-center space-y-1.5"
-                        style={{ background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.16)" }}
-                      >
-                        <p style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0f", fontFamily: "var(--font-inter)" }}>
-                          Monthly limit reached
-                        </p>
-                        <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
-                          You&apos;ve used all {limit} UGC videos this month.
-                          <br />Resets on {getNextResetDate()}.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Generate button — accessible + not exhausted */}
-                    {canAccess && !exhausted && (
-                      <>
-                        <button
-                          onClick={generateUgc}
-                          disabled={btnDisabled}
-                          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{
-                            background: btnDisabled ? "#e8e8f0" : "linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)",
-                            color:      btnDisabled ? "#9ca3af" : "#fff",
-                            boxShadow:  btnDisabled ? "none"    : "0 4px 20px rgba(124,58,237,0.30)",
-                            border:     "none",
-                          }}
-                        >
-                          {ugcLoading
-                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-                            : <><Video className="w-4 h-4" /> Generate Avatar Ad</>
-                          }
-                        </button>
-
-                        {/* Counter */}
-                        <p className="text-[11px] text-[#9ca3af] text-center" style={{ fontFamily: "var(--font-inter)" }}>
-                          {plan === "starter"
-                            ? `${used} of ${limit} UGC videos used this month`
-                            : `${limit - used} of ${limit} monthly UGC videos remaining`
-                          }
-                        </p>
-
-                        {!ugcImage && ugcInputMode === "image" && (
-                          <p className="text-[11px] text-[#9ca3af] text-center">↑ Upload a product image to enable generation</p>
+                        {/* Expanded full grid */}
+                        {isExp && (
+                          <div style={{ padding: "0 12px 14px", borderTop: `1px solid ${S.border}` }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 6, paddingTop: 12 }}>
+                              {sess.image_urls.map((img, i) => (
+                                <div key={i} style={{ borderRadius: 8, overflow: "hidden", position: "relative", aspectRatio: "0.56", background: S.bg3 }}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={img.url} alt={img.angle ?? `Ad ${i+1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                  {img.angle && <span style={{ position: "absolute", top: 5, left: 5, background: "rgba(0,0,0,0.65)", color: "#fff", fontSize: 7, fontWeight: 700, padding: "2px 5px", borderRadius: 4 }}>{img.angle}</span>}
+                                  <a href={img.url} download target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ position: "absolute", bottom: 5, right: 5, width: 22, height: 22, borderRadius: 6, background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", textDecoration: "none" }}>⬇</a>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
-                        {!ugcProductUrl.trim() && ugcInputMode === "url" && (
-                          <p className="text-[11px] text-[#9ca3af] text-center">↑ Enter your product URL to enable generation</p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* ─ Script preview ─ */}
-              {ugcScript && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">YOUR UGC SCRIPT</p>
-                    <button
-                      onClick={() => setUgcScriptOpen(o => !o)}
-                      className="text-[11px] font-semibold cursor-pointer"
-                      style={{ color: "#7c3aed", background: "none", border: "none" }}
-                    >
-                      {ugcScriptOpen ? "Hide ▲" : "Show ▼"}
-                    </button>
-                  </div>
-                  {ugcScriptOpen && (
-                    <div className="relative">
-                      <div
-                        className="p-3 rounded-xl text-[12px] leading-relaxed whitespace-pre-line"
-                        style={{ background: "#F7F5F2", border: "1px solid #E8E5E0", color: "#374151", maxHeight: 180, overflowY: "auto" }}
-                      >
-                        {ugcScript}
                       </div>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(ugcScript);
-                          setUgcScriptCopied(true);
-                          setTimeout(() => setUgcScriptCopied(false), 2000);
-                        }}
-                        className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold cursor-pointer transition-all"
-                        style={{
-                          background: ugcScriptCopied ? "#ecfdf5" : "rgba(255,255,255,0.90)",
-                          color:      ugcScriptCopied ? "#059669" : "#6b7280",
-                          border:     `1px solid ${ugcScriptCopied ? "#a7f3d0" : "#E8E5E0"}`,
-                          backdropFilter: "blur(4px)",
-                        }}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Copy sessions ── */}
+            {(libFilter === "all" || libFilter === "copy") && copySessions.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>AD COPY</div>
+                  <div style={{ flex: 1, height: 1, background: S.border }} />
+                  <div style={{ fontSize: 10, color: S.ink3 }}>{copySessions.length} session{copySessions.length !== 1 ? "s" : ""}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
+                  {copySessions.map((sess) => {
+                    const lead = sess.copy_variants?.[0];
+                    const isHov = libHoveredId === `copy-${sess.id}`;
+                    const isExp = expandedHistoryIds.has(sess.id);
+                    return (
+                      <div
+                        key={sess.id}
+                        onMouseEnter={() => setLibHoveredId(`copy-${sess.id}`)}
+                        onMouseLeave={() => setLibHoveredId(null)}
+                        style={{ background: S.bg2, border: `1px solid ${isHov ? "rgba(255,60,172,0.35)" : S.border}`, borderRadius: 16, padding: 18, cursor: "pointer", transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s", transform: isHov ? "translateY(-2px)" : "none", boxShadow: isHov ? "0 12px 40px rgba(0,0,0,0.4)" : "none" }}
+                        onClick={() => toggleHistory(sess.id)}
                       >
-                        {ugcScriptCopied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy Script</>}
-                      </button>
+                        {/* Big quote mark */}
+                        <div style={{ fontSize: 40, lineHeight: 1, color: S.accent, opacity: 0.25, fontFamily: "Georgia,serif", marginBottom: 4, userSelect: "none" }}>&quot;</div>
+
+                        {/* Lead headline */}
+                        {lead && (
+                          <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.3, color: S.ink, marginBottom: 8 }}>
+                            {lead.headline}
+                          </div>
+                        )}
+
+                        {/* Primary text preview */}
+                        {lead && (
+                          <div style={{ fontSize: 12, color: S.ink2, lineHeight: 1.65, marginBottom: 14, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                            {lead.primaryText}
+                          </div>
+                        )}
+
+                        {/* Footer row */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {lead?.cta && (
+                              <span style={{ display: "inline-flex", background: S.grad, color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 100 }}>{lead.cta}</span>
+                            )}
+                            <span style={{ fontSize: 10, background: "rgba(255,255,255,0.06)", border: `1px solid ${S.border}`, color: S.ink3, padding: "2px 7px", borderRadius: 100 }}>
+                              {sess.copy_variants?.length ?? 0} variants
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 11, color: S.ink3 }}>{timeAgo(sess.created_at)}</span>
+                            <span style={{ fontSize: 10, color: S.ink3, opacity: 0.5 }}>{isExp ? "▲" : "▼"}</span>
+                          </div>
+                        </div>
+
+                        {/* Expanded all variants */}
+                        {isExp && sess.copy_variants && (
+                          <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${S.border}`, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8 }}>
+                            {sess.copy_variants.map((v, i) => (
+                              <div key={i} style={{ background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 10, padding: 12 }}>
+                                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: S.ink3, marginBottom: 5 }}>Variant {String.fromCharCode(65+i)} · {v.hookType}</div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 5, lineHeight: 1.3 }}>{v.headline}</div>
+                                <div style={{ fontSize: 11, color: S.ink2, lineHeight: 1.5, marginBottom: 8 }}>{v.primaryText}</div>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <span style={{ display: "inline-flex", background: S.grad, color: "#fff", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 100 }}>{v.cta}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${v.headline}\n\n${v.primaryText}\n\n${v.cta}`); }} style={{ background: S.bg4, border: `1px solid ${S.border}`, borderRadius: 6, padding: "3px 8px", fontSize: 10, color: S.ink2, cursor: "pointer" }}>Copy</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Empty state ── */}
+            {_sessions.length === 0 && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", textAlign: "center" }}>
+                {/* Animated gradient orb */}
+                <div style={{ width: 80, height: 80, borderRadius: "50%", background: S.grad, opacity: 0.15, marginBottom: 24, filter: "blur(16px)" }} />
+                <div style={{ fontSize: 48, marginBottom: 16, marginTop: -60 }}>✨</div>
+                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8, color: S.ink }}>Your creative library is empty</div>
+                <div style={{ fontSize: 13, maxWidth: 300, margin: "0 auto 24px", lineHeight: 1.7, color: S.ink2 }}>
+                  Generate image ads, copy variants, or UGC videos — they&apos;ll all appear here automatically.
+                </div>
+                <button onClick={() => setActiveTab("creative")} style={{ display: "flex", alignItems: "center", gap: 7, background: S.grad, border: "none", borderRadius: 12, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px 24px", cursor: "pointer", boxShadow: "0 4px 20px rgba(255,60,172,0.4)" }}>
+                  <Sparkles className="w-3.5 h-3.5" /> Create your first ad
+                </button>
+              </div>
+            )}
+
+            {/* ── No results for filter ── */}
+            {_sessions.length > 0 && (
+              (libFilter === "videos"  && videoSessions.length  === 0) ||
+              (libFilter === "images"  && imageSessions.length  === 0) ||
+              (libFilter === "copy"    && copySessions.length   === 0)
+            ) && (
+              <div style={{ textAlign: "center", padding: "60px 0", color: S.ink2 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>
+                  {libFilter === "videos" ? "🎬" : libFilter === "images" ? "🖼" : "✍️"}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: S.ink, marginBottom: 6 }}>
+                  No {libFilter === "videos" ? "video ads" : libFilter === "images" ? "image ads" : "copy"} saved yet
+                </div>
+                <button
+                  onClick={() => setActiveTab(libFilter === "copy" ? "adcopy" : "ugc")}
+                  style={{ marginTop: 12, background: "none", border: `1px solid ${S.border}`, borderRadius: 8, padding: "6px 16px", fontSize: 12, color: S.ink2, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Generate {libFilter === "videos" ? "video ads" : libFilter === "images" ? "image ads" : "copy"} →
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      </div>{/* end scrollable canvas */}
+
+      {/* ════ PROMPT BAR (flex-shrink:0, bottom of column) ════ */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          flexShrink: 0,
+          background: "rgba(15,15,24,0.97)", backdropFilter: "blur(24px)",
+          borderTop: `1px solid ${S.border}`,
+          padding: "12px 24px 16px",
+          display: (
+            (activeTab === "creative" && (loading     || images.length === 0)) ||
+            (activeTab === "adcopy"   && (copyLoading  || copyVariants.length === 0)) ||
+            (activeTab === "ugc"      && (ugcLoading   || !ugcVideoUrl))
+          ) ? "none" : "flex",
+          flexDirection: "column", gap: 10,
+        }}
+      >
+        {/* Options row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+          {/* Add Image (image tab) */}
+          {activeTab === "creative" && (
+            <>
+              <button onClick={() => imageInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, background: refImage ? "rgba(255,60,172,0.08)" : S.bg3, border: `1px solid ${refImage ? S.accent : S.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 500, color: refImage ? S.accent : S.ink2, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit" }}>
+                <Camera className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> {refImage ? "Image added ✓" : "Add Image"}
+              </button>
+              <div style={{ width: 1, height: 20, background: S.border, flexShrink: 0 }} />
+            </>
+          )}
+
+          {/* Add Product (video tab image mode) */}
+          {activeTab === "ugc" && ugcInputMode === "image" && (
+            <>
+              <button onClick={() => ugcImageRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, background: ugcImage ? "rgba(255,60,172,0.08)" : S.bg3, border: `1px solid ${ugcImage ? S.accent : S.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 500, color: ugcImage ? S.accent : S.ink2, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit" }}>
+                <Camera className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> {ugcImage ? "Product added ✓" : "Add Product"}
+              </button>
+              <div style={{ width: 1, height: 20, background: S.border, flexShrink: 0 }} />
+            </>
+          )}
+
+          {/* Format (video only in bottom bar) */}
+          {activeTab === "ugc" && (
+            <div onClick={(e) => { e.stopPropagation(); toggleDD("fmt-dd"); }} style={{ display: "flex", alignItems: "center", gap: 6, background: openDD === "fmt-dd" ? "rgba(255,60,172,0.08)" : S.bg3, border: `1px solid ${openDD === "fmt-dd" ? S.accent : S.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: openDD === "fmt-dd" ? S.accent : S.ink, cursor: "pointer", position: "relative", userSelect: "none" }}>
+              {ugcRatio === "9:16" ? <Smartphone className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> : <Monitor className="w-3.5 h-3.5" style={{ flexShrink: 0 }} />}
+              <span>{imageFormatLabel}</span> <span style={{ opacity: 0.5, fontSize: 10 }}>▾</span>
+              {openDD === "fmt-dd" && (
+                <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", bottom: "calc(100% + 8px)", left: 0, background: "#111120", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 16, padding: 8, width: 340, boxShadow: "0 20px 60px rgba(0,0,0,0.8)", zIndex: 400 }}>
+                  {([
+                    { val: "16:9" as const, label: "Desktop", Icon: Monitor,    desc: "UGC ad for your website or desktop app",    preview: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=200&h=110&fit=crop&auto=format&q=75",  tw: 90, th: 58 },
+                    { val: "9:16" as const, label: "Mobile",  Icon: Smartphone, desc: "Vertical UGC for TikTok, Reels & Stories", preview: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=355&fit=crop&auto=format&q=75", tw: 46, th: 76 },
+                  ] as const).map(({ val, label, Icon, desc, preview, tw, th }) => {
+                    const active = ugcRatio === val;
+                    return (
+                    <div key={val} onClick={(e) => { e.stopPropagation(); setUgcRatio(val); setOpenDD(null); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "10px 12px", borderRadius: 12, cursor: "pointer", background: active ? "rgba(255,255,255,0.07)" : "none", marginBottom: 4, transition: "background 0.12s" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+                          <Icon className="w-4 h-4" style={{ color: active ? "#FF3CAC" : "#9090AC", flexShrink: 0 }} />
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#EEEEF5" }}>{label}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#52526A", lineHeight: 1.4 }}>{desc}</div>
+                      </div>
+                      <div style={{ width: tw, height: th, borderRadius: 9, overflow: "hidden", flexShrink: 0, background: "#1E1E30", border: active ? "1.5px solid #FF3CAC" : "1.5px solid rgba(255,255,255,0.06)", boxSizing: "border-box" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      </div>
                     </div>
-                  )}
+                    );
+                  })}
                 </div>
               )}
             </div>
-            )} {/* end (isAdmin || ugcPlan !== "free") left panel */}
+          )}
 
-            {/* ── RIGHT: Output (Starter / Pro only) ── */}
-            {(isAdmin || ugcPlan !== "free") && (
-            <div className="w-full lg:w-[60%] bg-[#F7F5F2] flex flex-col p-6 overflow-y-auto">
-              <AnimatePresence mode="wait">
-
-                {/* ─ Empty state ─ */}
-                {(isAdmin || ugcPlan !== "free") && ugcStage === 0 && !ugcVideoUrl && !ugcError && !ugcLoading && (
-                  <motion.div
-                    key="ugc-empty"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-6"
-                  >
-                    <div className="flex items-center justify-center rounded-3xl" style={{ width: 80, height: 80, background: "rgba(124,58,237,0.08)", border: "2px dashed rgba(124,58,237,0.25)" }}>
-                      <Video className="w-8 h-8" style={{ color: "rgba(124,58,237,0.45)" }} />
+          {/* Language (all except library) */}
+          {activeTab !== "library" && (
+            <div onClick={(e) => { e.stopPropagation(); toggleDD("lang-dd"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "lang-dd" ? "rgba(255,60,172,0.08)" : S.bg3, border: `1px solid ${openDD === "lang-dd" ? S.accent : S.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 500, color: openDD === "lang-dd" ? S.accent : S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+              <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 3 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.5, marginLeft: 2 }} />
+              {openDD === "lang-dd" && (
+                <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", zIndex: 200 }}>
+                  {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                    <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                      {label} {activeLang === val && <Check className="w-3 h-3" />}
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-[#0a0a0f]">Your avatar ad will appear here</p>
-                      <p className="text-xs text-[#9ca3af] mt-1">Pick an avatar, add your product, click Generate</p>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {["Perfect for Meta Feed", "Instagram Stories", "TikTok Ads"].map(label => (
-                        <span
-                          key={label}
-                          className="px-3 py-1.5 rounded-full text-[11px] font-semibold"
-                          style={{ background: "#fff", border: "1px solid #E8E5E0", color: "#6b7280" }}
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ─ Error state ─ */}
-                {ugcError && !ugcLoading && (
-                  <motion.div
-                    key="ugc-error"
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-4"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">⚠️</div>
-                    <p className="text-sm font-semibold text-[#0a0a0f] text-center max-w-xs">{ugcError}</p>
-                    <button
-                      onClick={generateUgc}
-                      disabled={ugcInputMode === "image" ? !ugcImage : !ugcProductUrl.trim()}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                      style={{ background: "#7c3aed" }}
-                    >
-                      <RefreshCw className="w-4 h-4" /> Try Again
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* ─ Generation stages ─ */}
-                {ugcLoading && (
-                  <motion.div
-                    key="ugc-loading"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center gap-8"
-                  >
-                    {/* Stage steps */}
-                    <div className="w-full max-w-sm space-y-3">
-                      {[
-                        { stage: 1, icon: "✍️", label: "Writing UGC script…"      },
-                        { stage: 2, icon: "🎥", label: "Generating avatar video…"  },
-                        { stage: 3, icon: "🎙️", label: "Generating voiceover…"    },
-                        { stage: 4, icon: "👄", label: "Syncing lips to audio…"   },
-                        { stage: 5, icon: "✅", label: "Your avatar ad is ready!"  },
-                      ].map(step => {
-                        const isActive = ugcStage === step.stage;
-                        const isDone   = ugcStage > step.stage;
-                        return (
-                          <div
-                            key={step.stage}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
-                            style={{
-                              background:  isActive ? "rgba(124,58,237,0.08)" : isDone ? "rgba(22,163,74,0.05)" : "rgba(0,0,0,0.03)",
-                              border:      `1px solid ${isActive ? "rgba(124,58,237,0.22)" : isDone ? "rgba(22,163,74,0.18)" : "transparent"}`,
-                            }}
-                          >
-                            {isActive
-                              ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: "#7c3aed" }} />
-                              : isDone
-                              ? <Check className="w-4 h-4 flex-shrink-0" style={{ color: "#16a34a" }} />
-                              : <span className="w-4 h-4 flex-shrink-0" />
-                            }
-                            <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? "#7c3aed" : isDone ? "#16a34a" : "#9ca3af", fontFamily: "var(--font-inter)" }}>
-                              {step.icon} {step.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Progress bar for stage 2 */}
-                    {ugcStage === 2 && (
-                      <div className="w-full max-w-sm space-y-1.5">
-                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(124,58,237,0.12)" }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{ width: `${ugcProgress}%`, background: "linear-gradient(90deg,#7c3aed,#a855f7)" }}
-                          />
-                        </div>
-                        <p className="text-[11px] text-[#9ca3af] text-center">This takes 2–3 minutes — please keep this tab open</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-
-                {/* ─ Video output ─ */}
-                {ugcVideoUrl && !ugcLoading && (
-                  <motion.div
-                    key="ugc-output"
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="space-y-5"
-                  >
-                    {/* Video title */}
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <p className="text-sm font-bold text-[#0a0a0f]">
-                          {AVATAR_PRESETS.find(a => a.id === ugcAvatar)?.name ?? ugcAvatar} · {ugcHook} · {ugcDuration}s
-                        </p>
-                        <p className="text-xs text-[#9ca3af] mt-0.5">{ugcStyle} · {ugcRatio} · {ugcLang}</p>
-                      </div>
-                      <div className="flex gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(22,163,74,0.10)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.22)" }}>✅ Ready</span>
-                        {ugcHasVoiceover && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.10)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.22)" }}>🎙️ Voice</span>}
-                        {ugcHasLipsync   && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(59,130,246,0.10)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.22)" }}>👄 Synced</span>}
-                      </div>
-                    </div>
-
-                    {/* Video player */}
-                    <div
-                      className="rounded-2xl overflow-hidden mx-auto bg-black"
-                      style={{
-                        width:  ugcRatio === "9:16" ? 280 : "100%",
-                        aspectRatio: ugcRatio === "9:16" ? "9/16" : ugcRatio === "1:1" ? "1/1" : "16/9",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      <video
-                        src={ugcVideoUrl}
-                        controls
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Clip 2 (15 s) */}
-                    {ugcNeedsMerge && ugcClip2Url && (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-semibold text-[#9ca3af]">Clip 2 — CTA Moment (5s)</p>
-                        <div className="rounded-2xl overflow-hidden bg-black" style={{ aspectRatio: ugcRatio === "16:9" ? "16/9" : ugcRatio === "1:1" ? "1/1" : "9/16", maxWidth: ugcRatio === "9:16" ? 200 : "100%" }}>
-                          <video src={ugcClip2Url} controls muted loop playsInline className="w-full h-full object-cover" />
-                        </div>
-                        <p className="text-[10px] text-[#9ca3af]">💡 Merge Clip 1 + Clip 2 in CapCut or Premiere for your full 15s video</p>
-                      </div>
-                    )}
-
-                    {/* Action buttons */}
-                    <div className="flex gap-2">
-                      <a
-                        href={ugcVideoUrl}
-                        download={`adurai-ugc-${ugcHook.replace(/\//g,"-").toLowerCase()}-${ugcDuration}s.mp4`}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
-                        style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", textDecoration: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.28)" }}
-                      >
-                        <Download className="w-3.5 h-3.5" /> Download MP4
-                      </a>
-                      <button
-                        onClick={generateUgc}
-                        disabled={ugcLoading}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
-                        style={{ background: "#fff", color: "#6b7280", border: "1px solid #E8E5E0" }}
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" /> Regenerate
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (ugcScript) {
-                            navigator.clipboard.writeText(ugcScript);
-                            setUgcScriptCopied(true);
-                            setTimeout(() => setUgcScriptCopied(false), 2000);
-                          }
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
-                        style={{ background: "#fff", color: ugcScriptCopied ? "#059669" : "#6b7280", border: `1px solid ${ugcScriptCopied ? "#a7f3d0" : "#E8E5E0"}` }}
-                      >
-                        {ugcScriptCopied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Script</>}
-                      </button>
-                    </div>
-
-                    {/* Pro tips */}
-                    <div
-                      className="rounded-2xl p-4 space-y-2"
-                      style={{ background: "rgba(124,58,237,0.04)", border: "1px solid rgba(124,58,237,0.12)" }}
-                    >
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", fontFamily: "var(--font-inter)" }}>💡 Pro Tips for this UGC</p>
-                      {[
-                        "Hook should stop scroll in the first 1.5 seconds",
-                        "Add captions — 85% of people watch without sound",
-                        "Test 3 different hooks with the same product",
-                      ].map(tip => (
-                        <div key={tip} className="flex items-start gap-2">
-                          <span style={{ color: "#a855f7", marginTop: 1, flexShrink: 0, fontSize: 10 }}>▸</span>
-                          <p style={{ fontSize: 12, color: "#6b7280", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>{tip}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-            </div>
-            )} {/* end (isAdmin || ugcPlan !== "free") right panel */}
-
-          </motion.div>
-        )}
-
-        {/* ════════════════════════════════════════════
-            AVATAR SELECTION MODAL
-        ════════════════════════════════════════════ */}
-        {ugcAvatarModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
-            onClick={e => { if (e.target === e.currentTarget) setUgcAvatarModalOpen(false); }}
-          >
-            <div className="w-full bg-white rounded-2xl shadow-2xl overflow-hidden" style={{ maxWidth: 520, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f5]">
-                <div>
-                  <p className="text-base font-bold text-[#0a0a0f]">Choose Your Avatar</p>
-                  <p className="text-xs text-[#9ca3af] mt-0.5">Select a pre-built creator or upload your own photo</p>
+                  ))}
                 </div>
+              )}
+            </div>
+          )}
+
+
+          {/* Duration (video only) */}
+          {activeTab === "ugc" && (
+            <div onClick={(e) => { e.stopPropagation(); toggleDD("dur-dd"); }} style={{ display: "flex", alignItems: "center", gap: 5, background: openDD === "dur-dd" ? "rgba(255,60,172,0.08)" : S.bg3, border: `1px solid ${openDD === "dur-dd" ? S.accent : S.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 500, color: openDD === "dur-dd" ? S.accent : S.ink2, cursor: "pointer", position: "relative", userSelect: "none" }}>
+              Duration: <span style={{ color: S.ink, fontWeight: 600, marginLeft: 3 }}>{ugcDuration}s</span> <span style={{ opacity: 0.5, fontSize: 10 }}>▾</span>
+              {openDD === "dur-dd" && (
+                <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", zIndex: 200 }}>
+                  {[5,10,15].map(d => (
+                    <div key={d} onClick={(e) => { e.stopPropagation(); setUgcDuration(d as 5|10|15); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: ugcDuration === d ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+                      {d}s {ugcDuration === d && <span style={{ fontSize: 10 }}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* Input row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+
+          {/* Image preview */}
+          {activeTab === "creative" && refImage && (
+            <div style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", border: `1px solid ${S.border2}`, flexShrink: 0, position: "relative" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={refImage.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <button onClick={clearImage} style={{ position: "absolute", top: 1, right: 1, width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", fontSize: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>×</button>
+            </div>
+          )}
+          {activeTab === "ugc" && ugcImage && (
+            <div style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", border: `1px solid ${S.border2}`, flexShrink: 0, position: "relative" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ugcImage.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <button onClick={clearUgcImage} style={{ position: "absolute", top: 1, right: 1, width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", fontSize: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>×</button>
+            </div>
+          )}
+
+          {/* Hide the input textarea for free users on the UGC tab — the lock screen is the CTA */}
+          {!(activeTab === "ugc" && !isAdmin && ugcPlan === "free") && (
+            <textarea
+              value={barValue}
+              onChange={(e) => setBarValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+              placeholder={
+                activeTab === "creative" ? "Describe your ad… e.g. Premium skincare serum, bold dark background." :
+                activeTab === "adcopy"   ? "Describe your product… e.g. Anti-aging serum. Results in 7 days." :
+                activeTab === "ugc"      ? "Describe your product… e.g. Whitening serum for women. 299 DH." :
+                "Search your saved ads…"
+              }
+              style={{ flex: 1, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 10, padding: "10px 14px", fontFamily: "inherit", fontSize: 13, color: S.ink, outline: "none", resize: "none", lineHeight: 1.4, height: 42, transition: "border-color 0.15s" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,60,172,0.4)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = S.border; }}
+            />
+          )}
+
+          {/* Remaining count chip — image/copy on free plan */}
+          {!isPaid && !isAdmin && activeTab !== "library" && activeTab !== "ugc" && (
+            <span style={{ fontSize: 10, color: S.ink3, whiteSpace: "nowrap", flexShrink: 0 }}>
+              {activeTab === "creative" ? `${Math.max(0, CREATIVE_LIMIT - imageUsage)} left` :
+               activeTab === "adcopy"   ? `${Math.max(0, CREATIVE_LIMIT - copyUsage)} left` : ""}
+            </span>
+          )}
+
+          {/* Generate button — show Lock for free UGC users, normal otherwise */}
+          {activeTab !== "library" && (
+            activeTab === "ugc" && !isAdmin && ugcPlan === "free"
+              ? (
                 <button
-                  onClick={() => setUgcAvatarModalOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F7F5F2] transition-colors cursor-pointer"
-                  style={{ color: "#9ca3af" }}
+                  onClick={() => onPaywall?.("ugc")}
+                  style={{ display: "flex", alignItems: "center", gap: 7, background: S.bg4, border: `1px solid rgba(255,60,172,0.3)`, borderRadius: 10, color: "#FF3CAC", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "0 20px", height: 42, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
-                  <X className="w-4 h-4" />
+                  <Lock className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> Unlock UGC
+                </button>
+              ) : (
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || (!barValue.trim() && !(activeTab === "ugc" && ugcInputMode === "url" && ugcProductUrl.trim()))}
+                  style={{ display: "flex", alignItems: "center", gap: 7, background: isGenerating ? S.bg4 : S.grad, border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "0 20px", height: 42, cursor: isGenerating ? "not-allowed" : "pointer", boxShadow: isGenerating ? "none" : S.glow, transition: "opacity 0.15s", opacity: isGenerating ? 0.7 : 1, letterSpacing: "-0.01em", whiteSpace: "nowrap", flexShrink: 0 }}
+                >
+                  {isGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ flexShrink: 0 }} /> Generating…</> : <><Sparkles className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> {genBtnLabel}</>}
+                </button>
+              )
+          )}
+        </div>
+      </div>
+
+      {/* ════ HIDDEN FILE INPUTS ════ */}
+      <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleImageChange} />
+      <input ref={ugcImageRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleUgcImageChange} />
+      <input ref={ugcAvatarFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        const previewUrl = URL.createObjectURL(f);
+        setUgcAvatarModalCustom({ file: f, previewUrl });
+        e.target.value = "";
+      }} />
+
+      {/* ════ PRODUCT / APP MODAL ════ */}
+      {productModalOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(6,6,14,0.88)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={() => { setProductModalOpen(false); setProductModalMode("main"); }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#14142A", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 24, width: "100%", maxWidth: 680, overflow: "hidden", boxShadow: "0 32px 100px rgba(0,0,0,0.7)" }}
+          >
+            {/* ── Top bar: tabs + back/close ── */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "#EEEEF5" }}>
+                <ShoppingBag className="w-3.5 h-3.5" style={{ color: "#FF3CAC" }} /> Product
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {productModalMode === "manual" && (
+                  <button onClick={() => setProductModalMode("main")} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 12px", cursor: "pointer", color: "#9090AC", fontSize: 12, fontFamily: "inherit" }}>← Back</button>
+                )}
+                <button onClick={() => { setProductModalOpen(false); setProductModalMode("main"); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, width: 30, height: 30, cursor: "pointer", color: "#9090AC", fontSize: 14, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              </div>
+            </div>
+
+            {/* ══ MANUAL MODE ══ */}
+            {productModalMode === "manual" ? (
+              <div style={{ padding: "24px 28px 28px" }}>
+                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "#EEEEF5", marginBottom: 6, lineHeight: 1.1 }}>
+                  Describe your product manually
+                </h2>
+                <p style={{ fontSize: 13, color: "#52526A", lineHeight: 1.5, marginBottom: 20 }}>
+                  Fill in the details — we&apos;ll use this to write the perfect UGC script.
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {/* Name field */}
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#52526A", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                      Product name *
+                    </label>
+                    <input
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      placeholder="e.g. AquaGlow Serum"
+                      style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "10px 14px", color: "#EEEEF5", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Description field */}
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#52526A", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                      Description
+                    </label>
+                    <textarea
+                      value={manualDesc}
+                      onChange={(e) => setManualDesc(e.target.value)}
+                      placeholder="e.g. Anti-aging serum for women. Visible results in 7 days. 299 DH."
+                      rows={3}
+                      style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "10px 14px", color: "#EEEEF5", fontSize: 14, outline: "none", fontFamily: "inherit", resize: "none", lineHeight: 1.5, boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Upload image */}
+                  <div
+                    onClick={() => { ugcImageRef.current?.click(); }}
+                    style={{ display: "flex", alignItems: "center", gap: 10, background: ugcImage ? "rgba(255,60,172,0.06)" : "rgba(255,255,255,0.025)", border: `1.5px dashed ${ugcImage ? "#FF3CAC" : "rgba(255,255,255,0.1)"}`, borderRadius: 10, padding: "10px 14px", cursor: "pointer" }}
+                  >
+                    {ugcImage ? (
+                      <div style={{ width: 32, height: 32, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ugcImage.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    ) : (
+                      <Upload className="w-4 h-4" style={{ color: "#9090AC", flexShrink: 0 }} />
+                    )}
+                    <span style={{ fontSize: 13, color: ugcImage ? "#FF3CAC" : "#9090AC", fontWeight: 500 }}>
+                      {ugcImage ? `Image added: ${ugcImage.file.name}` : "Upload product image (optional)"}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={confirmManualProduct}
+                  disabled={!manualName.trim() && !manualDesc.trim()}
+                  style={{ marginTop: 20, width: "100%", background: "linear-gradient(135deg,#FF3CAC 0%,#FF6B35 100%)", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, color: "#fff", cursor: (!manualName.trim() && !manualDesc.trim()) ? "not-allowed" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(255,60,172,0.35)", opacity: (!manualName.trim() && !manualDesc.trim()) ? 0.45 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                >
+                  <Sparkles className="w-4 h-4" /> Use this product
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="overflow-y-auto p-5 space-y-5">
+            ) : (
+              /* ══ MAIN (URL) MODE ══ */
+              <>
+                {/* Hero section */}
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 28px 20px" }}>
+                  <div style={{ flex: 1, paddingRight: 24 }}>
+                    <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.03em", color: "#EEEEF5", marginBottom: 8, lineHeight: 1.1 }}>
+                      ADD YOUR PRODUCT
+                    </h2>
+                    <p style={{ fontSize: 13, color: "#52526A", lineHeight: 1.6, marginBottom: 20, maxWidth: 340 }}>
+                      Paste your product link — we&apos;ll pull the image and details automatically. Or upload an image.
+                    </p>
 
-                {/* Pre-built avatars */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">PRE-BUILT CREATORS</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {AVATAR_PRESETS.map(av => {
-                      const sel = ugcAvatarModalSel === av.id && !ugcAvatarModalCustom;
+                    {/* URL input row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: "10px 14px" }}>
+                        <Link2 className="w-4 h-4" style={{ color: "#52526A", flexShrink: 0 }} />
+                        <input
+                          ref={productUrlInputRef}
+                          value={productUrlDraft}
+                          onChange={(e) => setProductUrlDraft(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter" && productUrlDraft.trim()) fetchProductInfo(productUrlDraft.trim()); }}
+                          placeholder="www.yourproduct.com"
+                          style={{ flex: 1, background: "none", border: "none", color: "#EEEEF5", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+                        />
+                        {productUrlDraft.trim() && (
+                          <button
+                            onClick={() => fetchProductInfo(productUrlDraft.trim())}
+                            disabled={fetchingInfo}
+                            style={{ background: "#FF3CAC", border: "none", borderRadius: 7, padding: "4px 12px", fontSize: 12, fontWeight: 700, color: "#fff", cursor: fetchingInfo ? "not-allowed" : "pointer", whiteSpace: "nowrap", fontFamily: "inherit", opacity: fetchingInfo ? 0.6 : 1, flexShrink: 0 }}
+                          >
+                            {fetchingInfo ? "Fetching…" : "Fetch →"}
+                          </button>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 12, color: "#52526A", flexShrink: 0 }}>or</span>
+                      <button
+                        onClick={() => setProductModalMode("manual")}
+                        style={{ background: "#EEEEF5", border: "none", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "#0F0F1C", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", flexShrink: 0 }}
+                      >
+                        Create manually
+                      </button>
+                    </div>
+
+                    {fetchInfoErr && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: "#fca5a5", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "7px 12px" }}>
+                        ⚠️ {fetchInfoErr}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Decorative avatar collage */}
+                  <div style={{ position: "relative", width: 140, height: 110, flexShrink: 0 }}>
+                    {[
+                      { src: AVATAR_PRESETS[0].photo, x: 0,  y: 10, rot: -6 },
+                      { src: AVATAR_PRESETS[2].photo, x: 50, y: 0,  rot: 3  },
+                      { src: AVATAR_PRESETS[3].photo, x: 90, y: 15, rot: -4 },
+                    ].map((av, i) => (
+                      <div key={i} style={{ position: "absolute", left: av.x, top: av.y, width: 64, height: 64, borderRadius: "50%", overflow: "hidden", border: "2.5px solid #14142A", boxShadow: "0 4px 16px rgba(0,0,0,0.5)", transform: `rotate(${av.rot}deg)` }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={av.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom preview area */}
+                <div style={{ background: "rgba(0,0,0,0.25)", borderTop: "1px solid rgba(255,255,255,0.05)", padding: "20px 28px 24px", minHeight: 160 }}>
+                  {fetchingInfo ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, paddingTop: 16 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(255,60,172,0.2)", borderTopColor: "#FF3CAC", animation: "csSpin 1s linear infinite" }} />
+                      <div style={{ fontSize: 13, color: "#9090AC" }}>Fetching info…</div>
+                    </div>
+                  ) : fetchedInfo ? (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#52526A", marginBottom: 12 }}>
+                        PRODUCT FOUND
+                      </div>
+                      <div style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
+                        {(fetchedInfo.image || fetchedInfo.logo) && (
+                          <div style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.05)" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={fetchedInfo.image || fetchedInfo.logo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {fetchedInfo.publisher && <div style={{ fontSize: 10, fontWeight: 700, color: "#52526A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>{fetchedInfo.publisher}</div>}
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#EEEEF5", marginBottom: 5, lineHeight: 1.2 }}>{fetchedInfo.title || "Untitled"}</div>
+                          {fetchedInfo.description && (
+                            <div style={{ fontSize: 12, color: "#9090AC", lineHeight: 1.55, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                              {fetchedInfo.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={confirmFetchedProduct}
+                        style={{ width: "100%", background: "linear-gradient(135deg,#FF3CAC 0%,#FF6B35 100%)", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(255,60,172,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                      >
+                        <Sparkles className="w-4 h-4" /> Use this product
+                      </button>
+                    </div>
+                  ) : (
+                    /* Upload + URL hints */
+                    <div style={{ display: "flex", gap: 10, width: "100%" }}>
+                      <div
+                        onClick={() => { ugcImageRef.current?.click(); setProductModalOpen(false); setProductModalMode("main"); }}
+                        style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,255,255,0.025)", border: "1.5px dashed rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 0", cursor: "pointer" }}
+                      >
+                        <Upload className="w-6 h-6" style={{ color: "#9090AC" }} />
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#9090AC" }}>Upload image</div>
+                        <div style={{ fontSize: 10, color: "#52526A" }}>JPG, PNG, WEBP</div>
+                      </div>
+                      <div
+                        onClick={() => productUrlInputRef.current?.focus()}
+                        style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,255,255,0.025)", border: "1.5px dashed rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 0", cursor: "pointer" }}
+                      >
+                        <Link2 className="w-6 h-6" style={{ color: "#9090AC" }} />
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#9090AC" }}>Paste a URL</div>
+                        <div style={{ fontSize: 10, color: "#52526A" }}>Any product page</div>
+                      </div>
+                      <div
+                        onClick={() => setProductModalMode("manual")}
+                        style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,255,255,0.025)", border: "1.5px dashed rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 0", cursor: "pointer" }}
+                      >
+                        <Pencil className="w-6 h-6" style={{ color: "#9090AC" }} />
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#9090AC" }}>Write manually</div>
+                        <div style={{ fontSize: 10, color: "#52526A" }}>Type name + details</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ════ AVATAR MODAL — Higgsfield style ════ */}
+      {ugcAvatarModalOpen && (() => {
+        const q = avatarSearch.toLowerCase();
+        const filtered = AVATAR_PRESETS.filter(av =>
+          (avatarGenderFilter === "all" || av.gender === avatarGenderFilter) &&
+          (!q || av.name.toLowerCase().includes(q) || av.style.toLowerCase().includes(q))
+        );
+        const showMine = avatarCategory === "mine";
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(4,4,12,0.90)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+            onClick={() => setUgcAvatarModalOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, width: "100%", maxWidth: 940, maxHeight: "82vh", display: "flex", overflow: "hidden", boxShadow: "0 40px 120px rgba(0,0,0,0.8)" }}
+            >
+              {/* ── Left sidebar ── */}
+              <div style={{ width: 190, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#EEEEF5", letterSpacing: "-0.02em", marginBottom: 12 }}>Select Avatar</div>
+
+                {/* Search */}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 9, padding: "7px 10px", marginBottom: 8 }}>
+                  <Search className="w-3.5 h-3.5" style={{ color: "#52526A", flexShrink: 0 }} />
+                  <input
+                    value={avatarSearch}
+                    onChange={(e) => setAvatarSearch(e.target.value)}
+                    placeholder="Search..."
+                    style={{ flex: 1, background: "none", border: "none", color: "#EEEEF5", fontSize: 12, outline: "none", fontFamily: "inherit" }}
+                  />
+                </div>
+
+                {/* Category pills */}
+                {([
+                  { key: "all",  label: "All",        Icon: Users },
+                  { key: "mine", label: "My avatars", Icon: Star  },
+                ] as const).map(({ key, label, Icon }) => {
+                  const active = avatarCategory === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setAvatarCategory(key)}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: active ? 600 : 400, cursor: "pointer", fontFamily: "inherit", background: active ? "rgba(255,255,255,0.07)" : "none", color: active ? "#EEEEF5" : "#9090AC", textAlign: "left", width: "100%" }}
+                    >
+                      <Icon className="w-4 h-4" style={{ flexShrink: 0 }} /> {label}
+                    </button>
+                  );
+                })}
+
+                {/* Gender filter */}
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#52526A", marginBottom: 8 }}>Gender</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {([["all","All"],["male","Male"],["female","Female"]] as const).map(([key, label]) => {
+                      const active = avatarGenderFilter === key;
                       return (
                         <button
-                          key={av.id}
-                          onClick={() => { setUgcAvatarModalSel(av.id); setUgcAvatarModalCustom(null); }}
-                          className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer"
-                          style={{
-                            background:  sel ? "rgba(124,58,237,0.06)" : "#F7F5F2",
-                            borderColor: sel ? "rgba(124,58,237,0.40)" : "#E8E5E0",
-                          }}
+                          key={key}
+                          onClick={() => setAvatarGenderFilter(key)}
+                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: active ? 600 : 400, cursor: "pointer", fontFamily: "inherit", background: active ? "rgba(255,60,172,0.10)" : "none", color: active ? "#FF3CAC" : "#9090AC", textAlign: "left", width: "100%" }}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={av.photo}
-                            alt={av.name}
-                            className="w-16 h-16 rounded-full object-cover"
-                            style={{ border: `2px solid ${sel ? "rgba(124,58,237,0.40)" : "#E8E5E0"}` }}
-                          />
-                          <p style={{ fontSize: 12, fontWeight: 700, color: sel ? "#7c3aed" : "#0a0a0f" }}>{av.name}</p>
-                          <p style={{ fontSize: 10, color: "#9ca3af", textAlign: "center", lineHeight: 1.3 }}>{av.style}</p>
-                          {sel && (
-                            <span style={{ fontSize: 9, fontWeight: 700, color: "#7c3aed", background: "rgba(124,58,237,0.10)", padding: "2px 8px", borderRadius: 100, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                              Selected
-                            </span>
-                          )}
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: active ? "#FF3CAC" : "#52526A", flexShrink: 0, display: "inline-block" }} />
+                          {label}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px" style={{ background: "#E8E5E0" }} />
-                  <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">or upload your own</span>
-                  <div className="flex-1 h-px" style={{ background: "#E8E5E0" }} />
+                {/* Custom upload indicator */}
+                {ugcAvatarModalCustom && (
+                  <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 6, overflow: "hidden", flexShrink: 0, border: "1.5px solid #FF3CAC" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ugcAvatarModalCustom.previewUrl} alt="Custom" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#FF3CAC" }}>Custom uploaded</div>
+                        <button onClick={() => ugcAvatarFileRef.current?.click()} style={{ background: "none", border: "none", fontSize: 10, color: "#52526A", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Change</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Main grid ── */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative" }}>
+                {/* Grid header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }}>
+                  <div style={{ fontSize: 12, color: "#52526A" }}>
+                    {showMine ? (ugcAvatarModalCustom ? "1 avatar" : "No avatars yet") : `${filtered.length} avatars`}
+                  </div>
+                  <button onClick={() => setUgcAvatarModalOpen(false)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#9090AC", fontSize: 14, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                 </div>
 
-                {/* Custom avatar upload */}
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">CUSTOM AVATAR</p>
+                {/* Scrollable grid */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 76px" }}>
 
-                  {ugcAvatarModalCustom ? (
-                    <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#E8E5E0] bg-[#F7F5F2]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={ugcAvatarModalCustom.previewUrl} alt="Custom" className="w-14 h-14 rounded-full object-cover border-2" style={{ borderColor: "rgba(124,58,237,0.35)" }} />
-                      <div className="flex-1 min-w-0">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" /> Custom avatar ready
-                        </span>
-                        <p className="text-xs text-[#6b7280] mt-1 truncate">{ugcAvatarModalCustom.file.name}</p>
+                  {/* ── MY AVATARS view ── */}
+                  {showMine ? (
+                    ugcAvatarModalCustom ? (
+                      /* Show the uploaded avatar */
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8 }}>
+                        <div
+                          onClick={() => setUgcAvatarModalSel("custom")}
+                          style={{ aspectRatio: "0.65", borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${ugcAvatarModalSel === "custom" ? "#FF3CAC" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", background: "#1E1E30", transition: "all 0.15s", boxShadow: ugcAvatarModalSel === "custom" ? "0 0 20px rgba(255,60,172,0.25)" : "none" }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={ugcAvatarModalCustom.previewUrl} alt="Custom" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          {ugcAvatarModalSel === "custom" && (
+                            <div style={{ position: "absolute", top: 7, right: 7, width: 22, height: 22, borderRadius: "50%", background: "#FF3CAC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontWeight: 800 }}>✓</div>
+                          )}
+                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 9px 9px", background: "linear-gradient(0deg,rgba(0,0,0,0.85) 0%,transparent 100%)" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>My Avatar</div>
+                            <button onClick={(e) => { e.stopPropagation(); ugcAvatarFileRef.current?.click(); }} style={{ background: "none", border: "none", fontSize: 10, color: "rgba(255,255,255,0.45)", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Replace</button>
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setUgcAvatarModalCustom(null)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-[#9ca3af] hover:text-red-400 transition-colors cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    ) : (
+                      /* Empty state */
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", gap: 14, textAlign: "center" }}>
+                        <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1.5px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#52526A" }}><User className="w-7 h-7" /></div>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: "#EEEEF5", marginBottom: 5 }}>No custom avatars yet</div>
+                          <div style={{ fontSize: 12, color: "#52526A", lineHeight: 1.5 }}>Upload a photo to create your own avatar</div>
+                        </div>
+                        <button
+                          onClick={() => ugcAvatarFileRef.current?.click()}
+                          style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#FF3CAC 0%,#FF6B35 100%)", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(255,60,172,0.35)" }}
+                        >
+                          <Upload className="w-4 h-4" /> Upload avatar photo
+                        </button>
+                      </div>
+                    )
                   ) : (
-                    <div
-                      onClick={() => ugcAvatarFileRef.current?.click()}
-                      className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed border-[#e0e0f0] hover:border-[#7c3aed]/40 hover:bg-[#7c3aed]/[0.025] transition-all cursor-pointer group"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[#F7F5F2] flex items-center justify-center group-hover:bg-[#7c3aed]/8 transition-colors">
-                        <Upload className="w-4 h-4 text-[#9ca3af] group-hover:text-[#7c3aed] transition-colors" />
+                    /* ── ALL AVATARS view ── */
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8 }}>
+                      {/* Create / Upload card */}
+                      <div
+                        onClick={() => ugcAvatarFileRef.current?.click()}
+                        style={{ aspectRatio: "0.65", borderRadius: 12, border: "1.5px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.025)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}
+                      >
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>+</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#9090AC", textAlign: "center", lineHeight: 1.3 }}>Create<br/>avatar</div>
                       </div>
-                      <p className="text-sm font-semibold text-[#0a0a0f]">Upload a photo of yourself</p>
-                      <p className="text-[11px] text-[#9ca3af]">JPG, PNG or WEBP · Clear face photo works best</p>
+
+                      {/* Custom uploaded avatar if exists */}
+                      {ugcAvatarModalCustom && (
+                        <div
+                          onClick={() => setUgcAvatarModalSel("custom")}
+                          style={{ aspectRatio: "0.65", borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${ugcAvatarModalSel === "custom" ? "#FF3CAC" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", background: "#1E1E30", transition: "all 0.15s", boxShadow: ugcAvatarModalSel === "custom" ? "0 0 20px rgba(255,60,172,0.25)" : "none" }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={ugcAvatarModalCustom.previewUrl} alt="Custom" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          {ugcAvatarModalSel === "custom" && (
+                            <div style={{ position: "absolute", top: 7, right: 7, width: 22, height: 22, borderRadius: "50%", background: "#FF3CAC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontWeight: 800 }}>✓</div>
+                          )}
+                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 9px 9px", background: "linear-gradient(0deg,rgba(0,0,0,0.85) 0%,transparent 100%)" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>My Avatar</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preset avatar cards */}
+                      {filtered.map((av) => {
+                        const isSel = ugcAvatarModalSel === av.id;
+                        return (
+                          <div
+                            key={av.id}
+                            onClick={() => setUgcAvatarModalSel(av.id)}
+                            style={{ aspectRatio: "0.65", borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${isSel ? "#FF3CAC" : "transparent"}`, cursor: "pointer", background: "#1E1E30", transition: "all 0.15s", boxShadow: isSel ? "0 0 20px rgba(255,60,172,0.25)" : "none" }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={av.photo} alt={av.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            {isSel && (
+                              <div style={{ position: "absolute", top: 7, right: 7, width: 22, height: 22, borderRadius: "50%", background: "#FF3CAC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontWeight: 800, boxShadow: "0 2px 8px rgba(255,60,172,0.5)" }}>✓</div>
+                            )}
+                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "28px 9px 9px", background: "linear-gradient(0deg,rgba(0,0,0,0.82) 0%,transparent 100%)" }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{av.name}</div>
+                              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{av.style}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
-                  <input
-                    ref={ugcAvatarFileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (!f) return;
-                      setUgcAvatarModalCustom({ file: f, previewUrl: URL.createObjectURL(f) });
-                      e.target.value = "";
+                </div>
+
+                {/* Sticky confirm bar — left: 0 because this is already inside the flex child */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 20px 14px", background: "linear-gradient(0deg,#111120 65%,transparent 100%)", display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ flex: 1, fontSize: 12, color: "#52526A" }}>
+                    {ugcAvatarModalSel === "custom" && ugcAvatarModalCustom
+                      ? "My Avatar selected"
+                      : `Selected: ${AVATAR_PRESETS.find(a => a.id === ugcAvatarModalSel)?.name ?? ugcAvatarModalSel}`}
+                  </div>
+                  <button onClick={() => setUgcAvatarModalOpen(false)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: "#9090AC", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                  <button
+                    onClick={() => {
+                      if (ugcAvatarModalSel === "custom" && ugcAvatarModalCustom) {
+                        setUgcAvatarCustomFile(ugcAvatarModalCustom);
+                        setUgcAvatar("custom");
+                      } else {
+                        setUgcAvatar(ugcAvatarModalSel);
+                        setUgcAvatarCustomFile(null);
+                      }
+                      setUgcAvatarModalOpen(false);
                     }}
-                  />
+                    style={{ background: "linear-gradient(135deg,#FF3CAC 0%,#FF6B35 100%)", border: "none", borderRadius: 10, padding: "9px 24px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(255,60,172,0.4)" }}
+                  >Confirm Avatar</button>
                 </div>
               </div>
-
-              {/* Footer */}
-              <div className="px-5 py-4 border-t border-[#f0f0f5] flex items-center gap-3">
-                <button
-                  onClick={() => setUgcAvatarModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all"
-                  style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    // Commit selection: either custom upload or preset
-                    if (ugcAvatarModalCustom) {
-                      if (ugcAvatarCustomFile) URL.revokeObjectURL(ugcAvatarCustomFile.previewUrl);
-                      setUgcAvatarCustomFile(ugcAvatarModalCustom);
-                      setUgcAvatar(ugcAvatarModalSel);
-                    } else {
-                      if (ugcAvatarCustomFile) URL.revokeObjectURL(ugcAvatarCustomFile.previewUrl);
-                      setUgcAvatarCustomFile(null);
-                      setUgcAvatar(ugcAvatarModalSel);
-                    }
-                    setUgcAvatarModalOpen(false);
-                  }}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer transition-all"
-                  style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 4px 16px rgba(124,58,237,0.30)" }}
-                >
-                  Use This Avatar →
-                </button>
-              </div>
-
             </div>
           </div>
-        )}
+        );
+      })()}
 
-        {/* ════════════════════════════════════════════
-            LIBRARY TAB
-        ════════════════════════════════════════════ */}
-        {activeTab === "library" && (
-          <motion.div
-            key="library"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="p-6"
-            style={{ minHeight: 480 }}
-          >
-            {_sessions.length === 0 ? (
-              /* Empty state */
-              <div className="flex flex-col items-center justify-center gap-4 py-20">
-                <div
-                  className="flex items-center justify-center rounded-2xl"
-                  style={{ width: 56, height: 56, background: "#F7F5F2", border: "1px solid #E8E5E0" }}
-                >
-                  <ImageIcon className="w-6 h-6" style={{ color: "#C4C4D8" }} />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-[#0a0a0f]">No saved creatives yet</p>
-                  <p className="text-xs text-[#9ca3af] mt-1 max-w-xs">
-                    Generate images or ad copy — everything you create is saved here automatically.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setActiveTab("creative")}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                    style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", color: "#fff", border: "none" }}
-                  >
-                    <Image className="w-3.5 h-3.5" /> Generate Images
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("adcopy")}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                    style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
-                  >
-                    <FileText className="w-3.5 h-3.5" /> Write Copy
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-8">
-
-                {/* ── Image sessions ── */}
-                {imageSessions.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.06em] mb-3">
-                      Image Creatives · {imageSessions.length}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {imageSessions.map((session) => {
-                        const isOpen = expandedHistoryIds.has(session.id);
-                        const imgs   = Array.isArray(session.image_urls) ? session.image_urls : [];
-                        return (
-                          <div
-                            key={session.id}
-                            className="rounded-2xl overflow-hidden cursor-pointer"
-                            style={{
-                              background: "#F7F5F2",
-                              border: `1px solid ${isOpen ? "rgba(255,60,172,0.28)" : "#E8E5E0"}`,
-                              boxShadow: isOpen ? "0 4px 20px rgba(255,60,172,0.10)" : "none",
-                              transition: "border-color 0.2s, box-shadow 0.2s",
-                            }}
-                            onClick={() => toggleHistory(session.id)}
-                          >
-                            {/* 2×2 thumbnail */}
-                            <div className="grid grid-cols-2 gap-0.5" style={{ height: 120 }}>
-                              {imgs.slice(0, 4).map((img, i) => (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                  key={i}
-                                  src={img.url}
-                                  alt={img.angle ?? `img ${i}`}
-                                  className="w-full h-full object-cover"
-                                  style={{ borderRadius: i === 0 ? "12px 0 0 0" : i === 1 ? "0 12px 0 0" : i === 2 ? "0 0 0 12px" : "0 0 12px 0" }}
-                                />
-                              ))}
-                            </div>
-                            {/* Footer */}
-                            <div className="p-3">
-                              <p className="text-xs font-semibold text-[#0a0a0f] line-clamp-1">
-                                {session.prompt ?? "No prompt"}
-                              </p>
-                              <p className="text-[10px] text-[#9ca3af] mt-0.5">
-                                {timeAgo(session.created_at)} · {imgs.length} image{imgs.length !== 1 ? "s" : ""}
-                              </p>
-                            </div>
-                            {/* Expanded */}
-                            {isOpen && (
-                              <div
-                                className="px-3 pb-3 grid grid-cols-2 gap-2"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {imgs.map((img, i) => (
-                                  <div key={i} className="relative group/li">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={img.url}
-                                      alt={img.angle ?? `Image ${i + 1}`}
-                                      className="w-full aspect-square rounded-xl object-cover"
-                                    />
-                                    {img.angle && (
-                                      <span
-                                        className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                        style={{ background: "rgba(10,10,15,0.65)", color: "#fff" }}
-                                      >
-                                        {img.angle}
-                                      </span>
-                                    )}
-                                    <button
-                                      className="absolute bottom-1.5 right-1.5 opacity-0 group-hover/li:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold"
-                                      style={{ background: "rgba(255,255,255,0.92)", color: "#0a0a0f" }}
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        try {
-                                          const res  = await fetch(img.url);
-                                          const blob = await res.blob();
-                                          const obj  = URL.createObjectURL(blob);
-                                          const a    = document.createElement("a");
-                                          a.href     = obj;
-                                          a.download = `adurai-${img.angle?.replace(/\s+/g,"-").toLowerCase() ?? "image"}-${i+1}.png`;
-                                          a.click();
-                                          URL.revokeObjectURL(obj);
-                                        } catch { window.open(img.url,"_blank"); }
-                                      }}
-                                    >
-                                      <Download className="w-2.5 h-2.5" /> Save
-                                    </button>
-                                  </div>
-                                ))}
-                                {imgs.length > 1 && (
-                                  <button
-                                    className="col-span-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold cursor-pointer mt-1"
-                                    style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.16)" }}
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      for (let i = 0; i < imgs.length; i++) {
-                                        try {
-                                          const res  = await fetch(imgs[i].url);
-                                          const blob = await res.blob();
-                                          const obj  = URL.createObjectURL(blob);
-                                          const a    = document.createElement("a");
-                                          a.href     = obj;
-                                          a.download = `adurai-${imgs[i].angle?.replace(/\s+/g,"-").toLowerCase() ?? "image"}-${i+1}.png`;
-                                          a.click();
-                                          URL.revokeObjectURL(obj);
-                                          await new Promise(r => setTimeout(r, 250));
-                                        } catch { window.open(imgs[i].url,"_blank"); }
-                                      }
-                                    }}
-                                  >
-                                    <Download className="w-3.5 h-3.5" /> Download all {imgs.length}
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Copy sessions ── */}
-                {copySessions.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.06em] mb-3">
-                      Ad Copy · {copySessions.length}
-                    </p>
-                    <div className="space-y-2">
-                      {copySessions.map((session) => {
-                        const isOpen  = expandedHistoryIds.has(session.id);
-                        const copies  = Array.isArray(session.copy_variants) ? session.copy_variants : [];
-                        return (
-                          <div
-                            key={session.id}
-                            className="rounded-2xl overflow-hidden cursor-pointer"
-                            style={{
-                              background: "#F7F5F2",
-                              border: `1px solid ${isOpen ? "rgba(124,58,237,0.28)" : "#E8E5E0"}`,
-                              transition: "border-color 0.2s",
-                            }}
-                            onClick={() => toggleHistory(session.id)}
-                          >
-                            {/* Collapsed row */}
-                            <div className="flex items-center gap-3 p-3">
-                              <div
-                                className="flex-shrink-0 flex items-center justify-center rounded-xl text-base"
-                                style={{ width: 40, height: 40, background: "linear-gradient(135deg,#fdf4ff,#eff6ff)", border: "1px solid rgba(124,58,237,0.15)" }}
-                              >
-                                ✍️
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-[#0a0a0f] line-clamp-1">
-                                  {session.prompt ?? "No description"}
-                                </p>
-                                <p className="text-[10px] text-[#9ca3af] mt-0.5">
-                                  {timeAgo(session.created_at)} · {copies.length} variant{copies.length !== 1 ? "s" : ""}
-                                </p>
-                              </div>
-                              <span className="text-[10px] font-semibold px-2 py-1 rounded-lg flex-shrink-0"
-                                style={{ background: "#fff", color: "#9ca3af", border: "1px solid #E8E5E0" }}>
-                                {isOpen ? "▲" : "▼"}
-                              </span>
-                            </div>
-                            {/* Expanded variants */}
-                            {isOpen && (
-                              <div className="px-3 pb-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                {copies.map((v, i) => {
-                                  const color = hookColor(v.hookType);
-                                  return (
-                                    <div key={i} className="rounded-xl p-3 space-y-2 bg-white" style={{ border: "1px solid #E8E5E0" }}>
-                                      <div className="flex items-center justify-between gap-2">
-                                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                          style={{ background: color.bg, color: color.text, borderColor: color.border }}>
-                                          {v.hookType}
-                                        </span>
-                                        <button
-                                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold cursor-pointer"
-                                          style={{ background: "#F7F5F2", color: "#6b7280", border: "1px solid #E8E5E0" }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const text = [v.primaryText, `HEADLINE: ${v.headline}`, v.description ? `DESCRIPTION: ${v.description}` : null, `CTA: ${v.cta}`].filter(Boolean).join("\n\n");
-                                            navigator.clipboard.writeText(text);
-                                          }}
-                                        >
-                                          <Copy className="w-3 h-3" /> Copy
-                                        </button>
-                                      </div>
-                                      <p className="text-xs text-[#374151] leading-relaxed line-clamp-3">{v.primaryText}</p>
-                                      <p className="text-xs font-bold text-[#0a0a0f]">{v.headline}</p>
-                                      <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold"
-                                        style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.15)" }}>
-                                        {v.cta}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            )}
-          </motion.div>
-        )}
-
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

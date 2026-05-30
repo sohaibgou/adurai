@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEmailVerified } from "@/lib/require-email-verified";
+import { checkUsage } from "@/lib/check-usage";
+import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -145,21 +146,24 @@ Return ONLY a valid JSON array with exactly 4 objects. No markdown, no explanati
 
 /* ── POST ── */
 export async function POST(req: NextRequest) {
-  const check = await requireEmailVerified(req);
-  if (check instanceof NextResponse) return check;
+  const usageResult = await checkUsage(req, "image");
+  if (usageResult instanceof NextResponse) return usageResult;
+  const { user, plan } = usageResult;
 
-  const { prompt, isArabic } = await req.json() as { prompt: string; isArabic?: boolean };
+  const { prompt, isArabic, language } = await req.json() as { prompt: string; isArabic?: boolean; language?: string };
 
   const apiKey = process.env.GOOGLE_AI_KEY!;
+  const lang   = (language || "English").trim();
 
   const arabicCopyPromise = isArabic
     ? generateArabicCopy(apiKey, prompt)
     : Promise.resolve<ArabicTextData[]>([]);
 
   const imagePromises = ANGLES.map(async ({ angle, suffix }) => {
-    const noTextClause = isArabic
+    // Arabic → no text baked in (added as RTL overlay). Other languages → force on-image copy into that language.
+    const langClause = isArabic
       ? "\n\nCRITICAL: The image must contain absolutely NO text, letters, words, numbers, or any written characters anywhere. Pure visual only — text will be added separately as an overlay."
-      : "";
+      : `\n\nLANGUAGE — CRITICAL: Every word of on-image text (headline, subheadline, CTA, badges, captions, and any other written characters) MUST be written in ${lang}, and ${lang} only. Do NOT use English or any other language unless the requested language is English. Spelling must be flawless and native.`;
 
     const fullPrompt = `You are a world-class Meta ads creative director who has produced campaigns for Gymshark, MVMT, Dollar Shave Club, and dozens of 8-figure DTC brands. Produce a FINISHED, print-ready Meta Feed static ad creative.
 
@@ -167,7 +171,9 @@ BRIEF: ${prompt}
 
 CREATIVE ANGLE — ${suffix}
 
-QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional. Scroll-stopping on a busy Instagram feed.${FORMAT_SPEC}${noTextClause}`;
+VISUAL STYLE: Choose the most effective visual style, color palette, lighting, mood, and typography for this specific product and target audience based on the brief — do not default to a generic look.
+
+QUALITY BAR: This ad must look indistinguishable from a $50,000 agency production. Every pixel intentional. Scroll-stopping on a busy Instagram feed.${FORMAT_SPEC}${langClause}`;
 
     const result = await generateImage(apiKey, fullPrompt);
     if (!result) return null;
@@ -186,6 +192,11 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
       { error: "Image generation failed — no images returned. Check GOOGLE_AI_KEY." },
       { status: 500 },
     );
+  }
+
+  // Increment server-side counter for free-plan users
+  if (plan === "free") {
+    try { await supabaseAdmin.rpc("increment_user_image", { p_user_id: user.id }); } catch { /**/ }
   }
 
   return NextResponse.json({
