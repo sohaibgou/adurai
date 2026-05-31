@@ -19,7 +19,6 @@ const FREE_FEATURES = [
   "3 ad copy generations",
   "Campaign performance table",
   "Basic AI recommendations",
-  "No login required",
   "❌ Meta account connection",
 ];
 
