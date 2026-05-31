@@ -165,9 +165,10 @@ async function composeStartFrame(opts: {
   return opts.avatarUrl ?? opts.productUrl;
 }
 
-/* Map an arbitrary requested duration to a Seedance-supported tier (5s | 10s). */
-function videoDuration(req: number): 5 | 10 {
-  return req >= 8 ? 10 : 5;
+/* Clamp the requested duration to Seedance 2.0's supported range (integer 4–15s). */
+function videoDuration(req: number): number {
+  if (!Number.isFinite(req)) return 10;
+  return Math.min(15, Math.max(4, Math.round(req)));
 }
 
 /* Map UI resolution to a Seedance-supported value. */
@@ -434,12 +435,17 @@ ${Object.entries(styleDirections).map(([key, val]) => `IF style is ${key}:\n${va
 
 STEP 3 — WRITE:
 
-1. UGC SCRIPT — ${vidDur} seconds, conversational, ${language}.
-Follow the scene direction acts above.
-Maximum ${Math.round(vidDur * 2.5)} words.
-Sound like a REAL person — not corporate.
-${language === "Darija" ? "Use Moroccan Darija dialect (Arabic-French mix)." : ""}
-${language === "Arabic" ? "Use Modern Standard Arabic suitable for Gulf/MENA." : ""}
+1. UGC SCRIPT — ${vidDur} seconds, spoken by the creator, in ${language}.
+Write like a senior direct-response media buyer who has spent millions on Meta/TikTok ads and knows exactly what makes people stop scrolling and buy. Follow the scene direction acts above and hit this proven structure:
+- HOOK (first 1-2s): a scroll-stopping opener that calls out the viewer's specific problem or a bold, curiosity-gap claim. NO generic openers — BAN phrases like "This changed everything", "This is amazing", "I love this", "Let me tell you about". Lead with the pain or the promise.
+- AGITATE: name the exact frustration the target customer feels, in their own words, so they think "that's me".
+- TURN: introduce the product as the obvious fix — confident, not salesy.
+- PROOF/BENEFIT: ONE concrete, believable result or detail (a number, a timeframe, a sensory payoff) — not vague hype.
+- CTA: a clear next step with light urgency (limited stock, selling out, link below) — never desperate.
+It must sound like a REAL person talking to a friend on camera — natural, a little imperfect, never corporate.
+Maximum ${Math.round(vidDur * 2.5)} words — every word must earn its place.
+${language === "Darija" ? "Use authentic spoken Moroccan Darija (Arabic-French mix) the way real people actually talk." : ""}
+${language === "Arabic" ? "Use natural conversational Arabic suitable for Gulf/MENA — not stiff Modern Standard Arabic." : ""}
 
 2. SEEDANCE VIDEO PROMPT — Translate the selected scene direction into a detailed video prompt.
 Start with: 'A ${gender} aged 25-35 in ${scene},'

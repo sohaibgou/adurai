@@ -171,7 +171,7 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
                 <div style={{ color: "#F59E0B", fontSize: 14, marginBottom: 4, letterSpacing: 2 }}>★ ★ ★ ★ ★</div>
                 <div style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", lineHeight: 1.4, maxWidth: 340 }}>
                   Trusted by <strong style={{ color: "#0D0D12", fontWeight: 700 }}>1,240+ DTC brands</strong>
-                  {" · "}Built by buyers who managed{" "}
+                  {" · "}Built by media buyers who managed{" "}
                   <strong style={{ color: "#0D0D12", fontWeight: 700 }}>$70M+ in ad spend</strong>
                 </div>
               </div>

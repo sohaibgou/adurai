@@ -18,6 +18,8 @@ export interface AppSidebarProps {
   analysisCount?: number;
   onSignOut?: () => void;
   onUpgrade?: () => void;
+  /** Color of the mobile hamburger icon. Use a light value on dark-header pages. */
+  menuIconColor?: string;
 }
 
 /* ── Nav definition ─────────────────────────────────────── */
@@ -193,7 +195,7 @@ export default function AppSidebar(props: AppSidebarProps) {
         onClick={() => setMobileOpen(true)}
         aria-label="Open menu"
       >
-        <Menu className="w-5 h-5" style={{ color: "#0D0D12" }} />
+        <Menu className="w-5 h-5" style={{ color: props.menuIconColor ?? "#0D0D12" }} />
       </button>
 
       {/* ══════════════════════════════════════

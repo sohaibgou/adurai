@@ -111,6 +111,7 @@ export default function CreativeStudioPage() {
         isPaid={isPaid}
         subLoading={subLoading}
         user={user}
+        menuIconColor="#EEEEF5"
         onSignOut={async () => { await signOut(); router.push("/"); }}
         onUpgrade={() => { setPaywallReason(undefined); setPaywallOpen(true); }}
       />
@@ -121,13 +122,16 @@ export default function CreativeStudioPage() {
         style={{ flex: 1, minWidth: 0, height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {/* Slim header */}
-        <header style={{
-          height: 52, flexShrink: 0,
-          background: "rgba(15,15,24,0.95)", backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 24px",
-        }}>
+        <header
+          className="pl-14 lg:pl-6"
+          style={{
+            height: 52, flexShrink: 0,
+            background: "rgba(15,15,24,0.95)", backdropFilter: "blur(12px)",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            paddingRight: 24,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,0.55)" }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(238,238,245,0.55)", letterSpacing: "-0.01em" }}>Creative Studio</span>
@@ -139,7 +143,7 @@ export default function CreativeStudioPage() {
           </div>
           {user && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{user.email}</span>
+              <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{user.email}</span>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
                 {(user.email?.[0] ?? "U").toUpperCase()}
               </div>

@@ -8,6 +8,8 @@ import HeroSection from "@/components/landing/hero-section";
 import SocialProof from "@/components/landing/social-proof";
 import DashboardPreview from "@/components/landing/dashboard-preview";
 import FeaturesSection from "@/components/landing/features-section";
+import AdImageShowcase from "@/components/landing/ad-image-showcase";
+import UgcShowcase from "@/components/landing/ugc-showcase";
 import HowItWorks from "@/components/landing/how-it-works";
 import PricingSection from "@/components/landing/pricing-section";
 import CtaSection from "@/components/landing/cta-section";
@@ -172,6 +174,8 @@ export default function Home() {
       <DashboardPreview />
       <HowItWorks />
       <FeaturesSection />
+      <AdImageShowcase />
+      <UgcShowcase />
       <PricingSection onCtaClick={goStart} />
       <CtaSection onCtaClick={goStart} />
 

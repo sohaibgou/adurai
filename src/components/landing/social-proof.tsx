@@ -85,7 +85,7 @@ export default function SocialProof() {
             </p>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <h2 className="font-heading" style={{ fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#0d0d1a", lineHeight: 1.1, maxWidth: 520 }}>
-                Your Meta Ads are bleeding money right now.{" "}
+                Your Meta Ads are bleeding money.{" "}
                 <span style={{ fontStyle: "italic", background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Here&apos;s proof.</span>
               </h2>
               <p style={{ fontSize: 15, color: "#6b7280", lineHeight: 1.65, maxWidth: 340, fontFamily: "var(--font-inter)", flexShrink: 0 }}>

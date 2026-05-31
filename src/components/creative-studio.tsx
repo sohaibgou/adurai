@@ -27,8 +27,7 @@ import {
   Search,
   ChevronDown,
   Lock,
-  Zap,
-  Crown,
+  ArrowRight,
   Pencil,
   ShoppingBag,
 } from "lucide-react";
@@ -1638,8 +1637,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   </button>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 20, alignItems: "stretch" }}>
-                <video controls src={ugcVideoUrl} style={{ borderRadius: 14, border: `1px solid ${S.border}`, background: "#000", width: 280, flexShrink: 0, aspectRatio: ugcRatio === "9:16" ? "9/16" : ugcRatio === "1:1" ? "1/1" : "16/9", objectFit: "cover" }} />
+              <div className="cs-video-result" style={{ display: "flex", gap: 20, alignItems: "stretch", flexWrap: "wrap" }}>
+                <video controls src={ugcVideoUrl} style={{ borderRadius: 14, border: `1px solid ${S.border}`, background: "#000", width: 280, maxWidth: "100%", flexShrink: 0, aspectRatio: ugcRatio === "9:16" ? "9/16" : ugcRatio === "1:1" ? "1/1" : "16/9", objectFit: "cover" }} />
                 {ugcScript && (
                   <div style={{ flex: 1, minWidth: 0, maxWidth: 440, background: S.bg2, border: `1px solid ${S.border}`, borderRadius: 14, padding: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -1667,41 +1666,14 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
               <p style={{ fontSize: 13, color: S.ink2, maxWidth: 360, lineHeight: 1.65, marginBottom: 32 }}>
                 Turn your product into scroll-stopping lip-synced UGC ads. Available on Starter and Pro.
               </p>
-              {/* Two plan cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, width: "100%", maxWidth: 460, marginBottom: 18 }}>
-                {/* Starter */}
-                <div style={{ background: "rgba(255,60,172,0.05)", border: "1.5px solid rgba(255,60,172,0.22)", borderRadius: 16, padding: 18, textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                    <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC", flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>Starter</span>
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: S.ink, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
-                    $19<span style={{ fontSize: 11, fontWeight: 400, color: S.ink2 }}>/mo</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 2 }}>3 UGC videos / month</div>
-                  <div style={{ fontSize: 11, color: S.ink2, marginBottom: 16, lineHeight: 1.4 }}>Unlimited images &amp; copy</div>
-                  <button onClick={() => onPaywall?.("ugc")} style={{ width: "100%", background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "10px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,60,172,0.3)" }}>
-                    Get Starter →
-                  </button>
-                </div>
-                {/* Pro */}
-                <div style={{ background: "rgba(124,58,237,0.06)", border: "1.5px solid rgba(124,58,237,0.28)", borderRadius: 16, padding: 18, textAlign: "left", position: "relative" }}>
-                  <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Most Powerful</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8, marginTop: 4 }}>
-                    <Crown className="w-3.5 h-3.5" style={{ color: "#7c3aed", flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em" }}>Pro</span>
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: S.ink, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
-                    $99<span style={{ fontSize: 11, fontWeight: 400, color: S.ink2 }}>/mo</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 2 }}>30 UGC videos / month</div>
-                  <div style={{ fontSize: 11, color: S.ink2, marginBottom: 16, lineHeight: 1.4 }}>+ AI Manager &amp; Autopilot</div>
-                  <button onClick={() => onPaywall?.("ugc")} style={{ width: "100%", background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", borderRadius: 10, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "10px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.3)" }}>
-                    Get Pro →
-                  </button>
-                </div>
-              </div>
-              <p style={{ fontSize: 11, color: S.ink3 }}>Cancel anytime · Instant access</p>
+              {/* Single upgrade button — opens the Starter/Pro paywall modal */}
+              <button
+                onClick={() => onPaywall?.("ugc")}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", borderRadius: 12, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "14px 32px", cursor: "pointer", boxShadow: "0 6px 22px rgba(255,60,172,0.32)", marginBottom: 16 }}
+              >
+                Upgrade to unlock <ArrowRight className="w-4 h-4" />
+              </button>
+              <p style={{ fontSize: 11, color: S.ink3 }}>Starter &amp; Pro · Cancel anytime · Instant access</p>
             </div>
           )}
 
@@ -2196,7 +2168,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
         }}
       >
         {/* Options row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 
           {/* Add Image (image tab) */}
           {activeTab === "creative" && (
