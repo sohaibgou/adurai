@@ -289,12 +289,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
 
           {/* ════ FREE ════ */}
           <FadeIn delay={0.1} className="w-full max-w-[420px] md:max-w-none">
-            <div className="flex flex-col h-full rounded-2xl bg-white p-7 text-center" style={{ border: "1.5px solid #E8E5E0" }}>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-center" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
+            <div className="flex flex-col h-full rounded-2xl bg-white p-7 text-left md:text-center" style={{ border: "1.5px solid #E8E5E0" }}>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-start md:self-center" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
                 <Zap className="w-2.5 h-2.5" /> Get Started
               </span>
               <p className="font-heading font-black" style={{ fontSize: 18, color: "#0a0a0f", letterSpacing: "-0.03em" }}>Free</p>
-              <div className="flex items-baseline gap-1 mt-1 justify-center">
+              <div className="flex items-baseline gap-1 mt-1 justify-start md:justify-center">
                 <span className="font-heading font-black" style={{ fontSize: 44, lineHeight: 1, color: "#0a0a0f", letterSpacing: "-0.04em" }}>$0</span>
               </div>
               <p className="text-[13px] font-medium mb-1" style={{ color: "#A8A5A0" }}>Forever</p>
@@ -314,12 +314,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
 
           {/* ════ STARTER ════ */}
           <FadeIn delay={0.15} className="w-full max-w-[420px] md:max-w-none">
-            <div className="flex flex-col h-full rounded-2xl bg-white p-7 text-center" style={{ border: "1.5px solid #E8E5E0" }}>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-center" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
+            <div className="flex flex-col h-full rounded-2xl bg-white p-7 text-left md:text-center" style={{ border: "1.5px solid #E8E5E0" }}>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-start md:self-center" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
                 Starter
               </span>
               <p className="font-heading font-black" style={{ fontSize: 18, color: "#0a0a0f", letterSpacing: "-0.03em" }}>Starter</p>
-              <div className="flex items-baseline gap-1 mt-1 justify-center">
+              <div className="flex items-baseline gap-1 mt-1 justify-start md:justify-center">
                 <span className="font-heading font-black" style={{ fontSize: 44, lineHeight: 1, color: "#0a0a0f", letterSpacing: "-0.04em" }}>${PRICES.starter[interval]}</span>
                 <span className="text-sm" style={{ color: "#A8A5A0" }}>/month</span>
               </div>
@@ -342,7 +342,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           {/* ════ GROWTH — FEATURED ════ */}
           <FadeIn delay={0.2} className="w-full max-w-[420px] md:max-w-none">
             <div
-              className="flex flex-col h-full rounded-2xl bg-white p-7 relative text-center"
+              className="flex flex-col h-full rounded-2xl bg-white p-7 relative text-left md:text-center"
               style={{ border: "2px solid #FF3CAC", boxShadow: "0 14px 50px rgba(255,60,172,0.16)" }}
             >
               <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,60,172,0.06) 0%, transparent 70%)" }} />
@@ -350,13 +350,13 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                 <Sparkles className="w-2.5 h-2.5" /> Most Popular
               </span>
               <p className="font-heading font-black relative" style={{ fontSize: 18, color: "#0a0a0f", letterSpacing: "-0.03em" }}>Growth</p>
-              <div className="flex items-baseline gap-1 mt-1 relative justify-center">
+              <div className="flex items-baseline gap-1 mt-1 relative justify-start md:justify-center">
                 <span className="font-heading font-black" style={{ fontSize: 44, lineHeight: 1, background: PINK, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", letterSpacing: "-0.04em" }}>${PRICES.growth[interval]}</span>
                 <span className="text-sm" style={{ color: "#A8A5A0" }}>/month</span>
               </div>
               <p className="text-[11px] font-medium mb-1 relative" style={{ color: annual ? "#16A34A" : "transparent" }}>billed annually</p>
               <p className="text-xs mb-4 relative" style={{ color: "#6b7280", lineHeight: 1.5 }}>Connect your Meta account. Live data and unlimited analysis.</p>
-              <div className="flex items-center justify-center gap-2 mb-5 relative rounded-lg px-3 py-2" style={{ background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.15)" }}>
+              <div className="flex items-center justify-start md:justify-center gap-2 mb-5 relative rounded-lg px-3 py-2" style={{ background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.15)" }}>
                 <Clock className="w-3 h-3 flex-shrink-0" style={{ color: "#FF3CAC" }} />
                 <span className="text-[11px]" style={{ color: "#6b7280" }}>Live campaigns · Real-time monitoring</span>
               </div>
@@ -375,12 +375,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
 
           {/* ════ AUTOPILOT — DARK ════ */}
           <FadeIn delay={0.25} className="w-full max-w-[420px] md:max-w-none">
-            <div className="flex flex-col h-full rounded-2xl p-7 text-center" style={{ background: "#0D0D12", border: "1.5px solid #0D0D12" }}>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-center" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em" }}>
+            <div className="flex flex-col h-full rounded-2xl p-7 text-left md:text-center" style={{ background: "#0D0D12", border: "1.5px solid #0D0D12" }}>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-start md:self-center" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em" }}>
                 <Bot className="w-2.5 h-2.5" /> Most Powerful
               </span>
               <p className="font-heading font-black" style={{ fontSize: 18, color: "#fff", letterSpacing: "-0.03em" }}>Autopilot</p>
-              <div className="flex items-baseline gap-1 mt-1 justify-center">
+              <div className="flex items-baseline gap-1 mt-1 justify-start md:justify-center">
                 <span className="font-heading font-black" style={{ fontSize: 44, lineHeight: 1, color: "#fff", letterSpacing: "-0.04em" }}>${PRICES.pro[interval]}</span>
                 <span className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>/month</span>
               </div>
