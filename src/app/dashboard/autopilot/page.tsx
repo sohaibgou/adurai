@@ -397,7 +397,14 @@ export default function AutopilotPage() {
         subLoading={subLoading}
         user={user}
         onSignOut={async () => { await signOut(); router.push("/"); }}
-        onUpgrade={async () => { setCheckoutLoading(true); try { await redirectToCheckout(); } finally { setCheckoutLoading(false); } }}
+        onUpgrade={async () => {
+          setCheckoutLoading(true);
+          try {
+            const ok = await redirectToCheckout(undefined, "pro");
+            if (!ok) window.location.href = "/login?redirect=checkout&plan=pro";
+          } catch { /* surfaced via spinner reset below */ }
+          finally { setCheckoutLoading(false); }
+        }}
       />
 
       <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />

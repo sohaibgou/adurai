@@ -78,8 +78,26 @@ function DashboardContent() {
   const [subLoading,       setSubLoading]       = useState(true);
   const [analysisCount,    setAnalysisCount]    = useState(0);
   const [recentAnalyses,   setRecentAnalyses]   = useState<RecentAnalysis[]>([]);
-  const [checkoutLoading,  setCheckoutLoading]  = useState(false);
+  const [checkoutLoading,  setCheckoutLoading]  = useState<null | "starter" | "pro">(null);
+  const [checkoutError,    setCheckoutError]    = useState<string | null>(null);
   const [paywallOpen,      setPaywallOpen]      = useState(false);
+
+  async function handleCheckout(plan: "starter" | "pro") {
+    setCheckoutError(null);
+    setCheckoutLoading(plan);
+    try {
+      const ok = await redirectToCheckout(undefined, plan);
+      if (!ok) {
+        // No session cookie — resume checkout after login.
+        window.location.href = `/login?redirect=checkout&plan=${plan}`;
+        return;
+      }
+      // ok === true → navigating to Stripe; keep the spinner.
+    } catch (e) {
+      setCheckoutError(e instanceof Error ? e.message : "Checkout failed. Please try again.");
+      setCheckoutLoading(null);
+    }
+  }
   // null = loading, true = verified, false = needs verification
 
   useEffect(() => {
@@ -507,13 +525,14 @@ function DashboardContent() {
                           ))}
                         </ul>
                         <button
-                          onClick={() => redirectToCheckout(undefined, "starter")}
-                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
+                          onClick={() => handleCheckout("starter")}
+                          disabled={checkoutLoading !== null}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
                           style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", boxShadow: "0 3px 12px rgba(255,60,172,0.30)", fontFamily: "var(--font-inter)" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
                         >
-                          Get Starter →
+                          {checkoutLoading === "starter" ? "Redirecting…" : "Get Starter →"}
                         </button>
                       </div>
 
@@ -540,17 +559,23 @@ function DashboardContent() {
                           ))}
                         </ul>
                         <button
-                          onClick={() => redirectToCheckout(undefined, "pro")}
-                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all"
+                          onClick={() => handleCheckout("pro")}
+                          disabled={checkoutLoading !== null}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
                           style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.30)", fontFamily: "var(--font-inter)" }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
                         >
-                          Get Pro →
+                          {checkoutLoading === "pro" ? "Redirecting…" : "Get Pro →"}
                         </button>
                       </div>
                     </div>
 
+                    {checkoutError && (
+                      <p className="text-center mt-3" style={{ fontSize: 12, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.18)", borderRadius: 10, padding: "9px 14px", fontFamily: "var(--font-inter)" }}>
+                        {checkoutError}
+                      </p>
+                    )}
                     <p className="text-center mt-3" style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>Cancel anytime · No commitment</p>
                   </div>
                 </div>

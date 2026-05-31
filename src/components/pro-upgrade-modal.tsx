@@ -20,12 +20,21 @@ const FEATURES = [
 
 export default function ProUpgradeModal({ open, onClose }: ProUpgradeModalProps) {
   const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
 
   async function handleUpgrade() {
     setLoading(true);
+    setError(null);
     try {
-      await redirectToCheckout(undefined, "pro");
-    } catch {
+      const ok = await redirectToCheckout(undefined, "pro");
+      if (!ok) {
+        // No active session (cookie) — bounce to login and resume checkout there.
+        window.location.href = "/login?redirect=checkout&plan=pro";
+        return;
+      }
+      // ok === true → the browser is already navigating to Stripe; keep the spinner.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       setLoading(false);
     }
   }
@@ -151,6 +160,13 @@ export default function ProUpgradeModal({ open, onClose }: ProUpgradeModalProps)
                     </li>
                   ))}
                 </ul>
+
+                {/* Error message */}
+                {error && (
+                  <p style={{ fontSize: 13, color: "#e17055", background: "rgba(225,112,85,0.08)", border: "1px solid rgba(225,112,85,0.18)", borderRadius: 10, padding: "10px 14px", fontFamily: "var(--font-inter)", textAlign: "center", marginBottom: 12 }}>
+                    {error}
+                  </p>
+                )}
 
                 {/* CTA */}
                 <button
