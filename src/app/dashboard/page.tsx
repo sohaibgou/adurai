@@ -78,11 +78,11 @@ function DashboardContent() {
   const [subLoading,       setSubLoading]       = useState(true);
   const [analysisCount,    setAnalysisCount]    = useState(0);
   const [recentAnalyses,   setRecentAnalyses]   = useState<RecentAnalysis[]>([]);
-  const [checkoutLoading,  setCheckoutLoading]  = useState<null | "starter" | "pro">(null);
+  const [checkoutLoading,  setCheckoutLoading]  = useState<null | "starter" | "growth" | "pro">(null);
   const [checkoutError,    setCheckoutError]    = useState<string | null>(null);
   const [paywallOpen,      setPaywallOpen]      = useState(false);
 
-  async function handleCheckout(plan: "starter" | "pro") {
+  async function handleCheckout(plan: "starter" | "growth" | "pro") {
     setCheckoutError(null);
     setCheckoutLoading(plan);
     try {
@@ -509,8 +509,8 @@ function DashboardContent() {
                       </span>
                     </div>
 
-                    {/* Two plan cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Three plan cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {/* Starter */}
                       <div className="flex flex-col rounded-xl p-4" style={{ background: "rgba(255,60,172,0.04)", border: "1.5px solid rgba(255,60,172,0.18)" }}>
                         <div className="flex items-center gap-1.5 mb-1.5">
@@ -521,7 +521,7 @@ function DashboardContent() {
                           $19<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
                         </p>
                         <ul className="flex-1 space-y-1.5 mb-4">
-                          {["Unlimited campaign analyses", "Full 7-Day Battle Plan", "AI Creative Studio", "3 UGC AI videos / month"].map(f => (
+                          {["10 campaign analyses / mo", "5 image generations / mo", "3 UGC AI videos / mo", "Full 7-Day Battle Plan"].map(f => (
                             <li key={f} className="flex items-start gap-2">
                               <span style={{ color: "#FF3CAC", flexShrink: 0, fontSize: 13 }}>✓</span>
                               <span style={{ fontSize: 12, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
@@ -540,22 +540,51 @@ function DashboardContent() {
                         </button>
                       </div>
 
-                      {/* Pro */}
-                      <div className="flex flex-col rounded-xl p-4 relative" style={{ background: "rgba(124,58,237,0.05)", border: "1.5px solid rgba(124,58,237,0.25)" }}>
+                      {/* Growth */}
+                      <div className="flex flex-col rounded-xl p-4 relative" style={{ background: "rgba(255,60,172,0.06)", border: "1.5px solid rgba(255,60,172,0.40)" }}>
                         <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                          <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: "#7c3aed", padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-                            Most Powerful
+                          <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: "#FF3CAC", padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                            Most Popular
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5 mb-1.5 mt-1">
+                          <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC" }} />
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Growth</span>
+                        </div>
+                        <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                          $49<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
+                        </p>
+                        <ul className="flex-1 space-y-1.5 mb-4">
+                          {["Unlimited analyses", "20 image generations / mo", "10 UGC AI videos / mo", "Connect Meta — live insights"].map(f => (
+                            <li key={f} className="flex items-start gap-2">
+                              <span style={{ color: "#FF3CAC", flexShrink: 0, fontSize: 13 }}>✓</span>
+                              <span style={{ fontSize: 12, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          onClick={() => handleCheckout("growth")}
+                          disabled={checkoutLoading !== null}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
+                          style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", boxShadow: "0 3px 12px rgba(255,60,172,0.30)", fontFamily: "var(--font-inter)" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
+                        >
+                          {checkoutLoading === "growth" ? "Redirecting…" : "Get Growth →"}
+                        </button>
+                      </div>
+
+                      {/* Autopilot */}
+                      <div className="flex flex-col rounded-xl p-4 relative" style={{ background: "rgba(124,58,237,0.05)", border: "1.5px solid rgba(124,58,237,0.25)" }}>
+                        <div className="flex items-center gap-1.5 mb-1.5 mt-1">
                           <Crown className="w-3.5 h-3.5" style={{ color: "#7c3aed" }} />
-                          <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Pro</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Autopilot</span>
                         </div>
                         <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
                           $99<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
                         </p>
                         <ul className="flex-1 space-y-1.5 mb-4">
-                          {["Everything in Starter", "30 UGC AI videos / month", "Connect Meta Ad Account", "AI Manager & Autopilot"].map(f => (
+                          {["Everything in Growth", "30 UGC AI videos / mo", "Meta write + Autopilot", "24/7 AI monitoring"].map(f => (
                             <li key={f} className="flex items-start gap-2">
                               <span style={{ color: "#7c3aed", flexShrink: 0, fontSize: 13 }}>✓</span>
                               <span style={{ fontSize: 12, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
@@ -570,7 +599,7 @@ function DashboardContent() {
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
                         >
-                          {checkoutLoading === "pro" ? "Redirecting…" : "Get Pro →"}
+                          {checkoutLoading === "pro" ? "Redirecting…" : "Get Autopilot →"}
                         </button>
                       </div>
                     </div>
@@ -627,7 +656,7 @@ function DashboardContent() {
       <PaywallModal
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
-        currentPlan="free"
+        currentPlan={(["free", "starter", "growth", "pro"].includes(planTier) ? planTier : "free") as "free" | "starter" | "growth" | "pro"}
       />
     </div>
   );

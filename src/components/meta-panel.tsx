@@ -238,7 +238,7 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
 
   return (
     <>
-    <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+    <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} variant="meta" />
     <div
       style={{
         background:   "#ffffff",

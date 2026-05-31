@@ -407,7 +407,7 @@ export default function AutopilotPage() {
         }}
       />
 
-      <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} variant="autopilot" />
 
       <div className="flex-1 lg:ml-60 min-w-0 flex flex-col">
 

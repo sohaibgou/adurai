@@ -15,25 +15,47 @@ interface PaywallModalProps {
   currentPlan?:  "free" | "starter" | "growth" | "pro";
 }
 
-const STARTER_FEATURES = [
-  "Unlimited campaign analyses",
-  "Full 7-Day Battle Plan",
-  "Profit Leak calculator",
-  "Unlimited image & copy generations",
-  "3 UGC AI videos / month",
-  "PDF report export",
-  "Priority support",
-];
+type PlanId = "starter" | "growth" | "pro";
 
-const PRO_FEATURES = [
-  "Everything in Starter",
-  "30 UGC AI videos / month",
-  "Connect Meta Ad Account",
-  "AI Manager & Autopilot",
-  "24/7 campaign monitoring",
-  "Auto budget optimisation",
-  "Daily AI briefings",
-];
+const PLAN_META: Record<PlanId, {
+  name: string; price: number; accent: string; grad: string; glow: string;
+  badge?: string; features: string[];
+}> = {
+  starter: {
+    name: "Starter", price: 19, accent: "#FF3CAC",
+    grad: "linear-gradient(135deg,#FF3CAC,#FF6B35)", glow: "rgba(255,60,172,0.35)",
+    features: [
+      "10 campaign analyses / mo",
+      "5 image generations / mo",
+      "3 UGC AI videos / mo",
+      "Full 7-Day Battle Plan",
+      "PDF report export",
+    ],
+  },
+  growth: {
+    name: "Growth", price: 49, accent: "#FF3CAC",
+    grad: "linear-gradient(135deg,#FF3CAC,#FF6B35)", glow: "rgba(255,60,172,0.35)",
+    badge: "Most Popular",
+    features: [
+      "Unlimited campaign analyses",
+      "20 image generations / mo",
+      "10 UGC AI videos / mo",
+      "Connect Meta — live insights",
+      "Creative fatigue alerts",
+    ],
+  },
+  pro: {
+    name: "Autopilot", price: 99, accent: "#6c5ce7",
+    grad: "linear-gradient(135deg,#6c5ce7,#a29bfe)", glow: "rgba(108,92,231,0.35)",
+    features: [
+      "Everything in Growth",
+      "30 UGC AI videos / mo",
+      "Meta write access + Autopilot",
+      "24/7 AI monitoring",
+      "Auto budget optimization",
+    ],
+  },
+};
 
 export default function PaywallModal({ open, onClose, reason, currentPlan = "free" }: PaywallModalProps) {
   const { user } = useAuth();
@@ -42,8 +64,25 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
   const [loading,  setLoading]  = useState<CheckoutPlan | null>(null);
   const [error,    setError]    = useState<string | null>(null);
 
-  // Paid non-Pro users (Starter / Growth) only see the Pro upgrade; free users see both plans
-  const isStarterUser = currentPlan === "starter" || currentPlan === "growth";
+  // Which upgrade tiers to offer, depending on what the user is already on.
+  const upgradePlans: PlanId[] =
+    currentPlan === "growth" ? ["pro"]
+    : currentPlan === "starter" ? ["growth", "pro"]
+    : ["starter", "growth", "pro"]; // free / unknown
+
+  const single  = upgradePlans.length === 1;
+  // Theme the header: pink unless the ONLY option is Autopilot.
+  const theme   = single && upgradePlans[0] === "pro" ? PLAN_META.pro : PLAN_META.growth;
+
+  const gridClass =
+    upgradePlans.length === 3 ? "sm:grid-cols-3"
+    : upgradePlans.length === 2 ? "sm:grid-cols-2"
+    : "";
+
+  const maxWidth =
+    upgradePlans.length === 3 ? 780
+    : upgradePlans.length === 2 ? 600
+    : 460;
 
   async function handleUpgrade(plan: CheckoutPlan, e?: React.FormEvent) {
     e?.preventDefault();
@@ -130,7 +169,7 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
             <div
               className="relative w-full pointer-events-auto"
               style={{
-                maxWidth:    isStarterUser ? 460 : 540,
+                maxWidth,
                 background:  "#FFFFFF",
                 borderRadius: 20,
                 boxShadow:   "0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(232,229,224,1)",
@@ -139,12 +178,7 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
               }}
             >
               {/* Gradient top strip */}
-              <div style={{
-                height:     5,
-                background: isStarterUser
-                  ? "linear-gradient(90deg, #7c3aed, #a855f7)"
-                  : "linear-gradient(90deg, #FF3CAC, #FF6B35)",
-              }} />
+              <div style={{ height: 5, background: theme.grad }} />
 
               {/* Close button */}
               <button
@@ -172,15 +206,13 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                   className="flex items-center justify-center mb-4"
                   style={{
                     width: 52, height: 52, borderRadius: 16,
-                    background: isStarterUser
-                      ? "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.10))"
-                      : "linear-gradient(135deg, rgba(255,60,172,0.12), rgba(255,107,53,0.10))",
-                    border: `1px solid ${isStarterUser ? "rgba(124,58,237,0.20)" : "rgba(255,60,172,0.20)"}`,
+                    background: `${theme.accent}1a`,
+                    border: `1px solid ${theme.accent}33`,
                   }}
                 >
-                  {isStarterUser
-                    ? <Crown className="w-6 h-6" style={{ color: "#7c3aed" }} />
-                    : <Lock  className="w-6 h-6" style={{ color: "#FF3CAC" }} />
+                  {single
+                    ? <Crown className="w-6 h-6" style={{ color: theme.accent }} />
+                    : <Lock  className="w-6 h-6" style={{ color: theme.accent }} />
                   }
                 </div>
 
@@ -188,46 +220,39 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
                   className="font-heading"
                   style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", color: "#0D0D12", lineHeight: 1.1, marginBottom: 6 }}
                 >
-                  {isStarterUser
-                    ? "Upgrade to Pro"
-                    : reason === "ugc"
-                      ? "Unlock UGC AI Video"
+                  {reason === "ugc"
+                    ? "Unlock UGC AI Video"
+                    : single
+                      ? `Upgrade to ${theme.name}`
                       : reason
-                        ? "You've hit your free limit"
+                        ? "You've hit your plan limit"
                         : "Choose your plan"}
                 </h2>
                 <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.6, fontFamily: "var(--font-inter)", marginBottom: 20 }}>
-                  {isStarterUser
-                    ? "Unlock 30 UGC AI videos per month, Meta account connection, AI Manager & Autopilot and more."
-                    : reason === "ugc"
-                      ? "Turn your product images into scroll-stopping UGC-style videos — available on Starter and Pro."
-                      : reason
-                        ? "Upgrade to keep going — choose the plan that suits you."
-                        : "Start with Starter or go all-in with Pro."}
+                  {reason === "ugc"
+                    ? "Turn product images into scroll-stopping UGC videos — available on Starter, Growth and Autopilot."
+                    : single
+                      ? "Unlock Meta write access, 24/7 monitoring and full campaign Autopilot."
+                      : currentPlan === "starter"
+                        ? "Scale up — unlock unlimited analyses, more creatives and live Meta insights."
+                        : "Pick the plan that fits. Upgrade or cancel anytime."}
                 </p>
 
-                {/* ── STARTER USER: single Pro card ── */}
-                {isStarterUser && (
+                {/* ── Plan cards ── */}
+                {single ? (
                   <>
-                    <PlanCard
-                      name="Pro"
-                      price={99}
-                      features={PRO_FEATURES}
-                      accent="#7c3aed"
-                      accentLight="rgba(124,58,237,0.08)"
-                      accentBorder="rgba(124,58,237,0.20)"
-                    />
+                    <PlanCard meta={PLAN_META[upgradePlans[0]]} />
 
                     {!user && (
                       <SignupForm
                         email={email} setEmail={setEmail}
                         password={password} setPassword={setPassword}
-                        loading={loading === "pro"}
+                        loading={loading === upgradePlans[0]}
                         error={error}
-                        onSubmit={e => handleUpgrade("pro", e)}
-                        accent="#7c3aed"
-                        accentGlow="rgba(124,58,237,0.35)"
-                        label="Upgrade to Pro →"
+                        onSubmit={e => handleUpgrade(upgradePlans[0], e)}
+                        accent={PLAN_META[upgradePlans[0]].accent}
+                        accentGlow={PLAN_META[upgradePlans[0]].glow}
+                        label={`Upgrade to ${PLAN_META[upgradePlans[0]].name} →`}
                       />
                     )}
 
@@ -235,109 +260,67 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
 
                     {user && (
                       <UpgradeBtn
-                        loading={loading === "pro"}
-                        onClick={() => handleUpgrade("pro")}
-                        accent="#7c3aed"
-                        accentGlow="rgba(124,58,237,0.35)"
-                        label="Upgrade to Pro →"
+                        loading={loading === upgradePlans[0]}
+                        onClick={() => handleUpgrade(upgradePlans[0])}
+                        accent={PLAN_META[upgradePlans[0]].accent}
+                        accentGlow={PLAN_META[upgradePlans[0]].glow}
+                        label={`Upgrade to ${PLAN_META[upgradePlans[0]].name} →`}
                       />
                     )}
                   </>
-                )}
-
-                {/* ── FREE USER: Starter + Pro side by side ── */}
-                {!isStarterUser && (
+                ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                      {/* Starter card */}
-                      <div
-                        className="flex flex-col rounded-2xl p-4"
-                        style={{ background: "rgba(255,60,172,0.04)", border: "1.5px solid rgba(255,60,172,0.22)" }}
-                      >
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Zap className="w-3.5 h-3.5" style={{ color: "#FF3CAC" }} />
-                          <span style={{ fontSize: 11, fontWeight: 800, color: "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Starter</span>
-                        </div>
-                        <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
-                          $19<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
-                        </p>
-                        <ul className="flex-1 space-y-1.5 mb-4">
-                          {STARTER_FEATURES.slice(0, 5).map(f => (
-                            <li key={f} className="flex items-start gap-2">
-                              <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: "#FF3CAC" }} />
-                              <span style={{ fontSize: 11.5, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        {user ? (
-                          <UpgradeBtn
-                            loading={loading === "starter"}
-                            onClick={() => handleUpgrade("starter")}
-                            accent="#FF3CAC"
-                            accentGlow="rgba(255,60,172,0.35)"
-                            label={loading === "starter" ? "Redirecting…" : "Get Starter"}
-                            small
-                          />
-                        ) : (
-                          <button
-                            onClick={() => handleUpgrade("starter")}
-                            disabled={!!loading}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
-                            style={{ background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", border: "none", boxShadow: "0 3px 12px rgba(255,60,172,0.30)" }}
+                    <div className={`grid grid-cols-1 ${gridClass} gap-3 mb-4`}>
+                      {upgradePlans.map(p => {
+                        const meta = PLAN_META[p];
+                        const featured = !!meta.badge;
+                        return (
+                          <div
+                            key={p}
+                            className="flex flex-col rounded-2xl p-4 relative"
+                            style={{
+                              background: `${meta.accent}0a`,
+                              border: `1.5px solid ${meta.accent}${featured ? "4d" : "33"}`,
+                            }}
                           >
-                            {loading === "starter" ? "…" : "Get Starter →"}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Pro card */}
-                      <div
-                        className="flex flex-col rounded-2xl p-4 relative"
-                        style={{ background: "rgba(124,58,237,0.05)", border: "1.5px solid rgba(124,58,237,0.30)" }}
-                      >
-                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                          <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: "#7c3aed", padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-                            Most Powerful
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mb-2 mt-1">
-                          <Crown className="w-3.5 h-3.5" style={{ color: "#7c3aed" }} />
-                          <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>Pro</span>
-                        </div>
-                        <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
-                          $99<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
-                        </p>
-                        <ul className="flex-1 space-y-1.5 mb-4">
-                          {PRO_FEATURES.slice(0, 5).map(f => (
-                            <li key={f} className="flex items-start gap-2">
-                              <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: "#7c3aed" }} />
-                              <span style={{ fontSize: 11.5, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        {user ? (
-                          <UpgradeBtn
-                            loading={loading === "pro"}
-                            onClick={() => handleUpgrade("pro")}
-                            accent="#7c3aed"
-                            accentGlow="rgba(124,58,237,0.35)"
-                            label={loading === "pro" ? "Redirecting…" : "Get Pro"}
-                            small
-                          />
-                        ) : (
-                          <button
-                            onClick={() => handleUpgrade("pro")}
-                            disabled={!!loading}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
-                            style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", border: "none", boxShadow: "0 3px 12px rgba(124,58,237,0.30)" }}
-                          >
-                            {loading === "pro" ? "…" : "Get Pro →"}
-                          </button>
-                        )}
-                      </div>
+                            {meta.badge && (
+                              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                                <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: meta.accent, padding: "3px 10px", borderRadius: 100, letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                                  {meta.badge}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5 mb-2 mt-1">
+                              {p === "pro"
+                                ? <Crown className="w-3.5 h-3.5" style={{ color: meta.accent }} />
+                                : <Zap   className="w-3.5 h-3.5" style={{ color: meta.accent }} />}
+                              <span style={{ fontSize: 11, fontWeight: 800, color: meta.accent, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)" }}>{meta.name}</span>
+                            </div>
+                            <p className="font-heading" style={{ fontSize: 22, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+                              ${meta.price}<span style={{ fontSize: 12, fontWeight: 400, color: "#6B6B72" }}>/mo</span>
+                            </p>
+                            <ul className="flex-1 space-y-1.5 mb-4">
+                              {meta.features.slice(0, 5).map(f => (
+                                <li key={f} className="flex items-start gap-2">
+                                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: meta.accent }} />
+                                  <span style={{ fontSize: 11.5, color: "#374151", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}>{f}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            <button
+                              onClick={() => handleUpgrade(p)}
+                              disabled={!!loading}
+                              className="w-full py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all disabled:opacity-60"
+                              style={{ background: meta.grad, border: "none", boxShadow: `0 3px 12px ${meta.glow}` }}
+                            >
+                              {loading === p ? "…" : `Get ${meta.name} →`}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    {/* Sign-up form for logged-out free users */}
+                    {/* Sign-up fields for logged-out users (shared by all cards) */}
                     {!user && (
                       <>
                         <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", textAlign: "center", marginBottom: 10 }}>
@@ -397,27 +380,24 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
 
 /* ── Small reusable sub-components ──────────────────────────────────────── */
 
-function PlanCard({ name, price, features, accent, accentLight, accentBorder }: {
-  name: string; price: number; features: string[];
-  accent: string; accentLight: string; accentBorder: string;
-}) {
+function PlanCard({ meta }: { meta: typeof PLAN_META[PlanId] }) {
   return (
-    <div className="rounded-2xl p-5 mb-4" style={{ background: accentLight, border: `1.5px solid ${accentBorder}` }}>
+    <div className="rounded-2xl p-5 mb-4" style={{ background: `${meta.accent}0f`, border: `1.5px solid ${meta.accent}33` }}>
       <div className="flex items-center justify-between mb-3">
-        <p style={{ fontSize: 11, fontWeight: 800, color: accent, textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)" }}>
-          {name} Plan
+        <p style={{ fontSize: 11, fontWeight: 800, color: meta.accent, textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)" }}>
+          {meta.name} Plan
         </p>
         <span style={{ fontSize: 11, fontWeight: 600, color: "#16A34A", background: "rgba(22,163,74,0.10)", padding: "4px 10px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
           Cancel anytime
         </span>
       </div>
       <p className="font-heading" style={{ fontSize: 28, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 14 }}>
-        ${price}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
+        ${meta.price}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
       </p>
       <ul className="space-y-2">
-        {features.map(f => (
+        {meta.features.map(f => (
           <li key={f} className="flex items-center gap-2.5">
-            <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: accent }} />
+            <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: meta.accent }} />
             <span style={{ fontSize: 13, color: "#0D0D12", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{f}</span>
           </li>
         ))}
