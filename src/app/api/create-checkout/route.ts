@@ -9,6 +9,37 @@ const PRICES: Record<string, string | undefined> = {
   pro:     process.env.STRIPE_PRO_PRICE_ID,
 };
 
+/**
+ * Resolve an absolute, scheme-qualified base URL for Stripe success/cancel URLs.
+ * Order: NEXT_PUBLIC_URL → forwarded/host headers → request origin.
+ * Guarantees an explicit http(s) scheme so Stripe never sees a malformed URL.
+ */
+function resolveBaseUrl(req: NextRequest): string {
+  // 1. Explicit env var (preferred). Add a scheme if it was omitted.
+  const raw = (process.env.NEXT_PUBLIC_URL ?? "").trim().replace(/\/+$/, "");
+  if (raw) {
+    return /^https?:\/\//i.test(raw) ? raw : `https://${raw.replace(/^\/+/, "")}`;
+  }
+
+  // 2. Derive from request headers. Default scheme to http for local hosts,
+  //    https otherwise — never leave it empty (which yields "://host").
+  const host = (
+    req.headers.get("x-forwarded-host") ??
+    req.headers.get("host") ??
+    req.nextUrl.host ??
+    ""
+  ).trim();
+  if (host) {
+    const fwdProto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const isLocal  = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(host);
+    const proto    = fwdProto || (isLocal ? "http" : "https");
+    return `${proto}://${host}`;
+  }
+
+  // 3. Last resort: the request's own origin is always absolute.
+  return req.nextUrl.origin;
+}
+
 export async function POST(req: NextRequest) {
   // ── 0. Guard: ensure Stripe is configured ───────────────────────────────
   const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -67,11 +98,21 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 4. Create Stripe session ──────────────────────────────────────────────
-  // Build baseUrl: explicit env var → forwarded headers → request origin
-  const proto   = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(/:$/, "");
-  const host    = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
-  const baseUrl = (process.env.NEXT_PUBLIC_URL ?? "").replace(/\/$/, "")
-    || `${proto}://${host}`;
+  // Resolve an absolute, scheme-qualified base URL. Stripe rejects relative or
+  // scheme-less success/cancel URLs with "Not a valid URL", which previously
+  // surfaced to users as a broken upgrade button. Normalise defensively.
+  const baseUrl = resolveBaseUrl(req);
+
+  // Final guard: never hand Stripe a malformed URL.
+  try {
+    new URL(baseUrl);
+  } catch {
+    console.error("[create-checkout] could not resolve a valid base URL:", JSON.stringify(baseUrl));
+    return NextResponse.json(
+      { error: "Site URL is misconfigured — please contact support." },
+      { status: 500 },
+    );
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
