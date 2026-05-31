@@ -167,7 +167,6 @@ export default function UgcShowcase() {
           animation: ugcMarquee 45s linear infinite;
           will-change: transform;
         }
-        .ugc-marquee:hover .ugc-track { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) {
           .ugc-track { animation: none; }
         }

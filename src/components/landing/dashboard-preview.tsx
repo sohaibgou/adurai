@@ -361,7 +361,7 @@ export default function DashboardPreview() {
         </FadeIn>
 
         {/* ── Two-column: feature rail + app window ── */}
-        <div className="grid lg:grid-cols-[340px_minmax(0,1fr)] gap-6 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-6 lg:gap-10 items-start">
 
           {/* Feature rail */}
           <FadeIn delay={0.06}>

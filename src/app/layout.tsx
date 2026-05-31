@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
@@ -35,7 +36,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${geist.variable} ${geist.className} h-full antialiased`} suppressHydrationWarning={true}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning={true}>
         {/* Capture Supabase hash tokens BEFORE any JS bundle runs and strips them */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var h=window.location.hash;if(h&&(h.indexOf('access_token=')!==-1||h.indexOf('error=')!==-1)){window.location.replace('/auth/confirm'+h);}})();` }} />
+        <Script id="supabase-hash-capture" strategy="beforeInteractive">
+          {`(function(){var h=window.location.hash;if(h&&(h.indexOf('access_token=')!==-1||h.indexOf('error=')!==-1)){window.location.replace('/auth/confirm'+h);}})();`}
+        </Script>
         <AuthProvider>
           {children}
           <ConditionalFooter />
