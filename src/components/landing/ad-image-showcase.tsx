@@ -28,7 +28,7 @@ const CARDS: AdCard[] = [
 
 export default function AdImageShowcase() {
   return (
-    <section className="relative pt-28 pb-12 px-6 overflow-hidden" style={{ background: "#08080A" }}>
+    <section className="relative pt-12 pb-28 px-6 overflow-hidden" style={{ background: "#08080A" }}>
       {/* Faint grid texture */}
       <div
         className="absolute inset-0 pointer-events-none"

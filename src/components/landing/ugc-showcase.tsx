@@ -95,7 +95,7 @@ export default function UgcShowcase() {
   const loop = [...CARDS, ...CARDS];
 
   return (
-    <section className="relative pt-12 pb-28 overflow-hidden" style={{ background: "#08080A" }}>
+    <section className="relative pt-28 pb-12 overflow-hidden" style={{ background: "#08080A" }}>
       {/* Faint grid texture */}
       <div
         className="absolute inset-0 pointer-events-none"
