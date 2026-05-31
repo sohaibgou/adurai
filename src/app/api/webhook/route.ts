@@ -5,6 +5,19 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// Map Stripe price IDs → plan tier. Used as a robust fallback when session
+// metadata isn't available (e.g. plan changes made in the Stripe portal).
+const PLAN_BY_PRICE: Record<string, "starter" | "pro"> = {
+  [process.env.STRIPE_STARTER_PRICE_ID ?? "__starter"]: "starter",
+  [process.env.STRIPE_PRO_PRICE_ID ?? "__pro"]:         "pro",
+};
+
+/** Resolve the plan tier from a subscription's first line item price. */
+function planFromSubscription(sub: Stripe.Subscription): "starter" | "pro" | null {
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  return priceId ? (PLAN_BY_PRICE[priceId] ?? null) : null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -34,38 +47,47 @@ export async function POST(req: NextRequest) {
     }
 
     const subscriptionId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : null;
-
+      typeof session.subscription === "string" ? session.subscription : null;
     const customerId =
-      typeof session.customer === "string"
-        ? session.customer
-        : null;
+      typeof session.customer === "string" ? session.customer : null;
+
+    // ── Resolve the purchased plan ──────────────────────────────────────────
+    // Primary: the plan we stamped into metadata at checkout creation.
+    // Fallback: look up the subscription's price ID. NEVER hardcode "starter"
+    // — doing so silently downgraded every Pro purchaser.
+    let plan: "starter" | "pro" = session.metadata?.plan === "pro" ? "pro" : "starter";
+    if (session.metadata?.plan !== "pro" && session.metadata?.plan !== "starter" && subscriptionId) {
+      try {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        plan = planFromSubscription(sub) ?? plan;
+      } catch (e) {
+        console.error("[webhook] could not retrieve subscription to resolve plan:", e);
+      }
+    }
 
     const { error } = await supabaseAdmin.from("subscriptions").upsert(
       {
-        user_id: userId,
-        stripe_customer_id: customerId,
+        user_id:                userId,
+        stripe_customer_id:     customerId,
         stripe_subscription_id: subscriptionId,
-        plan: "starter",
-        status: "active",
-        updated_at: new Date().toISOString(),
+        plan,
+        status:                 "active",
+        updated_at:             new Date().toISOString(),
       },
       { onConflict: "user_id" }
     );
 
     if (error) console.error("DB upsert error:", error);
+    else console.log(`[webhook] activated ${plan} for user ${userId}`);
   }
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
-    const subscriptionId = subscription.id;
 
     const { error } = await supabaseAdmin
       .from("subscriptions")
       .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("stripe_subscription_id", subscriptionId);
+      .eq("stripe_subscription_id", subscription.id);
 
     if (error) console.error("DB update error:", error);
   }
@@ -74,9 +96,19 @@ export async function POST(req: NextRequest) {
     const subscription = event.data.object as Stripe.Subscription;
     const newStatus = subscription.status === "active" ? "active" : "inactive";
 
+    // Keep the plan tier in sync too, so an upgrade/downgrade made in Stripe's
+    // billing portal is reflected in the user's unlocked features.
+    const plan = planFromSubscription(subscription);
+
+    const update: Record<string, unknown> = {
+      status:     newStatus,
+      updated_at: new Date().toISOString(),
+    };
+    if (plan) update.plan = plan;
+
     const { error } = await supabaseAdmin
       .from("subscriptions")
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .update(update)
       .eq("stripe_subscription_id", subscription.id);
 
     if (error) console.error("DB update error:", error);

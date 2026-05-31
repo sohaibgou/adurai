@@ -63,7 +63,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    // Return the authoritative plan so the client doesn't have to trust the
+    // (tamperable) ?plan= URL param for what it shows / unlocks.
+    return NextResponse.json({ ok: true, plan });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Activation failed";
     return NextResponse.json({ error: message }, { status: 500 });
