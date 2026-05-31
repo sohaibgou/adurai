@@ -346,7 +346,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               style={{ border: "2px solid #FF3CAC", boxShadow: "0 14px 50px rgba(255,60,172,0.16)" }}
             >
               <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,60,172,0.06) 0%, transparent 70%)" }} />
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-center relative" style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.25)", letterSpacing: "0.1em" }}>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5 self-start md:self-center relative" style={{ background: "rgba(255,60,172,0.08)", color: "#FF3CAC", border: "1px solid rgba(255,60,172,0.25)", letterSpacing: "0.1em" }}>
                 <Sparkles className="w-2.5 h-2.5" /> Most Popular
               </span>
               <p className="font-heading font-black relative" style={{ fontSize: 18, color: "#0a0a0f", letterSpacing: "-0.03em" }}>Growth</p>
