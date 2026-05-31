@@ -36,7 +36,8 @@ const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
 
 function isPaidPlan(): boolean {
   try {
-    return localStorage.getItem("adur_plan") === "starter";
+    const p = localStorage.getItem("adur_plan");
+    return !!p && p !== "free";
   } catch {
     return false;
   }
@@ -294,7 +295,7 @@ function ResultsContent() {
     if (!user) return;
     supabase
       .from("subscriptions")
-      .select("status")
+      .select("plan, status")
       .eq("user_id", user.id)
       .eq("status", "active")
       .maybeSingle()
@@ -302,7 +303,7 @@ function ResultsContent() {
         if (data) {
           setPaidPlan(true);
           try {
-            localStorage.setItem("adur_plan", "starter");
+            localStorage.setItem("adur_plan", data.plan ?? "starter");
           } catch {
             /* noop */
           }

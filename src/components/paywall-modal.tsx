@@ -12,7 +12,7 @@ interface PaywallModalProps {
   open:          boolean;
   onClose:       () => void;
   reason?:       "analysis" | "image" | "copy" | "ugc";
-  currentPlan?:  "free" | "starter" | "pro";
+  currentPlan?:  "free" | "starter" | "growth" | "pro";
 }
 
 const STARTER_FEATURES = [
@@ -42,8 +42,8 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
   const [loading,  setLoading]  = useState<CheckoutPlan | null>(null);
   const [error,    setError]    = useState<string | null>(null);
 
-  // Starter users only see the Pro upgrade; free users see both plans
-  const isStarterUser = currentPlan === "starter";
+  // Paid non-Pro users (Starter / Growth) only see the Pro upgrade; free users see both plans
+  const isStarterUser = currentPlan === "starter" || currentPlan === "growth";
 
   async function handleUpgrade(plan: CheckoutPlan, e?: React.FormEvent) {
     e?.preventDefault();

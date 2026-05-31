@@ -4,10 +4,29 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-server";
 
-const PRICES: Record<string, string | undefined> = {
-  starter: process.env.STRIPE_STARTER_PRICE_ID,
-  pro:     process.env.STRIPE_PRO_PRICE_ID,
+// Price IDs keyed by plan → billing interval. Annual prices are billed once a
+// year at the discounted rate; they fall back to the monthly price ID if an
+// annual price isn't configured, so checkout never 500s on a missing env var.
+const PRICES: Record<string, { monthly?: string; annual?: string }> = {
+  starter: {
+    monthly: process.env.STRIPE_STARTER_PRICE_ID,
+    annual:  process.env.STRIPE_STARTER_ANNUAL_PRICE_ID,
+  },
+  growth: {
+    monthly: process.env.STRIPE_GROWTH_PRICE_ID,
+    annual:  process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID,
+  },
+  pro: {
+    monthly: process.env.STRIPE_PRO_PRICE_ID,
+    annual:  process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
+  },
 };
+
+function resolvePriceId(plan: string, interval: string): string | undefined {
+  const tier = PRICES[plan];
+  if (!tier) return undefined;
+  return interval === "annual" ? (tier.annual ?? tier.monthly) : tier.monthly;
+}
 
 /**
  * Resolve an absolute, scheme-qualified base URL for Stripe success/cancel URLs.
@@ -85,15 +104,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized", requiresAuth: true }, { status: 401 });
   }
 
-  // ── 3. Resolve plan ───────────────────────────────────────────────────────
-  let body: { plan?: string } = {};
+  // ── 3. Resolve plan + billing interval ────────────────────────────────────
+  let body: { plan?: string; interval?: string } = {};
   try { body = await req.json(); } catch { /* missing body is OK */ }
 
-  const plan    = body.plan && PRICES[body.plan] ? body.plan : "starter";
-  const priceId = PRICES[plan];
+  const plan     = body.plan && PRICES[body.plan] ? body.plan : "starter";
+  const interval = body.interval === "annual" ? "annual" : "monthly";
+  const priceId  = resolvePriceId(plan, interval);
 
   if (!priceId) {
-    console.error(`[create-checkout] price ID not configured for plan: ${plan}`);
+    console.error(`[create-checkout] price ID not configured for plan: ${plan} (${interval})`);
     return NextResponse.json({ error: `Price not configured for plan: ${plan}` }, { status: 500 });
   }
 
@@ -120,7 +140,7 @@ export async function POST(req: NextRequest) {
       mode:                 "subscription",
       ...(userEmail ? { customer_email: userEmail } : {}),
       line_items: [{ price: priceId, quantity: 1 }],
-      metadata:   { user_id: userId, plan },
+      metadata:   { user_id: userId, plan, interval },
       success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
       cancel_url:  `${baseUrl}/#pricing`,
     });

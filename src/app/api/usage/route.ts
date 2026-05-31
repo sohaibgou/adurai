@@ -6,11 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import {
+  IMAGE_LIMITS, COPY_LIMITS, UGC_LIMITS, ANALYSIS_LIMITS, resolvePlan,
+} from "@/lib/check-usage";
 
-const ADMIN_EMAILS      = ["sohaibitotv@gmail.com"];
-const FREE_LIMIT        = 3;
-const STARTER_UGC_LIMIT = 3;
-const PRO_UGC_LIMIT     = 30;
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "").trim();
@@ -34,35 +34,32 @@ export async function GET(req: NextRequest) {
     .eq("status", "active")
     .maybeSingle();
 
-  const plan: "free" | "starter" | "pro" =
-    isAdmin         ? "pro"
-    : sub?.plan === "pro"     ? "pro"
-    : sub?.plan === "starter" ? "starter"
-    : "free";
-
+  const plan = isAdmin ? "pro" : resolvePlan(sub?.plan);
   const isPaid = plan !== "free";
 
   // Usage row
   const { data: usage } = await supabaseAdmin
     .from("user_usage")
-    .select("analysis_count, image_count, copy_count, ugc_count, ugc_month")
+    .select("analysis_count, analysis_month, image_count, image_month, copy_count, ugc_count, ugc_month")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const analysisCount = usage?.analysis_count ?? 0;
-  const imageCount    = usage?.image_count    ?? 0;
-  const copyCount     = usage?.copy_count     ?? 0;
+  const month = new Date().toISOString().slice(0, 7);
 
-  // UGC count resets monthly
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const ugcCount     = (usage?.ugc_month === currentMonth) ? (usage?.ugc_count ?? 0) : 0;
+  // analysis + image reset monthly; copy is a lifetime free cap
+  const analysisCount = usage?.analysis_month === month ? (usage?.analysis_count ?? 0) : 0;
+  const imageCount    = usage?.image_month    === month ? (usage?.image_count    ?? 0) : 0;
+  const copyCount     = usage?.copy_count ?? 0;
+  const ugcCount      = usage?.ugc_month      === month ? (usage?.ugc_count      ?? 0) : 0;
 
-  // Limits
-  const ugcLimit =
-    isAdmin         ? null    // unlimited
-    : plan === "pro"     ? PRO_UGC_LIMIT
-    : plan === "starter" ? STARTER_UGC_LIMIT
-    : 0;                  // free = blocked
+  // Limits (null = unlimited). Admins are unlimited everywhere.
+  const analysisLimit = isAdmin ? null : ANALYSIS_LIMITS[plan];
+  const imageLimit    = isAdmin ? null : IMAGE_LIMITS[plan];
+  const copyLimit     = isAdmin ? null : COPY_LIMITS[plan];
+  const ugcLimit      = isAdmin ? null : UGC_LIMITS[plan];
+
+  const remaining = (limit: number | null, count: number) =>
+    limit === null ? null : Math.max(0, limit - count);
 
   return NextResponse.json({
     plan,
@@ -74,14 +71,14 @@ export async function GET(req: NextRequest) {
     copyCount,
     ugcCount,
     // limits (null = unlimited)
-    analysisLimit: isAdmin || isPaid ? null : FREE_LIMIT,
-    imageLimit:    isAdmin || isPaid ? null : FREE_LIMIT,
-    copyLimit:     isAdmin || isPaid ? null : FREE_LIMIT,
+    analysisLimit,
+    imageLimit,
+    copyLimit,
     ugcLimit,
     // convenience "remaining" fields (null = unlimited)
-    analysisRemaining: isAdmin || isPaid ? null : Math.max(0, FREE_LIMIT - analysisCount),
-    imageRemaining:    isAdmin || isPaid ? null : Math.max(0, FREE_LIMIT - imageCount),
-    copyRemaining:     isAdmin || isPaid ? null : Math.max(0, FREE_LIMIT - copyCount),
-    ugcRemaining:      isAdmin          ? null : ugcLimit === null ? null : Math.max(0, ugcLimit - ugcCount),
+    analysisRemaining: remaining(analysisLimit, analysisCount),
+    imageRemaining:    remaining(imageLimit, imageCount),
+    copyRemaining:     remaining(copyLimit, copyCount),
+    ugcRemaining:      remaining(ugcLimit, ugcCount),
   });
 }

@@ -5,15 +5,26 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// Map Stripe price IDs → plan tier. Used as a robust fallback when session
-// metadata isn't available (e.g. plan changes made in the Stripe portal).
-const PLAN_BY_PRICE: Record<string, "starter" | "pro"> = {
-  [process.env.STRIPE_STARTER_PRICE_ID ?? "__starter"]: "starter",
-  [process.env.STRIPE_PRO_PRICE_ID ?? "__pro"]:         "pro",
+type PlanTier = "starter" | "growth" | "pro";
+
+// Map Stripe price IDs → plan tier (both monthly + annual prices map to the same
+// tier). Used as a robust fallback when session metadata isn't available
+// (e.g. plan changes made in the Stripe billing portal).
+const PLAN_BY_PRICE: Record<string, PlanTier> = {
+  [process.env.STRIPE_STARTER_PRICE_ID ?? "__starter"]:         "starter",
+  [process.env.STRIPE_STARTER_ANNUAL_PRICE_ID ?? "__starter_a"]: "starter",
+  [process.env.STRIPE_GROWTH_PRICE_ID ?? "__growth"]:           "growth",
+  [process.env.STRIPE_GROWTH_ANNUAL_PRICE_ID ?? "__growth_a"]:  "growth",
+  [process.env.STRIPE_PRO_PRICE_ID ?? "__pro"]:                 "pro",
+  [process.env.STRIPE_PRO_ANNUAL_PRICE_ID ?? "__pro_a"]:        "pro",
 };
 
+const VALID_PLANS: readonly PlanTier[] = ["starter", "growth", "pro"];
+const isPlanTier = (v: unknown): v is PlanTier =>
+  typeof v === "string" && (VALID_PLANS as readonly string[]).includes(v);
+
 /** Resolve the plan tier from a subscription's first line item price. */
-function planFromSubscription(sub: Stripe.Subscription): "starter" | "pro" | null {
+function planFromSubscription(sub: Stripe.Subscription): PlanTier | null {
   const priceId = sub.items?.data?.[0]?.price?.id;
   return priceId ? (PLAN_BY_PRICE[priceId] ?? null) : null;
 }
@@ -53,10 +64,10 @@ export async function POST(req: NextRequest) {
 
     // ── Resolve the purchased plan ──────────────────────────────────────────
     // Primary: the plan we stamped into metadata at checkout creation.
-    // Fallback: look up the subscription's price ID. NEVER hardcode "starter"
-    // — doing so silently downgraded every Pro purchaser.
-    let plan: "starter" | "pro" = session.metadata?.plan === "pro" ? "pro" : "starter";
-    if (session.metadata?.plan !== "pro" && session.metadata?.plan !== "starter" && subscriptionId) {
+    // Fallback: look up the subscription's price ID. NEVER hardcode a tier
+    // — doing so silently downgraded purchasers of other tiers.
+    let plan: PlanTier = isPlanTier(session.metadata?.plan) ? session.metadata.plan : "starter";
+    if (!isPlanTier(session.metadata?.plan) && subscriptionId) {
       try {
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         plan = planFromSubscription(sub) ?? plan;

@@ -34,7 +34,11 @@ function LoginContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get("redirect");
-  const planParam    = searchParams.get("plan") === "pro" ? "pro" : "starter";
+  const rawPlan      = searchParams.get("plan");
+  const planParam: "starter" | "growth" | "pro" =
+    rawPlan === "pro" || rawPlan === "growth" ? rawPlan : "starter";
+  const intervalParam: "monthly" | "annual" =
+    searchParams.get("interval") === "annual" ? "annual" : "monthly";
 
   const [email,      setEmail]      = useState("");
   const [password,   setPassword]   = useState("");
@@ -103,7 +107,7 @@ function LoginContent() {
     }
 
     if (redirectTo === "checkout") {
-      try { await redirectToCheckout(undefined, planParam); } catch { router.push("/dashboard"); }
+      try { await redirectToCheckout(undefined, planParam, intervalParam); } catch { router.push("/dashboard"); }
     } else if (redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login") {
       router.push(redirectTo);
     } else {

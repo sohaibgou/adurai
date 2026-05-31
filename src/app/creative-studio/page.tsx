@@ -38,7 +38,10 @@ export default function CreativeStudioPage() {
 
   useEffect(() => {
     try { const raw = sessionStorage.getItem("adur_results"); if (raw) setAnalysis(JSON.parse(raw) as AnalysisResult); } catch { /**/ }
-    try { if (localStorage.getItem("adur_plan") === "starter") setPaidPlan(true); } catch { /**/ }
+    try {
+      const stored = localStorage.getItem("adur_plan");
+      if (stored && stored !== "free") { setPaidPlan(true); setPlanName(stored); }
+    } catch { /**/ }
     setHydrated(true);
   }, []);
 
@@ -92,6 +95,11 @@ export default function CreativeStudioPage() {
   const isPaid    = paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email));
   const isAdmin   = !!(user?.email && ADMIN_EMAILS.includes(user.email));
   const isProPlan = planName === "pro" || isAdmin;
+  const planTier: "free" | "starter" | "growth" | "pro" =
+    isAdmin ? "pro"
+    : (isPaid && (planName === "pro" || planName === "growth" || planName === "starter")) ? planName
+    : isPaid ? "starter"
+    : "free";
 
   if (!hydrated || authLoading) {
     return (
@@ -162,6 +170,7 @@ export default function CreativeStudioPage() {
               isPaid={isPaid}
               isAdmin={isAdmin}
               isProPlan={isProPlan}
+              planTier={planTier}
               savedSessions={creatives}
               onPaywall={(reason) => { setPaywallReason(reason); setPaywallOpen(true); }}
               onSaved={() => loadCreatives()}
@@ -176,7 +185,7 @@ export default function CreativeStudioPage() {
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
         reason={paywallReason}
-        currentPlan={isAdmin ? "pro" : isProPlan ? "pro" : isPaid ? "starter" : "free"}
+        currentPlan={planTier}
       />
     </div>
   );

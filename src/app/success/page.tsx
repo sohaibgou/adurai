@@ -8,8 +8,11 @@ import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-type PlanKey = "starter" | "pro";
+type PlanKey = "starter" | "growth" | "pro";
 type State   = "verifying" | "success" | "invalid";
+
+const isPlanKey = (v: unknown): v is PlanKey =>
+  v === "starter" || v === "growth" || v === "pro";
 
 interface PlanMeta {
   badge:     string;
@@ -46,15 +49,36 @@ const PLAN_META: Record<PlanKey, PlanMeta> = {
     ctaLabel:  "Start Analyzing",
     ctaHref:   "/analyze",
   },
-  pro: {
-    badge:    "PRO PLAN",
-    headline: "You're on Pro 🚀",
-    sub:      "Everything in Starter, plus your autonomous AI ad manager. Let Adur run your campaigns.",
+  growth: {
+    badge:    "GROWTH PLAN",
+    headline: "Welcome to Growth 🚀",
+    sub:      "Your Meta account, live data and unlimited analysis — all unlocked. Time to scale.",
     features: [
-      "Everything in Starter",
+      "Unlimited campaign analyses",
+      "Connect your Meta account (live data)",
+      "20 ad images + 10 UGC videos / month",
+      "Creative fatigue alerts",
+    ],
+    steps: [
+      { icon: Bot,       label: "Connect your Meta Ad account" },
+      { icon: BarChart3, label: "Pull in your live campaign data" },
+      { icon: Wand2,     label: "Generate scroll-stopping ad creative" },
+    ],
+    color:     "#FF3CAC",
+    colorSoft: "rgba(255,60,172,0.08)",
+    shadow:    "rgba(255,60,172,0.38)",
+    ctaLabel:  "Connect Meta Account",
+    ctaHref:   "/dashboard",
+  },
+  pro: {
+    badge:    "AUTOPILOT PLAN",
+    headline: "You're on Autopilot 🚀",
+    sub:      "Everything in Growth, plus your autonomous AI ad manager. Let Adur run your campaigns.",
+    features: [
+      "Everything in Growth",
       "30 UGC AI videos every month",
-      "Direct Meta account connection",
-      "AI Manager & Autopilot · 24/7 monitoring",
+      "AI Manager & full Autopilot",
+      "Auto pause / scale / budget · 24/7 monitoring",
     ],
     steps: [
       { icon: Bot,    label: "Connect your Meta Ad account" },
@@ -114,8 +138,8 @@ function SuccessContent() {
           body:    JSON.stringify({ session_id: sessionId }),
         });
         const data = await res.json().catch(() => ({}));
-        if (res.ok && (data.plan === "pro" || data.plan === "starter")) return data.plan;
-        if (res.ok) return planParam === "pro" ? "pro" : "starter";
+        if (res.ok && isPlanKey(data.plan)) return data.plan;
+        if (res.ok) return isPlanKey(planParam) ? planParam : "starter";
       } catch { /* fall through to retry */ }
       if (attempt < 2) {
         await new Promise(r => setTimeout(r, 700));
@@ -137,7 +161,7 @@ function SuccessContent() {
         //    row exists before the user ever lands on the dashboard. The
         //    Stripe webhook is the redundant safety net.
         const { data: { session } } = await supabase.auth.getSession();
-        let resolved: PlanKey = planParam === "pro" ? "pro" : "starter";
+        let resolved: PlanKey = isPlanKey(planParam) ? planParam : "starter";
 
         if (session?.access_token) {
           const confirmed = await activate(session.access_token);
@@ -169,7 +193,7 @@ function SuccessContent() {
     run();
   }, [searchParams, router]);
 
-  const meta  = plan === "pro" ? PLAN_META.pro : PLAN_META.starter;
+  const meta  = PLAN_META[plan];
   const isPro = plan === "pro";
 
   return (

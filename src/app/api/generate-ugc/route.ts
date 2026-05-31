@@ -128,7 +128,7 @@ Return ONLY valid JSON with no markdown:
     });
 
     /* ── 5. Increment UGC counter for paid plans ─────────────────────── */
-    if (plan === "starter" || plan === "pro") {
+    if (plan === "starter" || plan === "growth" || plan === "pro") {
       try { await supabaseAdmin.rpc("increment_user_ugc", { p_user_id: user.id }); } catch { /**/ }
     }
 

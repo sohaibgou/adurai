@@ -630,7 +630,7 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
           <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "var(--font-inter)", lineHeight: 1.5 }}>
             {isPro
               ? "Authorise via Meta Business OAuth — no app setup needed."
-              : "Available on Pro plan · $99/month"}
+              : "Available on Growth & Autopilot plans"}
           </p>
         </>
       )}

@@ -52,6 +52,7 @@ interface CreativeStudioProps {
   isPaid?:          boolean;
   isAdmin?:         boolean;
   isProPlan?:       boolean;
+  planTier?:        "free" | "starter" | "growth" | "pro";
   onPaywall?:       (reason: "image" | "copy" | "ugc") => void;
   onSaved?:         (id: string) => void;
   onLibraryOpen?:   () => void;   // called when user switches to Library tab
@@ -225,12 +226,15 @@ const AVATAR_PRESETS = [
 ];
 
 // Monthly generation limits per plan
-const UGC_LIMIT: Record<string, number> = { free: 0, starter: 3, pro: 30 };
+const UGC_LIMIT: Record<string, number> = { free: 0, starter: 3, growth: 10, pro: 30 };
 
-function getUgcPlan(): "free" | "starter" | "pro" {
+type UgcPlan = "free" | "starter" | "growth" | "pro";
+
+function getUgcPlan(): UgcPlan {
   try {
     const p = localStorage.getItem("adur_plan");
     if (p === "pro")     return "pro";
+    if (p === "growth")  return "growth";
     if (p === "starter") return "starter";
     return "free";
   } catch { return "free"; }
@@ -416,7 +420,7 @@ async function applyArabicOverlay(
 
 /* ── Main component ──────────────────────────────────────── */
 
-export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, isAdmin = false, isProPlan = false, onPaywall, onSaved, onLibraryOpen, savedSessions = [] }: CreativeStudioProps) {
+export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, isAdmin = false, isProPlan = false, planTier, onPaywall, onSaved, onLibraryOpen, savedSessions = [] }: CreativeStudioProps) {
   /* ── Auth (for hub save) ─────────────────────────── */
   const { session } = useAuth();
 
@@ -494,7 +498,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   const [ugcError,       setUgcError]         = useState<string | null>(null);
   const [ugcScriptOpen,  setUgcScriptOpen]    = useState(false);
   const [ugcScriptCopied, setUgcScriptCopied] = useState(false);
-  const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "pro">("free");
+  const [ugcPlan,        setUgcPlan]          = useState<"free" | "starter" | "growth" | "pro">("free");
   const [ugcUsage,       setUgcUsage]         = useState(0);
   // Avatar UGC extras
   const [ugcAvatar,           setUgcAvatar]          = useState<string>("sarah");
@@ -584,10 +588,12 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
   /* ── Sync ugcPlan from subscription props (authoritative over localStorage) ── */
   useEffect(() => {
     if (isAdmin) return;
+    // planTier (when provided) is the source of truth from the subscription
+    if (planTier) { setUgcPlan(planTier); return; }
     if (isProPlan) setUgcPlan("pro");
     else if (isPaid) setUgcPlan("starter");
     else setUgcPlan("free");
-  }, [isAdmin, isProPlan, isPaid]);
+  }, [isAdmin, isProPlan, isPaid, planTier]);
 
   /* ── Fetch server-side usage counts (authoritative — prevents localStorage bypass) ── */
   useEffect(() => {

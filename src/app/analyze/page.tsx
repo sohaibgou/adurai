@@ -26,7 +26,7 @@ function getCount(): number {
   try { return parseInt(localStorage.getItem("adur_analysis_count") ?? "0", 10) || 0; } catch { return 0; }
 }
 function isPaidPlan(): boolean {
-  try { return localStorage.getItem("adur_plan") === "starter"; } catch { return false; }
+  try { const p = localStorage.getItem("adur_plan"); return !!p && p !== "free"; } catch { return false; }
 }
 function incrementCount(): number {
   const next = getCount() + 1;
@@ -59,14 +59,14 @@ export default function AnalyzePage() {
     if (!user) { setSubLoading(false); return; }
     supabase
       .from("subscriptions")
-      .select("status")
+      .select("plan, status")
       .eq("user_id", user.id)
       .eq("status", "active")
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
           setPaidPlan(true);
-          try { localStorage.setItem("adur_plan", "starter"); } catch {}
+          try { localStorage.setItem("adur_plan", data.plan ?? "starter"); } catch {}
         } else {
           setPaidPlan(false);
           try { localStorage.removeItem("adur_plan"); } catch {}

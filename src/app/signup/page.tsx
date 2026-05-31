@@ -33,7 +33,11 @@ const INPUT: React.CSSProperties = {
 function SignupContent() {
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get("redirect");
-  const planParam    = searchParams.get("plan") === "pro" ? "pro" : "starter";
+  const rawPlan      = searchParams.get("plan");
+  const planParam: "starter" | "growth" | "pro" =
+    rawPlan === "pro" || rawPlan === "growth" ? rawPlan : "starter";
+  const intervalParam: "monthly" | "annual" =
+    searchParams.get("interval") === "annual" ? "annual" : "monthly";
   const router       = useRouter();
 
   const [email,    setEmail]    = useState("");
@@ -81,7 +85,7 @@ function SignupContent() {
     const token = signInData.session?.access_token;
 
     if (redirectTo === "checkout" && token) {
-      try { await redirectToCheckout(token, planParam); return; } catch { /* fall through */ }
+      try { await redirectToCheckout(token, planParam, intervalParam); return; } catch { /* fall through */ }
     }
 
     router.push("/dashboard");

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkUsage } from "@/lib/check-usage";
+import { checkUsage, IMAGE_LIMITS } from "@/lib/check-usage";
 import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const maxDuration = 120;
@@ -148,7 +148,7 @@ Return ONLY a valid JSON array with exactly 4 objects. No markdown, no explanati
 export async function POST(req: NextRequest) {
   const usageResult = await checkUsage(req, "image");
   if (usageResult instanceof NextResponse) return usageResult;
-  const { user, plan } = usageResult;
+  const { user, plan, isAdmin } = usageResult;
 
   const { prompt, isArabic, language } = await req.json() as { prompt: string; isArabic?: boolean; language?: string };
 
@@ -194,8 +194,9 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
     );
   }
 
-  // Increment server-side counter for free-plan users
-  if (plan === "free") {
+  // Increment the monthly image counter for any tier that has a finite cap
+  // (free 3, starter 5, growth 20). Pro/Autopilot + admins are unlimited.
+  if (!isAdmin && IMAGE_LIMITS[plan] !== null) {
     try { await supabaseAdmin.rpc("increment_user_image", { p_user_id: user.id }); } catch { /**/ }
   }
 

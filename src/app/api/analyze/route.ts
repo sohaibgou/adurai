@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { ANALYSIS_LIMITS, resolvePlan, type PlanTier } from "@/lib/check-usage";
 import type { CampaignSummary } from "@/lib/types";
 
 // Allow up to 120 seconds for the Claude API call
 export const maxDuration = 120;
 
 const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
-const FREE_LIMIT   = 3;
+const FREE_LIMIT   = 3; // guest fallback (no session)
 
 const INDUSTRY_BENCHMARKS = `
 META ADS INDUSTRY BENCHMARKS — use these as hard reference points. Compare EVERY campaign metric against these benchmarks and cite them explicitly in your recommendations. Never guess without context.
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
     const { summaries, onboarding, sessionToken, plan, analysisCount: clientCount } = body;
 
     // ── Server-side limit enforcement ─────────────────────────────────────────
-    let serverPaid    = false;
+    let serverPlan    : PlanTier = "free";
     let serverAdmin   = false;
     let authedUserId: string | undefined;
 
@@ -193,11 +194,11 @@ export async function POST(request: NextRequest) {
           if (!serverAdmin) {
             const { data: sub } = await supabaseAdmin
               .from("subscriptions")
-              .select("status")
+              .select("plan, status")
               .eq("user_id", user.id)
               .eq("status", "active")
               .maybeSingle();
-            serverPaid = !!sub;
+            serverPlan = resolvePlan(sub?.plan);
           }
         }
       } catch (e) {
@@ -205,23 +206,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!serverAdmin && !serverPaid) {
+    // Analysis caps reset monthly. Free 3/mo, Starter 10/mo, Growth+/Autopilot
+    // unlimited (null). Admins are always unlimited.
+    const analysisLimit = serverAdmin ? null : ANALYSIS_LIMITS[serverPlan];
+    if (analysisLimit !== null) {
+      const month = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+      const overMessage =
+        serverPlan === "free"
+          ? "You've used all 3 free analyses for this month. Upgrade to continue."
+          : `You've used all ${analysisLimit} analyses for this month. Resets on the 1st.`;
+
       if (authedUserId) {
-        // Authenticated free user — enforce via DB count (authoritative)
+        // Authenticated user — enforce via DB count (authoritative, monthly reset)
         const { data: usageRow } = await supabaseAdmin
           .from("user_usage")
-          .select("analysis_count")
+          .select("analysis_count, analysis_month")
           .eq("user_id", authedUserId)
           .maybeSingle();
-        const dbCount = usageRow?.analysis_count ?? 0;
-        if (dbCount >= FREE_LIMIT) {
+        const dbCount = usageRow?.analysis_month === month ? (usageRow?.analysis_count ?? 0) : 0;
+        if (dbCount >= analysisLimit) {
           return NextResponse.json(
-            { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
+            { error: overMessage, code: "FREE_LIMIT_EXCEEDED" },
             { status: 403 }
           );
         }
       } else {
-        // Guest user — fall back to client-reported count
+        // Guest user — fall back to client-reported count (free tier only)
         const count = typeof clientCount === "number" ? clientCount : 0;
         if (count >= FREE_LIMIT) {
           return NextResponse.json(
@@ -469,8 +479,9 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
       analysisMode,
       summaries,  // ← include campaign rows so DB-loaded results show Overview & Campaigns tabs
     };
-    // Increment DB usage for authenticated free users
-    if (authedUserId && !serverPaid && !serverAdmin) {
+    // Increment the monthly analysis counter for tiers with a finite cap
+    // (free 3/mo, starter 10/mo). Growth/Autopilot + admins are unlimited.
+    if (authedUserId && !serverAdmin && ANALYSIS_LIMITS[serverPlan] !== null) {
       try {
         await supabaseAdmin.rpc("increment_user_analysis", { p_user_id: authedUserId });
       } catch { /* non-fatal — count will be checked next request */ }

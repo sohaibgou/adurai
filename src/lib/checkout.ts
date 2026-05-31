@@ -1,16 +1,19 @@
 import { supabase } from "@/lib/supabase";
 
-export type CheckoutPlan = "starter" | "pro";
+export type CheckoutPlan = "starter" | "growth" | "pro";
+export type BillingInterval = "monthly" | "annual";
 
 /**
- * Redirect the user to Stripe Checkout for the given plan.
+ * Redirect the user to Stripe Checkout for the given plan + billing interval.
  *
- * - `token`  — pass the access token right after signUp (before cookie is set)
- * - `plan`   — "starter" (default) or "pro"
+ * - `token`    — pass the access token right after signUp (before cookie is set)
+ * - `plan`     — "starter" (default), "growth", or "pro" (Autopilot)
+ * - `interval` — "monthly" (default) or "annual"
  */
 export async function redirectToCheckout(
   token?: string,
-  plan: CheckoutPlan = "starter"
+  plan: CheckoutPlan = "starter",
+  interval: BillingInterval = "monthly"
 ): Promise<boolean> {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -21,7 +24,7 @@ export async function redirectToCheckout(
       method:      "POST",
       credentials: "include",
       headers,
-      body:        JSON.stringify({ plan }),
+      body:        JSON.stringify({ plan, interval }),
     });
   } catch {
     throw new Error("Network error — please check your connection and try again.");
@@ -49,11 +52,14 @@ export async function redirectToCheckout(
  *   - Logged in  → redirect to Stripe checkout
  *   - Logged out → return false so the caller shows the signup modal
  */
-export async function handleGetStarted(plan: CheckoutPlan = "starter"): Promise<boolean> {
+export async function handleGetStarted(
+  plan: CheckoutPlan = "starter",
+  interval: BillingInterval = "monthly"
+): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    return redirectToCheckout(undefined, plan);
+    return redirectToCheckout(undefined, plan, interval);
   }
 
   return false;

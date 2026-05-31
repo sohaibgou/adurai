@@ -5,36 +5,76 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Zap, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { redirectToCheckout, type CheckoutPlan } from "@/lib/checkout";
+import { redirectToCheckout, type CheckoutPlan, type BillingInterval } from "@/lib/checkout";
 
 interface CheckoutModalProps {
-  open:    boolean;
-  onClose: () => void;
-  plan?:   CheckoutPlan;
+  open:      boolean;
+  onClose:   () => void;
+  plan?:     CheckoutPlan;
+  interval?: BillingInterval;
 }
 
-const STARTER_FEATURES = [
-  "Unlimited campaign analyses",
-  "Full 7-Day Battle Plan",
-  "Profit Leak calculator",
-  "Creative Studio — images & copy",
-  "PDF report export",
-];
+interface PlanInfo {
+  title:    string;
+  label:    string;
+  monthly:  string;
+  annual:   string;
+  purple:   boolean;            // purple accent (Autopilot) vs pink gradient
+  features: string[];
+}
 
-const PRO_FEATURES = [
-  "Everything in Starter",
-  "Connect Meta Ad Account",
-  "AI Manager & Autopilot",
-  "24/7 campaign monitoring",
-  "Auto budget optimization",
-  "Daily AI briefings",
-];
+const PLAN_INFO: Record<CheckoutPlan, PlanInfo> = {
+  starter: {
+    title: "Upgrade to Starter",
+    label: "Starter Plan",
+    monthly: "$19", annual: "$15",
+    purple: false,
+    features: [
+      "10 campaign analyses / month",
+      "Full 7-Day Battle Plan",
+      "Profit Leak calculator",
+      "5 ad images / month + unlimited copy",
+      "3 UGC AI videos / month",
+    ],
+  },
+  growth: {
+    title: "Upgrade to Growth",
+    label: "Growth Plan",
+    monthly: "$49", annual: "$39",
+    purple: false,
+    features: [
+      "Unlimited campaign analyses",
+      "Connect Meta Account (live data)",
+      "20 ad images / month + unlimited copy",
+      "10 UGC AI videos / month",
+      "Creative fatigue alerts",
+    ],
+  },
+  pro: {
+    title: "Upgrade to Autopilot",
+    label: "Autopilot Plan",
+    monthly: "$99", annual: "$79",
+    purple: true,
+    features: [
+      "Everything in Growth",
+      "AI Manager & full Autopilot",
+      "Auto pause / scale / budget",
+      "24/7 campaign monitoring",
+      "30 UGC AI videos / month",
+    ],
+  },
+};
 
-export default function CheckoutModal({ open, onClose, plan = "starter" }: CheckoutModalProps) {
-  const isPro     = plan === "pro";
-  const FEATURES  = isPro ? PRO_FEATURES : STARTER_FEATURES;
-  const planLabel = isPro ? "Pro Plan" : "Starter Plan";
-  const price     = isPro ? "$99" : "$19";
+export default function CheckoutModal({ open, onClose, plan = "starter", interval = "monthly" }: CheckoutModalProps) {
+  const info     = PLAN_INFO[plan];
+  const purple   = info.purple;
+  const price    = interval === "annual" ? info.annual : info.monthly;
+  const period   = interval === "annual" ? "/mo billed yearly" : "/month";
+  const accent   = purple ? "#6c5ce7" : "#FF3CAC";
+  const btnBg     = purple ? "#6c5ce7" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)";
+  const shadowSm  = purple ? "0 4px 20px rgba(108,92,231,0.35)" : "0 4px 20px rgba(255,60,172,0.35)";
+  const shadowLg  = purple ? "0 8px 28px rgba(108,92,231,0.48)" : "0 8px 28px rgba(255,60,172,0.48)";
+
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -64,7 +104,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
       if (signUpError) throw signUpError;
 
       if (data.session?.access_token) {
-        await redirectToCheckout(data.session.access_token, plan);
+        await redirectToCheckout(data.session.access_token, plan, interval);
         return;
       }
 
@@ -78,7 +118,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
       }
 
       if (signInData.session?.access_token) {
-        await redirectToCheckout(signInData.session.access_token, plan);
+        await redirectToCheckout(signInData.session.access_token, plan, interval);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -130,7 +170,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
               }}
             >
               {/* Gradient top strip */}
-              <div style={{ height: 5, background: isPro ? "linear-gradient(90deg, #6c5ce7, #a29bfe)" : "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
+              <div style={{ height: 5, background: purple ? "linear-gradient(90deg, #6c5ce7, #a29bfe)" : "linear-gradient(90deg, #FF3CAC, #FF6B35)" }} />
 
               {/* Close */}
               <button
@@ -165,11 +205,13 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                   style={{
                     width: 52, height: 52,
                     borderRadius: 16,
-                    background: "linear-gradient(135deg, rgba(255,60,172,0.12), rgba(255,107,53,0.10))",
-                    border: "1px solid rgba(255,60,172,0.20)",
+                    background: purple
+                      ? "linear-gradient(135deg, rgba(108,92,231,0.12), rgba(162,155,254,0.10))"
+                      : "linear-gradient(135deg, rgba(255,60,172,0.12), rgba(255,107,53,0.10))",
+                    border: purple ? "1px solid rgba(108,92,231,0.20)" : "1px solid rgba(255,60,172,0.20)",
                   }}
                 >
-                  <Zap className="w-6 h-6" style={{ color: "#FF3CAC" }} />
+                  <Zap className="w-6 h-6" style={{ color: accent }} />
                 </div>
 
                 {/* Heading */}
@@ -183,7 +225,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                     marginBottom: 8,
                   }}
                 >
-                  {isPro ? "Upgrade to Pro" : "Upgrade to Starter"}
+                  {info.title}
                 </h2>
                 <p style={{ fontSize: 14, color: "#6B6B72", lineHeight: 1.65, fontFamily: "var(--font-inter)", marginBottom: 20 }}>
                   Create your account and go straight to payment — done in 60 seconds.
@@ -195,16 +237,16 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                   style={{
                     padding: "14px 18px",
                     borderRadius: 14,
-                    background: isPro ? "rgba(108,92,231,0.06)" : "rgba(255,60,172,0.05)",
-                    border: isPro ? "1px solid rgba(108,92,231,0.20)" : "1px solid rgba(255,60,172,0.18)",
+                    background: purple ? "rgba(108,92,231,0.06)" : "rgba(255,60,172,0.05)",
+                    border: purple ? "1px solid rgba(108,92,231,0.20)" : "1px solid rgba(255,60,172,0.18)",
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: isPro ? "#6c5ce7" : "#FF3CAC", textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)", marginBottom: 3 }}>
-                      {planLabel}
+                    <p style={{ fontSize: 11, fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.09em", fontFamily: "var(--font-inter)", marginBottom: 3 }}>
+                      {info.label}
                     </p>
                     <p className="font-heading" style={{ fontSize: 26, fontWeight: 900, color: "#0D0D12", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                      {price}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>/month</span>
+                      {price}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B6B72", letterSpacing: 0 }}>{period}</span>
                     </p>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#16A34A", background: "rgba(22,163,74,0.10)", padding: "5px 12px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
@@ -214,9 +256,9 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
 
                 {/* Feature list */}
                 <ul className="space-y-2 mb-6">
-                  {FEATURES.map(f => (
+                  {info.features.map(f => (
                     <li key={f} className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: "#FF3CAC" }} />
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: accent }} />
                       <span style={{ fontSize: 13, color: "#0D0D12", fontFamily: "var(--font-inter)", fontWeight: 500 }}>{f}</span>
                     </li>
                   ))}
@@ -242,7 +284,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                       color: "#0D0D12",
                       background: "#F7F5F2",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = `0 0 0 4px ${purple ? "rgba(108,92,231,0.10)" : "rgba(255,60,172,0.10)"}`; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
                   />
                   <input
@@ -263,7 +305,7 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                       color: "#0D0D12",
                       background: "#F7F5F2",
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = "#FF3CAC"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(255,60,172,0.10)"; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = `0 0 0 4px ${purple ? "rgba(108,92,231,0.10)" : "rgba(255,60,172,0.10)"}`; }}
                     onBlur={e => { e.currentTarget.style.borderColor = "#E8E5E0"; e.currentTarget.style.background = "#F7F5F2"; e.currentTarget.style.boxShadow = "none"; }}
                   />
 
@@ -280,15 +322,15 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                     style={{
                       padding: "15px",
                       borderRadius: 100,
-                      background: loading ? "#9ca3af" : isPro ? "#6c5ce7" : "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+                      background: loading ? "#9ca3af" : btnBg,
                       fontSize: 15,
                       fontFamily: "var(--font-inter)",
                       letterSpacing: "-0.01em",
-                      boxShadow: loading ? "none" : isPro ? "0 4px 20px rgba(108,92,231,0.35)" : "0 4px 20px rgba(255,60,172,0.35)",
+                      boxShadow: loading ? "none" : shadowSm,
                       border: "none",
                     }}
-                    onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = isPro ? "0 8px 28px rgba(108,92,231,0.48)" : "0 8px 28px rgba(255,60,172,0.48)"; } }}
-                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = isPro ? "0 4px 20px rgba(108,92,231,0.35)" : "0 4px 20px rgba(255,60,172,0.35)"; }}
+                    onMouseEnter={e => { if (!loading) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = shadowLg; } }}
+                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = shadowSm; }}
                   >
                     {loading ? "Setting up your account…" : "Continue to Payment"}
                     {!loading && <ArrowRight className="w-4 h-4" />}
@@ -298,9 +340,9 @@ export default function CheckoutModal({ open, onClose, plan = "starter" }: Check
                 <p className="text-center" style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
                   Already have an account?{" "}
                   <Link
-                    href={`/login?redirect=checkout&plan=${plan}`}
+                    href={`/login?redirect=checkout&plan=${plan}&interval=${interval}`}
                     className="font-semibold"
-                    style={{ color: isPro ? "#6c5ce7" : "#FF3CAC", textDecoration: "none" }}
+                    style={{ color: accent, textDecoration: "none" }}
                     onClick={handleClose}
                   >
                     Sign in

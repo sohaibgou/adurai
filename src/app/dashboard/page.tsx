@@ -144,7 +144,11 @@ function DashboardContent() {
 
   const isAdmin      = !!(user?.email && ADMIN_EMAILS.includes(user.email));
   const isPaid       = isAdmin || subscription?.status === "active";
+  const planTier     = isAdmin ? "pro" : (isPaid ? (subscription?.plan ?? "starter") : "free");
   const isPro        = isAdmin || (isPaid && subscription?.plan === "pro");
+  // Meta connection (READ) unlocks on Growth + Autopilot; autopilot/write stays Pro.
+  const hasMeta      = isAdmin || (isPaid && (subscription?.plan === "growth" || subscription?.plan === "pro"));
+  const planLabel    = { free: "Free", starter: "Starter", growth: "Growth", pro: "Autopilot" }[planTier] ?? "Starter";
   const FREE_LIMIT   = 3;
   const remaining    = Math.max(0, FREE_LIMIT - analysisCount);
   const firstName    = user.email?.split("@")[0] ?? "there";
@@ -330,7 +334,7 @@ function DashboardContent() {
                   },
                   {
                     label:      "Plan",
-                    value:      subLoading ? "…" : isPaid ? "Starter" : "Free",
+                    value:      subLoading ? "…" : planLabel,
                     sub:        isPaid ? "All features unlocked" : `${remaining} of 3 analyses left`,
                     subOk:      isPaid,
                     subWarn:    false,
@@ -366,7 +370,7 @@ function DashboardContent() {
 
             {/* ══ Meta Integration ══ */}
             <motion.div {...fade(0.12)}>
-              <MetaPanel flashParam={metaParam ?? actionParam} isPro={isPro} />
+              <MetaPanel flashParam={metaParam ?? actionParam} isPro={hasMeta} />
             </motion.div>
 
             {/* ══ Pending Actions ══ */}
