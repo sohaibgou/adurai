@@ -174,8 +174,8 @@ export default function Home() {
       <DashboardPreview />
       <HowItWorks />
       <FeaturesSection />
-      <AdImageShowcase />
       <UgcShowcase />
+      <AdImageShowcase />
       <PricingSection onCtaClick={goStart} />
       <CtaSection onCtaClick={goStart} />
 
