@@ -281,10 +281,10 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
         </FadeIn>
 
         {/* ── Cards grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch justify-items-center md:justify-items-stretch">
 
           {/* ════ FREE ════ */}
-          <FadeIn delay={0.1}>
+          <FadeIn delay={0.1} className="w-full max-w-[420px] md:max-w-none">
             <div className="flex flex-col h-full rounded-2xl bg-white p-7" style={{ border: "1.5px solid #E8E5E0" }}>
               <span className="inline-flex items-center gap-1.5 self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
                 <Zap className="w-2.5 h-2.5" /> Get Started
@@ -309,7 +309,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           </FadeIn>
 
           {/* ════ STARTER ════ */}
-          <FadeIn delay={0.15}>
+          <FadeIn delay={0.15} className="w-full max-w-[420px] md:max-w-none">
             <div className="flex flex-col h-full rounded-2xl bg-white p-7" style={{ border: "1.5px solid #E8E5E0" }}>
               <span className="inline-flex items-center gap-1.5 self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5" style={{ background: "#FAF8F5", color: "#6b7280", border: "1px solid #E8E5E0", letterSpacing: "0.1em" }}>
                 Starter
@@ -336,7 +336,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           </FadeIn>
 
           {/* ════ GROWTH — FEATURED ════ */}
-          <FadeIn delay={0.2}>
+          <FadeIn delay={0.2} className="w-full max-w-[420px] md:max-w-none">
             <div
               className="flex flex-col h-full rounded-2xl bg-white p-7 relative"
               style={{ border: "2px solid #FF3CAC", boxShadow: "0 14px 50px rgba(255,60,172,0.16)" }}
@@ -370,7 +370,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
           </FadeIn>
 
           {/* ════ AUTOPILOT — DARK ════ */}
-          <FadeIn delay={0.25}>
+          <FadeIn delay={0.25} className="w-full max-w-[420px] md:max-w-none">
             <div className="flex flex-col h-full rounded-2xl p-7" style={{ background: "#0D0D12", border: "1.5px solid #0D0D12" }}>
               <span className="inline-flex items-center gap-1.5 self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-5" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em" }}>
                 <Bot className="w-2.5 h-2.5" /> Most Powerful
