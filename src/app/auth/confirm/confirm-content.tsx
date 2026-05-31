@@ -69,11 +69,47 @@ export default function ConfirmContent() {
       const type      = searchParams.get("type") as "signup" | "email" | "magiclink" | "invite" | null;
       const code      = searchParams.get("code");
 
-      async function markVerified(accessToken?: string | null) {
-        await fetch("/api/auth/mark-verified", {
-          method: "POST",
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        }).catch(() => {});
+      // Durably persist email_link_verified = true.
+      //
+      // This single write is what permanently unlocks the account. If it fails
+      // silently, the user appears verified for the current session (via the
+      // sessionStorage flag) but the DB never records it — so days later, on a
+      // fresh login, verify-status reads `false` and re-prompts a user who
+      // already verified. That is exactly the bug we're fixing, so this must
+      // NEVER be fire-and-forget: ensure we have a token, retry, and report
+      // whether it actually succeeded.
+      async function markVerified(accessToken?: string | null): Promise<boolean> {
+        // Right after verifyOtp/exchangeCodeForSession the cookies/token can
+        // lag, so fall back to reading the token straight from the client.
+        let token = accessToken ?? null;
+        if (!token) {
+          const { data } = await supabase.auth
+            .getSession()
+            .catch(() => ({ data: { session: null } }));
+          token = data.session?.access_token ?? null;
+        }
+
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const res = await fetch("/api/auth/mark-verified", {
+              method:  "POST",
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.ok) return true;
+          } catch { /* network blip — retry */ }
+
+          // Halfway through, refresh the session in case the token was stale
+          // or missing on the first attempts.
+          if (attempt === 1) {
+            const { data } = await supabase.auth
+              .refreshSession()
+              .catch(() => ({ data: { session: null } }));
+            if (data?.session?.access_token) token = data.session.access_token;
+          }
+
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        }
+        return false;
       }
 
       try {
@@ -136,10 +172,13 @@ export default function ConfirmContent() {
           return;
         }
 
-        await markVerified(session?.access_token);
+        const marked = await markVerified(session?.access_token);
         setStatus("success");
         setMsg("Email verified! Redirecting…");
-        try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+        // Only show the optimistic "verified" state if the DB write succeeded.
+        // If it didn't, skip the flag so the gate (and its resend button)
+        // surfaces immediately instead of silently breaking days later.
+        if (marked) { try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ } }
         setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
 
       } catch (err) {
@@ -148,13 +187,10 @@ export default function ConfirmContent() {
         if (message.toLowerCase().includes("already")) {
           // Email was already confirmed — user re-clicked an old valid link
           const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-          await fetch("/api/auth/mark-verified", {
-            method: "POST",
-            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
-          }).catch(() => {});
+          const marked = await markVerified(session?.access_token);
           setStatus("success");
           setMsg("Email already verified! Redirecting…");
-          try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+          if (marked) { try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ } }
           setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
 
         } else if (
