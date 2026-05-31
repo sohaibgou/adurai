@@ -132,7 +132,7 @@ const PINK = "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)";
 // ── Feature row ─────────────────────────────────────────────────────────────────
 function FeatureRow({ feat, dark }: { feat: Feat; dark?: boolean }) {
   return (
-    <li className="flex items-start justify-center gap-2.5">
+    <li className="flex items-start gap-2.5">
       {feat.ok ? (
         <span
           className="mt-0.5 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center"
@@ -176,19 +176,23 @@ function FeatureRow({ feat, dark }: { feat: Feat; dark?: boolean }) {
 function FeatureGroups({ groups, dark }: { groups: Group[]; dark?: boolean }) {
   return (
     <div className="flex-1 mb-7">
-      {groups.map((g, gi) => (
-        <div key={g.label} className={gi > 0 ? "mt-4" : ""}>
-          <p
-            className="text-[10px] font-bold uppercase tracking-wider mb-2.5"
-            style={{ color: dark ? "rgba(255,255,255,0.35)" : "#A8A5A0", letterSpacing: "0.1em" }}
-          >
-            {g.label}
-          </p>
-          <ul className="space-y-2.5">
-            {g.items.map((f) => <FeatureRow key={f.label} feat={f} dark={dark} />)}
-          </ul>
-        </div>
-      ))}
+      {/* Centered as a block, but rows stay left-aligned so the check/X
+          icons line up in a clean vertical column. */}
+      <div className="inline-block text-left">
+        {groups.map((g, gi) => (
+          <div key={g.label} className={gi > 0 ? "mt-4" : ""}>
+            <p
+              className="text-[10px] font-bold uppercase tracking-wider mb-2.5"
+              style={{ color: dark ? "rgba(255,255,255,0.35)" : "#A8A5A0", letterSpacing: "0.1em" }}
+            >
+              {g.label}
+            </p>
+            <ul className="space-y-2.5">
+              {g.items.map((f) => <FeatureRow key={f.label} feat={f} dark={dark} />)}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
