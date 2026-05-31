@@ -43,6 +43,8 @@ export default function PreviewPage() {
     try {
       const raw = sessionStorage.getItem("adur_results");
       if (!raw) { router.replace("/"); return; }
+      // Hydrate from sessionStorage on mount — this is client-only data that cannot be read during render/SSR.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnalysis(JSON.parse(raw) as AnalysisResult);
     } catch {
       router.replace("/");

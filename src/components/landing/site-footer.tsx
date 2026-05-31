@@ -96,6 +96,8 @@ function FooterLink({ label, href, scrollTo }: { label: string; href?: string; s
 
 export default function SiteFooter() {
   const [year, setYear] = useState(2026);
+  // Resolve the real current year on the client to avoid an SSR/CSR hydration mismatch.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setYear(new Date().getFullYear()); }, []);
 
   return (

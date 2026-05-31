@@ -31,16 +31,24 @@ interface Props {
 export default function AnalysisLoadingScreen({ visible, active, onComplete }: Props) {
   const [progress, setProgress] = useState(0);
   const [msgIdx, setMsgIdx]     = useState(0);
+  const [completing, setCompleting] = useState(false);
   const doneRef      = useRef(false);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  // Keep the latest onComplete callback without reading/writing a ref during render
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  });
 
   // Reset when overlay becomes visible again
   useEffect(() => {
     if (visible) {
       doneRef.current = false;
+      // Reset the overlay's animation state each time it re-opens; must run in an effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProgress(0);
       setMsgIdx(0);
+      setCompleting(false);
     }
   }, [visible]);
 
@@ -68,8 +76,11 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
   useEffect(() => {
     if (!active && visible && !doneRef.current) {
       doneRef.current = true;
+      // Reacting to the API finishing (active→false): snap the ring to 100% then navigate.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProgress(100);
       setMsgIdx(MESSAGES.length - 1); // "Finalizing your complete audit..."
+      setCompleting(true);
       const t = setTimeout(() => onCompleteRef.current(), 900);
       return () => clearTimeout(t);
     }
@@ -83,7 +94,7 @@ export default function AnalysisLoadingScreen({ visible, active, onComplete }: P
   const CY   = 80;
   const circ = 2 * Math.PI * R;
   const dash = circ * (1 - progress / 100);
-  const isCompleting = doneRef.current;
+  const isCompleting = completing;
 
   return (
     <motion.div

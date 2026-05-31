@@ -30,6 +30,8 @@ export default function HealthGauge({ score }: HealthGaugeProps) {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (prefersReduced) {
+      // Reduced-motion users skip the animation and jump straight to the final value.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnimated(score);
       return;
     }

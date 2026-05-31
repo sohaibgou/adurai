@@ -151,14 +151,13 @@ export const generateAvatarVideo = async ({
     try {
       console.log(`[fal-client] generateAvatarVideo trying ${model}…`);
       const result = await fal.subscribe(model, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         input: {
           image_url:       imageUrl,   // correct param name for all Kling image-to-video models
           prompt,
           duration:        klingDuration,
           aspect_ratio:    aspectRatio,
           negative_prompt: "blurry, low quality, distorted, no face, faceless, text overlay, watermark, cartoon, animation, drawing",
-        } as any,
+        },
         logs: true,
       }) as { data?: { video?: { url?: string } } };
 
@@ -194,13 +193,12 @@ export const composeHeldProductImage = async ({
   imageUrls: string[];
 }): Promise<string | undefined> => {
   const result = await fal.subscribe("fal-ai/nano-banana/edit", {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input: {
       prompt,
       image_urls:    imageUrls,
       num_images:    1,
       output_format: "jpeg",
-    } as any,
+    },
     logs: true,
   }) as { data?: { images?: { url?: string }[] } };
 
@@ -216,11 +214,10 @@ export const lipSyncVideo = async ({
   audioUrl: string;
 }): Promise<string | undefined> => {
   const result = await fal.subscribe(FAL_MODELS.LIPSYNC, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input: {
       video_url: videoUrl,
       audio_url: audioUrl,
-    } as any,
+    },
     logs: true,
   }) as { data?: { video?: { url?: string } } };
 

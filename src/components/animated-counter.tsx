@@ -22,6 +22,9 @@ export default function AnimatedCounter({
 
   useEffect(() => {
     if (hasAnimated.current) {
+      // Re-syncing display to a new prop value after the intro animation has run.
+      // This must happen in an effect — it reacts to prop changes, not render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplay(value);
       return;
     }

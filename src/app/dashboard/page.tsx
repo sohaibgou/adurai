@@ -132,6 +132,8 @@ function DashboardContent() {
   const firstName    = user.email?.split("@")[0] ?? "there";
   const createdAt    = user.created_at ? new Date(user.created_at) : null;
   const memberSince  = createdAt ? formatDate(createdAt.toISOString()) : "—";
+  // Date.now() is read once for a display-only "days since signup" figure; a stale-by-render value is fine here.
+  // eslint-disable-next-line react-hooks/purity
   const memberDays   = createdAt ? Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / 86_400_000)) : 0;
   const avgScore     = recentAnalyses.length > 0
     ? Math.round(recentAnalyses.reduce((s, a) => s + a.score, 0) / recentAnalyses.length)
