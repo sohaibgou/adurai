@@ -11,7 +11,7 @@
  *   2. 121k-domain disposable/throwaway blocklist via the npm package
  *   3. DNS MX-record lookup — domain must be able to receive mail
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { promises as dns } from "dns";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const disposableDomains: string[] = require("disposable-email-domains");
@@ -135,7 +135,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  await sendVerificationEmail(normalizedEmail, origin);
+  // Send the verification email in the background (via `after`) so the
+  // response returns immediately — the client can sign in and reach the
+  // dashboard without waiting on the email round-trip (~1-3s saved).
+  after(() => sendVerificationEmail(normalizedEmail, origin));
 
   return NextResponse.json({ ok: true, userId: data.user?.id });
 }
