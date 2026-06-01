@@ -461,7 +461,7 @@ Write like a senior direct-response media buyer who has spent millions on Meta/T
 It must sound like a REAL person talking to a friend on camera — natural, a little imperfect, never corporate.
 Maximum ${Math.round(vidDur * 2.5)} words — every word must earn its place.
 ${language === "Darija" ? "Use authentic spoken Moroccan Darija (Arabic-French mix) the way real people actually talk." : ""}
-${language === "Arabic" ? "Use natural conversational Arabic suitable for Gulf/MENA — not stiff Modern Standard Arabic." : ""}
+${language === "Arabic" ? "Write in authentic spoken Gulf KHALEEJI Arabic (اللهجة الخليجية) — the way people actually talk in Saudi Arabia and the UAE. Use Gulf vocabulary and phrasing, NOT stiff Modern Standard Arabic and NOT Egyptian or Levantine." : ""}
 
 2. SEEDANCE VIDEO PROMPT — Translate the selected scene direction into a detailed video prompt.
 Start with: 'A ${gender} aged 25-35 in ${scene},'
@@ -535,8 +535,11 @@ Return ONLY valid JSON with no markdown:
         if (needsGoogleVoice(language, productDesc)) {
           try {
             const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
-            console.log("3b. Arabic detected → Google TTS voiceover");
-            const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender);
+            // Arabic selection → Gulf Khaleeji accent; Darija → Moroccan.
+            const accent: "khaleeji" | "darija" =
+              language.trim().toLowerCase() === "darija" ? "darija" : "khaleeji";
+            console.log(`3b. Arabic detected → Google TTS voiceover (${accent})`);
+            const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender, accent);
             if (wav) {
               progress(3, 84);
               const audioUrl = await uploadToFalStorage(wav, "audio/wav", `voice_${ts}.wav`);

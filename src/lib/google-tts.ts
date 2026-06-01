@@ -41,15 +41,31 @@ function pcmToWav(pcm: Buffer, sampleRate = 24000, channels = 1, bitsPerSample =
   return Buffer.concat([header, pcm]);
 }
 
+/** Accent/dialect the synthesized voice should use. */
+export type ArabicAccent = "khaleeji" | "darija" | "default";
+
+// Natural-language style directives steer Gemini's delivery + accent. The
+// instruction (before the colon) shapes how it speaks; only the script is read.
+const ACCENT_DIRECTIVE: Record<ArabicAccent, string> = {
+  khaleeji:
+    "Speak in an authentic Gulf Khaleeji Arabic accent (like a native speaker from Saudi Arabia or the UAE), warm and upbeat like a real social-media creator talking to a friend",
+  darija:
+    "Speak in an authentic Moroccan Darija accent, casual and friendly like a real social-media creator talking to a friend",
+  default:
+    "Speak in a warm, natural, upbeat voice like a real social-media creator talking to a friend",
+};
+
 /**
  * Synthesize Arabic (or any) speech and return it as a WAV Buffer.
  * @param text   The script to speak (Arabic text supported).
  * @param gender "female" | "male" — selects a fitting prebuilt voice.
+ * @param accent Accent to render. Arabic → "khaleeji", Darija → "darija".
  * @returns WAV audio Buffer, or null if the key is unset / request fails.
  */
 export async function synthesizeArabicSpeech(
   text: string,
   gender: "female" | "male" = "female",
+  accent: ArabicAccent = "khaleeji",
 ): Promise<Buffer | null> {
   const apiKey = process.env.GOOGLE_AI_KEY;
   if (!apiKey) {
@@ -60,9 +76,9 @@ export async function synthesizeArabicSpeech(
 
   const voiceName = gender === "male" ? MALE_VOICE : FEMALE_VOICE;
 
-  // Light style directive (documented Gemini controllability pattern: the
-  // instruction before the colon shapes delivery; only the content is spoken).
-  const prompt = `Read this in a warm, natural, upbeat voice like a real social-media creator talking to a friend: ${text.trim()}`;
+  // Documented Gemini controllability pattern: the directive before the colon
+  // shapes delivery + accent; only the content after it is spoken.
+  const prompt = `${ACCENT_DIRECTIVE[accent]}: ${text.trim()}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
