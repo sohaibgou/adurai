@@ -36,9 +36,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   composeHeldProductImage,
   generateVideo,
+  lipSyncVideo,
+  uploadToFalStorage,
   FAL_MODELS,
   falAvailable,
 } from "@/lib/fal-client";
+import { synthesizeArabicSpeech } from "@/lib/google-tts";
 
 /**
  * Upload raw bytes to Supabase Storage (ugc-videos bucket) and return a
@@ -196,6 +199,19 @@ function selectSeedance(
     model:      FAL_MODELS.SEEDANCE_FAST,
     resolution: res === "1080p" ? "720p" : res,
   };
+}
+
+/* ── Arabic detection ──────────────────────────────────────────────────────
+ * Seedance's native speech doesn't cover Arabic, so when the user picks an
+ * Arabic dialect OR writes Arabic script in the description we generate the
+ * voiceover with Google (Gemini) TTS and lip-sync it onto the video instead.
+ * English (and every non-Arabic language) keeps the native Seedance path.
+ */
+function needsGoogleVoice(language: string, productDesc: string): boolean {
+  const lang = language.trim().toLowerCase();
+  if (lang === "arabic" || lang === "darija") return true;
+  // Arabic + Supplement + Extended-A + Presentation Forms A/B ranges.
+  return /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(productDesc);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -509,6 +525,36 @@ Return ONLY valid JSON with no markdown:
         }
         if (!videoUrl) throw new Error("Video generation failed (Seedance 2.0)");
         console.log("3. Seedance video ✓ | url:", videoUrl.slice(0, 80));
+        progress(3, 78);
+
+        /* ── 5b. Arabic path — Google (Gemini) TTS + fal lip-sync ──
+         * Seedance can't speak Arabic, so for Arabic/Darija (or an Arabic-script
+         * description) we generate the voiceover with Google TTS and lip-sync it
+         * onto the video. Any failure falls back to the native Seedance video. */
+        let usedGoogleVoice = false;
+        if (needsGoogleVoice(language, productDesc)) {
+          try {
+            const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
+            console.log("3b. Arabic detected → Google TTS voiceover");
+            const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender);
+            if (wav) {
+              progress(3, 84);
+              const audioUrl = await uploadToFalStorage(wav, "audio/wav", `voice_${ts}.wav`);
+              const synced   = await lipSyncVideo({ videoUrl, audioUrl });
+              if (synced) {
+                videoUrl        = synced;
+                usedGoogleVoice = true;
+                console.log("3c. Lip-sync ✓ | url:", synced.slice(0, 80));
+              } else {
+                console.warn("[generate-avatar-ugc] lip-sync returned no URL — using native video");
+              }
+            } else {
+              console.warn("[generate-avatar-ugc] Google TTS unavailable — using native Seedance audio");
+            }
+          } catch (e) {
+            console.warn("[generate-avatar-ugc] Arabic voice path failed, using native video:", e instanceof Error ? e.message : e);
+          }
+        }
         progress(3, 86);
 
         /* ── 6. Re-host the final MP4 on Supabase ── */
@@ -561,8 +607,9 @@ Return ONLY valid JSON with no markdown:
           hook:         scriptData.hook,
           scene:        scriptData.scene,
           duration:     vidDur,
-          hasVoiceover: true,  // Seedance generates voice natively
-          hasLipsync:   true,  // …and lip-syncs it itself
+          hasVoiceover: true,            // Seedance native, or Google TTS for Arabic
+          hasLipsync:   true,            // Seedance self-syncs, or fal sync-lipsync
+          voiceSource:  usedGoogleVoice ? "google-tts" : "seedance",
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
