@@ -252,7 +252,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               style={{ fontSize: "clamp(34px, 4.5vw, 54px)", letterSpacing: "-0.04em", lineHeight: 1.05 }}
             >
               Start free.{" "}
-              <span style={{ background: PINK, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <span style={{ background: PINK, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", whiteSpace: "nowrap" }}>
                 Scale when ready.
               </span>
             </h2>
