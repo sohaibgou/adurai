@@ -69,47 +69,35 @@ export default function ConfirmContent() {
       const type      = searchParams.get("type") as "signup" | "email" | "magiclink" | "invite" | null;
       const code      = searchParams.get("code");
 
-      // Durably persist email_link_verified = true.
+      // Durably persist email_link_verified = true — WITHOUT blocking the UI.
       //
-      // This single write is what permanently unlocks the account. If it fails
-      // silently, the user appears verified for the current session (via the
-      // sessionStorage flag) but the DB never records it — so days later, on a
-      // fresh login, verify-status reads `false` and re-prompts a user who
-      // already verified. That is exactly the bug we're fixing, so this must
-      // NEVER be fire-and-forget: ensure we have a token, retry, and report
-      // whether it actually succeeded.
-      async function markVerified(accessToken?: string | null): Promise<boolean> {
-        // Right after verifyOtp/exchangeCodeForSession the cookies/token can
-        // lag, so fall back to reading the token straight from the client.
-        let token = accessToken ?? null;
-        if (!token) {
-          const { data } = await supabase.auth
-            .getSession()
-            .catch(() => ({ data: { session: null } }));
-          token = data.session?.access_token ?? null;
-        }
-
-        for (let attempt = 0; attempt < 4; attempt++) {
-          try {
-            const res = await fetch("/api/auth/mark-verified", {
-              method:  "POST",
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            if (res.ok) return true;
-          } catch { /* network blip — retry */ }
-
-          // Halfway through, refresh the session in case the token was stale
-          // or missing on the first attempts.
-          if (attempt === 1) {
+      // `keepalive: true` lets the POST finish even after we redirect away, so
+      // we can show "verified" instantly and navigate, while the write still
+      // lands reliably (this is what stops verified users being re-prompted
+      // days later). We don't await it on the happy path.
+      function markVerified(accessToken?: string | null): void {
+        void (async () => {
+          let token = accessToken ?? null;
+          if (!token) {
             const { data } = await supabase.auth
-              .refreshSession()
+              .getSession()
               .catch(() => ({ data: { session: null } }));
-            if (data?.session?.access_token) token = data.session.access_token;
+            token = data.session?.access_token ?? null;
           }
 
-          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-        }
-        return false;
+          // Two quick attempts with keepalive; no long back-off so nothing
+          // hangs. keepalive survives the page navigation that follows.
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              const res = await fetch("/api/auth/mark-verified", {
+                method:    "POST",
+                headers:   token ? { Authorization: `Bearer ${token}` } : {},
+                keepalive: true,
+              });
+              if (res.ok) return;
+            } catch { /* retry once */ }
+          }
+        })();
       }
 
       try {
@@ -172,14 +160,13 @@ export default function ConfirmContent() {
           return;
         }
 
-        const marked = await markVerified(session?.access_token);
+        // Supabase has confirmed the email at this point — show success
+        // immediately and persist our flag in the background (keepalive).
+        markVerified(session?.access_token);
         setStatus("success");
         setMsg("Email verified! Redirecting…");
-        // Only show the optimistic "verified" state if the DB write succeeded.
-        // If it didn't, skip the flag so the gate (and its resend button)
-        // surfaces immediately instead of silently breaking days later.
-        if (marked) { try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ } }
-        setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
+        try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+        setTimeout(() => { window.location.href = "/dashboard"; }, 600);
 
       } catch (err) {
         const message = err instanceof Error ? err.message : "Verification failed.";
@@ -187,11 +174,11 @@ export default function ConfirmContent() {
         if (message.toLowerCase().includes("already")) {
           // Email was already confirmed — user re-clicked an old valid link
           const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
-          const marked = await markVerified(session?.access_token);
+          markVerified(session?.access_token);
           setStatus("success");
           setMsg("Email already verified! Redirecting…");
-          if (marked) { try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ } }
-          setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
+          try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
+          setTimeout(() => { window.location.href = "/dashboard"; }, 600);
 
         } else if (
           message.toLowerCase().includes("expired") ||
