@@ -227,7 +227,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
   };
 
   return (
-    <section className="py-28 relative" id="pricing" style={{ background: "#FAF8F5" }}>
+    <section className="pt-12 pb-28 relative" id="pricing" style={{ background: "#FAF8F5" }}>
       <CheckoutModal open={modalPlan !== null} onClose={() => setModalPlan(null)} plan={modalPlan ?? "starter"} interval={interval} />
 
       <div
