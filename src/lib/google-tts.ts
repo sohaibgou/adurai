@@ -42,15 +42,27 @@ function pcmToWav(pcm: Buffer, sampleRate = 24000, channels = 1, bitsPerSample =
 }
 
 /** Accent/dialect the synthesized voice should use. */
-export type ArabicAccent = "khaleeji" | "darija" | "default";
+export type ArabicAccent =
+  | "khaleeji"
+  | "egyptian"
+  | "levantine"
+  | "darija"
+  | "msa"
+  | "default";
 
 // Natural-language style directives steer Gemini's delivery + accent. The
 // instruction (before the colon) shapes how it speaks; only the script is read.
 const ACCENT_DIRECTIVE: Record<ArabicAccent, string> = {
   khaleeji:
     "Speak in an authentic Gulf Khaleeji Arabic accent (like a native speaker from Saudi Arabia or the UAE), warm and upbeat like a real social-media creator talking to a friend",
+  egyptian:
+    "Speak in an authentic Egyptian Arabic accent (Masri, like a native speaker from Cairo), warm and upbeat like a real social-media creator talking to a friend",
+  levantine:
+    "Speak in an authentic Levantine Arabic accent (Shami, like a native speaker from Lebanon, Syria, Jordan or Palestine), warm and upbeat like a real social-media creator talking to a friend",
   darija:
     "Speak in an authentic Moroccan Darija accent, casual and friendly like a real social-media creator talking to a friend",
+  msa:
+    "Speak in clear, natural Modern Standard Arabic, warm and upbeat like a real social-media creator talking to a friend",
   default:
     "Speak in a warm, natural, upbeat voice like a real social-media creator talking to a friend",
 };

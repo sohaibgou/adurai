@@ -41,7 +41,7 @@ import {
   FAL_MODELS,
   falAvailable,
 } from "@/lib/fal-client";
-import { synthesizeArabicSpeech } from "@/lib/google-tts";
+import { synthesizeArabicSpeech, type ArabicAccent } from "@/lib/google-tts";
 
 /**
  * Upload raw bytes to Supabase Storage (ugc-videos bucket) and return a
@@ -74,6 +74,7 @@ interface ScriptData {
   hook:        string;
   videoStyle?: string; // auto-selected creative direction (unboxing | review | …)
   hookText?:   string; // ≤5-word text-overlay hook
+  arabicDialect?: string; // detected dialect: khaleeji | egyptian | levantine | darija | msa
 }
 
 /**
@@ -461,7 +462,11 @@ Write like a senior direct-response media buyer who has spent millions on Meta/T
 It must sound like a REAL person talking to a friend on camera — natural, a little imperfect, never corporate.
 Maximum ${Math.round(vidDur * 2.5)} words — every word must earn its place.
 ${language === "Darija" ? "Use authentic spoken Moroccan Darija (Arabic-French mix) the way real people actually talk." : ""}
-${language === "Arabic" ? "Write in authentic spoken Gulf KHALEEJI Arabic (اللهجة الخليجية) — the way people actually talk in Saudi Arabia and the UAE. Use Gulf vocabulary and phrasing, NOT stiff Modern Standard Arabic and NOT Egyptian or Levantine." : ""}
+${language === "Arabic" ? `ARABIC DIALECT — READ CAREFULLY:
+Look at the PRODUCT description above. If it names a target market, country, region, or dialect (e.g. Saudi/Gulf/Khaleeji/Emirati, Egypt/Masri, Levant/Shami/Lebanese/Jordanian/Syrian, Iraqi, Morocco/Darija, Tunisia, Algeria, etc.), write the spoken script in THAT authentic spoken dialect — the way real people there actually talk.
+If NO market or dialect is mentioned, DEFAULT to Gulf KHALEEJI Arabic (اللهجة الخليجية) as spoken in Saudi Arabia and the UAE.
+Never use stiff Modern Standard Arabic (فصحى) for the spoken script.
+You MUST also set the "arabicDialect" field to the closest match from: khaleeji | egyptian | levantine | darija | msa.` : ""}
 
 2. SEEDANCE VIDEO PROMPT — Translate the selected scene direction into a detailed video prompt.
 Start with: 'A ${gender} aged 25-35 in ${scene},'
@@ -483,7 +488,8 @@ Return ONLY valid JSON with no markdown:
   "imagePrompt": "the still-image prompt from STEP 3.4",
   "videoPrompt": "detailed video prompt with Dialogue: \\"...\\" lines embedded",
   "hookText": "5 word hook",
-  "hook": "first sentence of the script"
+  "hook": "first sentence of the script"${language === "Arabic" ? `,
+  "arabicDialect": "one of: khaleeji | egyptian | levantine | darija | msa"` : ""}
 }`,
           }],
         });
@@ -535,9 +541,15 @@ Return ONLY valid JSON with no markdown:
         if (needsGoogleVoice(language, productDesc)) {
           try {
             const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
-            // Arabic selection → Gulf Khaleeji accent; Darija → Moroccan.
-            const accent: "khaleeji" | "darija" =
-              language.trim().toLowerCase() === "darija" ? "darija" : "khaleeji";
+            // Darija selection forces Moroccan. Otherwise honor the dialect Claude
+            // detected from the product description (market-aware), defaulting to
+            // Gulf Khaleeji when nothing was specified.
+            const VALID_DIALECTS: ArabicAccent[] = ["khaleeji", "egyptian", "levantine", "darija", "msa"];
+            const detected = (scriptData.arabicDialect ?? "").trim().toLowerCase() as ArabicAccent;
+            const accent: ArabicAccent =
+              language.trim().toLowerCase() === "darija"
+                ? "darija"
+                : VALID_DIALECTS.includes(detected) ? detected : "khaleeji";
             console.log(`3b. Arabic detected → Google TTS voiceover (${accent})`);
             const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender, accent);
             if (wav) {
