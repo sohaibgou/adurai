@@ -17,13 +17,15 @@ interface AdCard {
   caption:  string;
 }
 
-// Filenames carry a version suffix (-v2) so regenerated creatives get a fresh URL
+// Filenames carry a version suffix (-v3) so regenerated creatives get a fresh URL
 // and bypass the browser + Next image cache. Bump the suffix when you regenerate.
+// One cohesive demo brand ("Adur" skincare serum) shown across the four proven
+// Meta ad angles — the kind of campaign a $1M DTC brand would run.
 const CARDS: AdCard[] = [
-  { src: "/showcase/ads/ad-1-v2.jpg", category: "Skincare",   caption: "Hero Product Shot" },
-  { src: "/showcase/ads/ad-2-v2.jpg", category: "Supplements", caption: "Social Proof" },
-  { src: "/showcase/ads/ad-3-v2.jpg", category: "Fashion",    caption: "Lifestyle & Emotion" },
-  { src: "/showcase/ads/ad-4-v2.jpg", category: "Beverage",   caption: "Pattern Interrupt" },
+  { src: "/showcase/ads/ad-1-v3.jpg", category: "Hero Shot",        caption: "Adur — Glow Serum" },
+  { src: "/showcase/ads/ad-2-v3.jpg", category: "Social Proof",     caption: "Loved by 12,000+" },
+  { src: "/showcase/ads/ad-3-v3.jpg", category: "Lifestyle",        caption: "Skin That Loves You Back" },
+  { src: "/showcase/ads/ad-4-v3.jpg", category: "Pattern Interrupt", caption: "The Glow Drop" },
 ];
 
 export default function AdImageShowcase() {
