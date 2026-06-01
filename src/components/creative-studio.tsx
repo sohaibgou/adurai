@@ -1597,8 +1597,17 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                   { stage: 3, label: "Filming your video…",      sub: "Adur is bringing your creator to life" },
                   { stage: 4, label: "Finishing up…",            sub: "Polishing & saving your video" },
                 ].map(({ stage, label, sub }, i) => {
-                  const isActive = ugcStage === stage;
-                  const isDone   = ugcStage > stage;
+                  // Real backend events drive ugcStage, but the long video-gen
+                  // step can sit between events (or arrive buffered). Derive a
+                  // stage floor from the creeping progress bar so the stepper
+                  // keeps advancing smoothly and never freezes on step 1.
+                  const progressStage =
+                    ugcProgress >= 88 ? 4 :
+                    ugcProgress >= 40 ? 3 :
+                    ugcProgress >= 22 ? 2 : 1;
+                  const curStage = Math.max(ugcStage, progressStage);
+                  const isActive = curStage === stage;
+                  const isDone   = curStage > stage;
                   return (
                     <div key={stage} style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: i < 3 ? 18 : 0 }}>
                       {/* Step indicator */}
