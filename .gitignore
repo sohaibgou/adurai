@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw, uncompressed UGC source clips (web-optimized copies live in public/showcase/ugc)
+/ugc/

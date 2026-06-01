@@ -5,8 +5,9 @@ import FadeIn from "@/components/fade-in";
 
 /* ──────────────────────────────────────────────────────────────────────────
    UGC VIDEO SHOWCASE — animated right-to-left marquee
-   Drop real files into /public/showcase/ugc/ using these names (or edit below):
-     ugc-1.mp4 + ugc-1.jpg (poster)   ... through ugc-4
+   Real generated ads in /public/showcase/ugc/ (ugc-1..ugc-5 .mp4 + .jpg poster),
+   spanning English, Khaleeji Arabic, Spanish and Moroccan Darija to show off
+   the multi-language / multi-dialect output.
    Videos autoplay muted + loop (required for mobile inline playback).
    ────────────────────────────────────────────────────────────────────────── */
 
@@ -18,10 +19,11 @@ interface UgcCard {
 }
 
 const CARDS: UgcCard[] = [
-  { src: "/showcase/ugc/ugc-1.mp4", poster: "/showcase/ugc/ugc-1.jpg", category: "Beauty", caption: "Hair Repair Treatment Cream" },
-  { src: "/showcase/ugc/ugc-2.mp4", poster: "/showcase/ugc/ugc-2.jpg", category: "SaaS",   caption: "AI-Powered UGC Ad Generator" },
-  { src: "/showcase/ugc/ugc-3.mp4", poster: "/showcase/ugc/ugc-3.jpg", category: "Auto",   caption: "Car Cleaning Spray Solution" },
-  { src: "/showcase/ugc/ugc-4.mp4", poster: "/showcase/ugc/ugc-4.jpg", category: "Beauty", caption: "Nourishing Hair Treatment Cream" },
+  { src: "/showcase/ugc/ugc-1.mp4", poster: "/showcase/ugc/ugc-1.jpg", category: "English",        caption: "Founder-Led Brand Promo" },
+  { src: "/showcase/ugc/ugc-2.mp4", poster: "/showcase/ugc/ugc-2.jpg", category: "Khaleeji Arabic", caption: "Anti-Dark-Spot Face Cream" },
+  { src: "/showcase/ugc/ugc-3.mp4", poster: "/showcase/ugc/ugc-3.jpg", category: "Spanish",        caption: "Anti-Acne Skin Treatment" },
+  { src: "/showcase/ugc/ugc-4.mp4", poster: "/showcase/ugc/ugc-4.jpg", category: "Moroccan Darija", caption: "Hair-Growth Shampoo" },
+  { src: "/showcase/ugc/ugc-5.mp4", poster: "/showcase/ugc/ugc-5.jpg", category: "Khaleeji Arabic", caption: "Luxury Men's Fragrance" },
 ];
 
 function Card({ card }: { card: UgcCard }) {
@@ -132,8 +134,8 @@ export default function UgcShowcase() {
                   Made by AI.
                 </span>
               </h2>
-              <p style={{ fontSize: 17, color: "#9ca3af", marginTop: 18, maxWidth: 520, margin: "18px auto 0", fontFamily: "var(--font-inter)", lineHeight: 1.6 }}>
-                Real ads created by our platform. No creators. No shoots. Just describe what you sell.
+              <p style={{ fontSize: 17, color: "#9ca3af", marginTop: 18, maxWidth: 560, margin: "18px auto 0", fontFamily: "var(--font-inter)", lineHeight: 1.6 }}>
+                Real ads created by our platform — in any language or dialect, from Khaleeji Arabic to Spanish. No creators. No shoots. Just describe what you sell.
               </p>
             </div>
           </FadeIn>
