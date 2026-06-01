@@ -94,39 +94,6 @@ export default function AdImageShowcase() {
                   sizes="(max-width: 1024px) 50vw, 25vw"
                   className="object-cover"
                 />
-
-                {/* Top gradient + category badge */}
-                <div
-                  className="absolute top-0 left-0 right-0 pointer-events-none"
-                  style={{ height: 80, background: "linear-gradient(180deg, rgba(0,0,0,0.5), transparent)" }}
-                />
-                <div
-                  className="absolute flex items-center gap-1.5"
-                  style={{
-                    top: 12, left: 12,
-                    padding: "5px 10px",
-                    borderRadius: 100,
-                    background: "rgba(8,8,10,0.65)",
-                    backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                  }}
-                >
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", boxShadow: "0 0 6px #FF6B35" }} />
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#FF6B35", fontFamily: "var(--font-inter)" }}>{card.category}</span>
-                </div>
-
-                {/* Bottom gradient + caption */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                  style={{ height: 90, background: "linear-gradient(0deg, rgba(0,0,0,0.72), transparent)" }}
-                />
-                <span
-                  className="absolute"
-                  style={{ left: 14, bottom: 14, fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "var(--font-inter)", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
-                >
-                  {card.caption}
-                </span>
               </motion.div>
             </FadeIn>
           ))}
