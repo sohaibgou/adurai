@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, Check } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -46,6 +47,19 @@ function LoginContent() {
   const [error,      setError]      = useState<string | null>(null);
   const [resendSent, setResendSent] = useState(false);
   const [needsVerify, setNeedsVerify] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const resendTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    resendTimer.current = setInterval(() => {
+      setResendCountdown(c => {
+        if (c <= 1) { clearInterval(resendTimer.current!); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(resendTimer.current!);
+  }, [resendCountdown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Guard: if already authenticated, send to dashboard immediately.
   // The middleware handles this for the first load, but this catches the
@@ -64,14 +78,17 @@ function LoginContent() {
   }, []);
 
   async function handleResend() {
-    if (!email.trim()) return;
+    if (!email.trim() || resendCountdown > 0) return;
     setResendSent(false);
-    await supabase.auth.resend({
+    const { error } = await supabase.auth.resend({
       type: "signup",
       email: email.trim(),
       options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
     });
-    setResendSent(true);
+    // Start the 60s cooldown regardless — Supabase enforces it server-side, so
+    // this keeps the button state honest even when the send is rate-limited.
+    setResendCountdown(60);
+    if (!error) setResendSent(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -213,23 +230,49 @@ function LoginContent() {
             )}
 
             {needsVerify && (
-              <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.20)" }}>
-                <p style={{ fontSize: 13, color: "#0D0D12", fontFamily: "var(--font-inter)", marginBottom: 8, lineHeight: 1.5 }}>
-                  📧 <strong>Please verify your email</strong> — check your inbox for a confirmation link.
-                </p>
-                {resendSent ? (
-                  <p style={{ fontSize: 12, color: "#16A34A", fontFamily: "var(--font-inter)", fontWeight: 600 }}>
-                    ✓ Verification email sent — check your inbox!
+              <div style={{ display: "flex", gap: 12, padding: "16px", borderRadius: 14, background: "#ffffff", border: "1px solid #E8E5E0", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+                {/* Icon */}
+                <div style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 11, background: "#F7F5F2", border: "1px solid #E8E5E0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Mail size={17} style={{ color: "#FF3CAC" }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", margin: 0, lineHeight: 1.4 }}>
+                    Verify your email
                   </p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    style={{ fontSize: 12, fontWeight: 700, color: "#FF3CAC", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", textDecoration: "underline" }}
-                  >
-                    Didn&apos;t receive it? Resend verification email →
-                  </button>
-                )}
+                  <p style={{ fontSize: 12.5, color: "#6B6B72", fontFamily: "var(--font-inter)", margin: "3px 0 10px", lineHeight: 1.5 }}>
+                    Check your inbox for the confirmation link to finish signing in.
+                  </p>
+
+                  {resendSent && resendCountdown > 0 ? (
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Check size={14} style={{ color: "#16A34A" }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#16A34A", fontFamily: "var(--font-inter)" }}>
+                        Email sent — resend available in {resendCountdown}s
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={resendCountdown > 0}
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: resendCountdown > 0 ? "#A8A5A0" : "#FF3CAC",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        cursor: resendCountdown > 0 ? "default" : "pointer",
+                        fontFamily: "var(--font-inter)",
+                        textDecoration: resendCountdown > 0 ? "none" : "underline",
+                      }}
+                    >
+                      {resendCountdown > 0
+                        ? `Resend available in ${resendCountdown}s`
+                        : "Didn't receive it? Resend email →"}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 

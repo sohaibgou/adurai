@@ -152,7 +152,9 @@ function LockedCard({ email }: { email: string }) {
         >
           <Mail size={14} style={{ color: "#16A34A" }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: "#16A34A", fontFamily: "var(--font-inter)" }}>
-            Email sent — check your inbox
+            {countdown > 0
+              ? `Email sent — resend available in ${countdown}s`
+              : "Email sent — check your inbox"}
           </span>
         </div>
       ) : (
