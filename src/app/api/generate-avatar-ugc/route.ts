@@ -452,6 +452,9 @@ ${Object.entries(styleDirections).map(([key, val]) => `IF style is ${key}:\n${va
 
 STEP 3 — WRITE:
 
+0. USER-PROVIDED SCRIPT OVERRIDE — CHECK FIRST:
+If the PRODUCT text above already contains an exact, ready-to-speak script the user wants the creator to say (e.g. it reads like spoken lines, is quoted, or is prefixed with "script:" / "say:" / "voiceover:"), you MUST use that script VERBATIM as the "script" field — do NOT rewrite, paraphrase, shorten, translate, or "improve" it, and do NOT change its language or dialect. This override applies in ALL markets and languages. Only strip an obvious "script:"-style label and surrounding quotes. Then skip the writing rules in 1 below and go straight to building the video/image prompts around that exact script. If the PRODUCT text is just a product DESCRIPTION (not a script), ignore this override and write the script normally per 1.
+
 1. UGC SCRIPT — ${vidDur} seconds, spoken by the creator, in ${language}.
 Write like a senior direct-response media buyer who has spent millions on Meta/TikTok ads and knows exactly what makes people stop scrolling and buy. Follow the scene direction acts above and hit this proven structure:
 - HOOK (first 1-2s): a scroll-stopping opener that calls out the viewer's specific problem or a bold, curiosity-gap claim. NO generic openers — BAN phrases like "This changed everything", "This is amazing", "I love this", "Let me tell you about". Lead with the pain or the promise.
