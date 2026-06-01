@@ -76,7 +76,7 @@ const PROBLEMS = [
 
 export default function SocialProof() {
   return (
-    <section className="relative py-28 px-6 overflow-hidden" style={{ background: "#ffffff" }}>
+    <section className="relative pt-12 pb-28 px-6 overflow-hidden" style={{ background: "#ffffff" }}>
       <div className="relative z-10 max-w-6xl mx-auto">
         <FadeIn>
           <div className="mb-16">

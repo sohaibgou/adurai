@@ -245,7 +245,7 @@ export default function HowItWorks() {
   const tabCfg = TAB_CONFIG.find(t => t.id === active)!;
 
   return (
-    <section id="how-it-works" className="py-16 sm:py-24" style={{ background: "#ffffff" }}>
+    <section id="how-it-works" className="pt-12 pb-16 sm:pb-24" style={{ background: "#ffffff" }}>
       <div className="px-4 sm:px-6" style={{ maxWidth: 1040, margin: "0 auto" }}>
 
         {/* ── Header ── */}

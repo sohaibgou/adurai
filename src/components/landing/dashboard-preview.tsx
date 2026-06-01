@@ -331,7 +331,7 @@ export default function DashboardPreview() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section className="relative overflow-hidden" style={{ background: "#0A0A0F", padding: "84px 0 100px" }}>
+    <section className="relative overflow-hidden" style={{ background: "#0A0A0F", padding: "48px 0 100px" }}>
       {/* Faint grid texture */}
       <div
         className="absolute inset-0 pointer-events-none"
