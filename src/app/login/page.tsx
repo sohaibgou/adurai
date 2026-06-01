@@ -106,13 +106,28 @@ function LoginContent() {
       }
     }
 
-    if (redirectTo === "checkout") {
-      try { await redirectToCheckout(undefined, planParam, intervalParam); } catch { router.push("/dashboard"); }
-    } else if (redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login") {
-      router.push(redirectTo);
-    } else {
-      router.push("/dashboard");
+    // Wait until the auth cookie is durably readable before navigating. The
+    // middleware reads the session from cookies on the server; navigating before
+    // the cookie is flushed makes it see no session and bounce back to /login.
+    for (let i = 0; i < 20; i++) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) break;
+      await new Promise(r => setTimeout(r, 50));
     }
+
+    const dest =
+      redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login"
+        ? redirectTo
+        : "/dashboard";
+
+    if (redirectTo === "checkout") {
+      try { await redirectToCheckout(undefined, planParam, intervalParam); return; }
+      catch { window.location.href = "/dashboard"; return; }
+    }
+
+    // Full-page navigation (not router.push) so the freshly-set auth cookies
+    // ride along with the request the middleware inspects.
+    window.location.href = dest;
   }
 
   return (

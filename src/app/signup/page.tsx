@@ -88,7 +88,19 @@ function SignupContent() {
       try { await redirectToCheckout(token, planParam, intervalParam); return; } catch { /* fall through */ }
     }
 
-    router.push("/dashboard");
+    // Wait until the auth cookie is durably readable before navigating. The
+    // middleware reads the session from cookies on the server; if we navigate
+    // before the cookie is flushed it sees no session and bounces us to /login.
+    for (let i = 0; i < 20; i++) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+
+    // Full-page navigation (not router.push) so the freshly-set auth cookies
+    // ride along with the request the middleware inspects — guarantees the
+    // dashboard load is seen as authenticated.
+    window.location.href = "/dashboard";
   }
 
   return (
