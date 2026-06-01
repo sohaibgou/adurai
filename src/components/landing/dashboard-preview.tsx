@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Calendar, Wand2, Video, Bot, CheckCircle2, Check, X, Play } from "lucide-react";
+import { TrendingUp, Calendar, Wand2, Video, Bot, CheckCircle2, Check, X } from "lucide-react";
 import FadeIn from "@/components/fade-in";
 
 /* ── Feature rail definitions ─────────────────────────────── */
@@ -201,9 +201,9 @@ function CreativeStudioContent() {
 
 /* ── UGC Videos tab ───────────────────────────────────────── */
 const UGC_CARDS = [
-  { cat: "Beauty", cap: "Hair Repair Cream",  g: "linear-gradient(160deg,#3a2733 0%,#160f14 100%)" },
-  { cat: "SaaS",   cap: "UGC Ad Generator",   g: "linear-gradient(160deg,#26303d 0%,#0f1419 100%)" },
-  { cat: "Auto",   cap: "Car Cleaning Spray", g: "linear-gradient(160deg,#26352c 0%,#0f1713 100%)" },
+  { cat: "English",  cap: "Brand Promo",     src: "/showcase/ugc/ugc-1.mp4", poster: "/showcase/ugc/ugc-1.jpg" },
+  { cat: "Khaleeji", cap: "Anti-Spot Cream", src: "/showcase/ugc/ugc-2.mp4", poster: "/showcase/ugc/ugc-2.jpg" },
+  { cat: "Spanish",  cap: "Anti-Acne Care",  src: "/showcase/ugc/ugc-3.mp4", poster: "/showcase/ugc/ugc-3.jpg" },
 ];
 
 function UgcContent() {
@@ -224,15 +224,22 @@ function UgcContent() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
         {UGC_CARDS.map((c) => (
-          <div key={c.cap} style={{ position: "relative", aspectRatio: "9 / 16", borderRadius: 14, overflow: "hidden", background: c.g, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div key={c.cap} style={{ position: "relative", aspectRatio: "9 / 16", borderRadius: 14, overflow: "hidden", background: "#111114", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {/* real generated clip — autoplay muted loop */}
+            <video
+              src={c.src}
+              poster={c.poster}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            />
             {/* category */}
-            <div style={{ position: "absolute", top: 8, left: 8, display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 100, background: "rgba(8,8,10,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ position: "absolute", top: 8, left: 8, display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 100, background: "rgba(8,8,10,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.1)", whiteSpace: "nowrap" }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 5px #22c55e" }} />
               <span style={{ fontSize: 9, fontWeight: 600, color: "#22c55e", fontFamily: "var(--font-inter)" }}>{c.cat}</span>
-            </div>
-            {/* play */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.14)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Play style={{ width: 13, height: 13, color: "#fff", marginLeft: 2 }} fill="#fff" />
             </div>
             {/* caption */}
             <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 60, background: "linear-gradient(0deg, rgba(0,0,0,0.7), transparent)" }} />
