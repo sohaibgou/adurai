@@ -856,6 +856,25 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     }
   }
 
+  // Video lives on a cross-origin CDN (fal.ai), where the <a download> attribute
+  // is ignored — the browser just opens the file in a new tab. Fetching it as a
+  // blob and downloading the object URL forces a real "Save" on a same-origin URL.
+  async function downloadVideo(url: string, filename = "adur-ugc.mp4", e?: React.MouseEvent) {
+    e?.preventDefault();
+    try {
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      const obj  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = obj;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(obj);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
   /* ── UGC image helpers ──────────────────────────── */
   function readUgcImage(file: File) {
     if (file.size > 10 * 1024 * 1024) { alert("Image must be under 10 MB."); return; }
@@ -1632,7 +1651,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink3 }}>YOUR UGC VIDEO</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <a href={ugcVideoUrl} download="adur-ugc.mp4" style={{ display: "flex", alignItems: "center", gap: 5, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 8, padding: "7px 12px", fontSize: 12, color: S.ink2, textDecoration: "none" }}>⬇ Download</a>
+                  <a href={ugcVideoUrl} download="adur-ugc.mp4" onClick={(e) => downloadVideo(ugcVideoUrl, "adur-ugc.mp4", e)} style={{ display: "flex", alignItems: "center", gap: 5, background: S.bg3, border: `1px solid ${S.border}`, borderRadius: 8, padding: "7px 12px", fontSize: 12, color: S.ink2, textDecoration: "none", cursor: "pointer" }}>⬇ Download</a>
                   <button
                     onClick={() => { setUgcVideoUrl(null); setUgcClip2Url(null); setUgcScript(null); setUgcHookLine(null); setUgcError(null); setUgcStage(0); setUgcProgress(0); }}
                     style={{ display: "flex", alignItems: "center", gap: 6, background: S.grad, border: "none", borderRadius: 8, color: "#fff", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,60,172,0.32)", transition: "transform 0.15s, box-shadow 0.15s" }}
@@ -1929,11 +1948,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                           <a
                             href={sess.video_url}
                             download
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); downloadVideo(sess.video_url!, `adur-ugc-${sess.id ?? "video"}.mp4`, e); }}
                             title="Download video"
-                            style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 8, background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff", textDecoration: "none", backdropFilter: "blur(4px)" }}
+                            style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 8, background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff", textDecoration: "none", backdropFilter: "blur(4px)", cursor: "pointer" }}
                           >⬇</a>
                           {/* UGC badge */}
                           <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9, fontWeight: 700, background: "linear-gradient(135deg,#ff3cac,#784ba0)", color: "#fff", padding: "3px 7px", borderRadius: 6 }}>UGC</span>
