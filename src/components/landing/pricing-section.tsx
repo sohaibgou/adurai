@@ -239,7 +239,7 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
 
         {/* ── Header ── */}
         <FadeIn>
-          <div className="text-center mb-10 max-w-xl mx-auto">
+          <div className="text-center mb-10 mx-auto">
             <span
               className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest mb-5 px-3.5 py-1.5 rounded-full"
               style={{ color: "#FF3CAC", background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.2)", letterSpacing: "0.08em" }}
@@ -248,15 +248,15 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               Simple Pricing
             </span>
             <h2
-              className="font-heading font-black text-foreground"
+              className="font-heading font-black text-foreground sm:whitespace-nowrap"
               style={{ fontSize: "clamp(34px, 4.5vw, 54px)", letterSpacing: "-0.04em", lineHeight: 1.05 }}
             >
               Start free.{" "}
-              <span style={{ background: PINK, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", whiteSpace: "nowrap" }}>
+              <span style={{ background: PINK, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                 Scale when ready.
               </span>
             </h2>
-            <p className="mt-4 text-[17px]" style={{ color: "#6b7280", lineHeight: 1.6 }}>
+            <p className="mt-4 text-[17px] max-w-xl mx-auto" style={{ color: "#6b7280", lineHeight: 1.6 }}>
               No hidden fees. No agency contracts. Cancel any time.
             </p>
           </div>
