@@ -4,19 +4,26 @@ import Link from "next/link";
 import { useState } from "react";
 
 const REASONS = [
-  { icon: "◐", title: "Massive, underserved market", body: "10M+ active Meta advertisers. Most are flying blind. We give them a senior media buyer on demand — at a fraction of the cost." },
-  { icon: "⌁", title: "AI-native from day one", body: "Not a dashboard with AI bolted on. The entire product is designed around AI reasoning about ad performance data." },
-  { icon: "✦", title: "Strong early traction", body: "1,240+ brands onboarded in the first months. Organic growth driven by word-of-mouth from media buyers who actually use it daily." },
-  { icon: "○", title: "Deep domain expertise", body: "$70M+ in managed Meta ad spend. We know this space from the inside — every feature solves a real, painful operator problem." },
-  { icon: "⊟", title: "Scalable SaaS model", body: "$19/month Starter plan with clear upgrade paths. Low churn due to high switching cost once the AI has learned your account patterns." },
-  { icon: "◔", title: "Expanding product surface", body: "Analysis is the wedge. Autonomous campaign management, creative generation, and multi-platform expansion are on the roadmap." },
+  { icon: "◐", title: "Massive, underserved market", body: "10M+ active Meta advertisers spend billions, yet most can't afford a creative team or a senior media buyer. We give them both — on demand, for the price of a SaaS seat." },
+  { icon: "⌁", title: "The full loop, not a point tool", body: "We generate the creative, write the copy in any language, and then analyse and act on the performance data. Owning create → launch → optimise is a moat no single-feature competitor has." },
+  { icon: "✦", title: "Strong early traction", body: "1,240+ brands onboarded in the first months. Organic growth driven by word-of-mouth from media buyers and DTC founders who use it daily." },
+  { icon: "○", title: "Deep domain expertise", body: "$70M+ in managed Meta ad spend behind the team. Every feature solves a real, painful operator problem we've lived ourselves." },
+  { icon: "⊟", title: "Scalable SaaS economics", body: "Four-tier model from a $19 Starter to a $99 Autopilot plan. Usage-based creative generation plus high switching cost once the AI learns an account — durable expansion revenue." },
+  { icon: "◔", title: "Autopilot is the endgame", body: "Already shipped: AI that reads Meta performance and autonomously pauses losers, scales winners and adjusts bids 24/7. Multi-platform (TikTok, Google) expansion is next." },
 ];
 
 const METRICS = [
   { value: "$70M+",  label: "Ad spend managed by the team" },
   { value: "1,240+", label: "Brands onboarded" },
-  { value: "30+",    label: "Countries" },
-  { value: "$19",    label: "Starter plan / month" },
+  { value: "30+",    label: "Languages & dialects" },
+  { value: "4",      label: "Pricing tiers ($19–$99)" },
+];
+
+const CAPABILITIES = [
+  { title: "AI UGC video ads", body: "Photoreal AI creators that speak your script in English, Spanish, and Arabic dialects from Khaleeji to Darija — no shoots, no creators, no studio." },
+  { title: "AI image ad creatives", body: "Agency-grade Meta feed ads across four proven angles — hero, social proof, lifestyle, pattern interrupt — generated from a single product description." },
+  { title: "Meta performance analysis", body: "Connect an ad account and get a senior media buyer's read on what's working, what's wasting budget, and exactly what to change." },
+  { title: "Autopilot execution", body: "On the top tier, the AI doesn't just recommend — it acts. Pauses losers, scales winners and tunes bids around the clock with write access to Meta." },
 ];
 
 const darkInputStyle: React.CSSProperties = {
@@ -96,14 +103,14 @@ export default function InvestorsPage() {
         </div>
 
         <h1 className="font-heading" style={{ fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.04em", color: "#fff", marginBottom: 24 }}>
-          The AI operating system<br />
+          The AI growth team<br />
           <span style={{ background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            for paid media
+            in one platform
           </span>
         </h1>
 
-        <p style={{ fontSize: "clamp(15px, 2vw, 18px)", color: "rgba(255,255,255,0.50)", lineHeight: 1.7, maxWidth: 560, margin: "0 auto 40px", fontFamily: "var(--font-inter)" }}>
-          We&apos;re building the tool that every DTC brand needs but can&apos;t afford to hire: a senior performance marketer, available 24/7, powered by AI.
+        <p style={{ fontSize: "clamp(15px, 2vw, 18px)", color: "rgba(255,255,255,0.50)", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 40px", fontFamily: "var(--font-inter)" }}>
+          Adur.ai gives every DTC brand what it can&apos;t afford to hire: a creative studio that makes AI UGC videos and ad images in any language, plus a senior media buyer that analyses and runs Meta campaigns 24/7.
         </p>
 
         <a href="#contact" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 36px", borderRadius: 100, background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", color: "#fff", fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "var(--font-inter)", boxShadow: "0 4px 24px rgba(255,60,172,0.38)" }}>
@@ -120,6 +127,29 @@ export default function InvestorsPage() {
                 {m.value}
               </div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.40)", fontFamily: "var(--font-inter)" }}>{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── What we've shipped ── */}
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "80px 24px 0" }}>
+        <h2 className="font-heading" style={{ fontSize: "clamp(26px, 3.5vw, 38px)", fontWeight: 900, letterSpacing: "-0.04em", color: "#fff", marginBottom: 12 }}>
+          What we&apos;ve shipped
+        </h2>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.40)", fontFamily: "var(--font-inter)", lineHeight: 1.6, maxWidth: 560, marginBottom: 48 }}>
+          Not a roadmap deck. These are live, in-product, and used by brands today.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {CAPABILITIES.map((c, i) => (
+            <div key={c.title} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "26px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#FF3CAC", fontFamily: "var(--font-inter)", background: "rgba(255,60,172,0.10)", border: "1px solid rgba(255,60,172,0.22)", width: 26, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="font-heading" style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>{c.title}</div>
+              </div>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.65, fontFamily: "var(--font-inter)" }}>{c.body}</p>
             </div>
           ))}
         </div>

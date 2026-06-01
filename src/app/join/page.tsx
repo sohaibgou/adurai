@@ -8,19 +8,19 @@ const OPEN_ROLES = [
     title: "Senior Growth Engineer",
     type: "Full-time · Remote",
     tags: ["Next.js", "AI/LLM", "Paid Media"],
-    description: "Build the infrastructure that makes AI-powered ad analysis possible. You'll work on data pipelines, API integrations, and the core analysis engine.",
+    description: "Build the infrastructure behind our creative studio and autopilot engine — data pipelines, the Meta API integration, and the systems that generate and optimise campaigns end to end.",
+  },
+  {
+    title: "Generative Media Engineer",
+    type: "Full-time · Remote",
+    tags: ["Diffusion", "Video/TTS", "Multilingual"],
+    description: "Own our AI UGC video and image-ad pipelines — image generation, multilingual voice and lip-sync across dialects from Khaleeji Arabic to Spanish. Make AI creative feel human.",
   },
   {
     title: "Performance Marketing Lead",
     type: "Full-time · Remote",
     tags: ["Meta Ads", "DTC", "Analytics"],
-    description: "Own our own growth. You understand paid social at a deep level and can run experiments, analyse data, and scale what works.",
-  },
-  {
-    title: "AI/ML Engineer",
-    type: "Full-time · Remote",
-    tags: ["LLMs", "Python", "Prompt Engineering"],
-    description: "Push the boundaries of what's possible when AI meets ad performance data. Work directly with Claude and custom fine-tuned models.",
+    description: "Own our own growth and shape the autopilot logic. You understand paid social at a deep level and can run experiments, analyse data, and scale what works.",
   },
 ];
 
