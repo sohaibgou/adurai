@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/auth-context";
+import {
+  markVerifyEmailSent,
+  verifyCooldownRemaining,
+  parseRateLimitSeconds,
+} from "@/lib/verify-cooldown";
 
 interface Props {
   email?:   string;
@@ -19,6 +24,13 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
   const [err,       setErr]       = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Pre-arm the cooldown if signup (or an earlier resend) just sent an email —
+  // so the button shows "resend in Xs" instead of a 429 the moment it's clicked.
+  useEffect(() => {
+    const remain = verifyCooldownRemaining();
+    if (remain > 0) setCountdown(remain);
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -45,14 +57,17 @@ export default function EmailVerifyBanner({ email: emailProp, compact }: Props) 
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         const msg  = body.error ?? `Failed (${res.status})`;
-        if (msg.toLowerCase().includes("rate limit") || res.status === 429) {
-          setErr("Rate limit reached");
-          setCountdown(COOLDOWN_SECS);
+        if (msg.toLowerCase().includes("rate limit") || msg.toLowerCase().includes("after") || res.status === 429) {
+          // Benign per-address frequency limit — the email is already on its
+          // way, so reassure rather than alarm.
+          setSent(true);
+          setCountdown(parseRateLimitSeconds(msg));
         } else {
           setErr(msg);
         }
         return;
       }
+      markVerifyEmailSent();
       setSent(true);
       setCountdown(COOLDOWN_SECS);
     } catch (e) {

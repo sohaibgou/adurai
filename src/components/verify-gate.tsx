@@ -11,6 +11,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Lock, Mail } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import {
+  markVerifyEmailSent,
+  verifyCooldownRemaining,
+  parseRateLimitSeconds,
+} from "@/lib/verify-cooldown";
 
 const COOLDOWN_SECS = 60;
 
@@ -46,6 +51,13 @@ function LockedCard({ email }: { email: string }) {
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Pre-arm the cooldown if signup just auto-sent a verification email, so the
+  // user sees a calm countdown instead of clicking into a rate-limit error.
+  useEffect(() => {
+    const remain = verifyCooldownRemaining();
+    if (remain > 0) { setSent(true); setCountdown(remain); }
+  }, []);
+
   useEffect(() => {
     if (countdown <= 0) return;
     timerRef.current = setInterval(() => {
@@ -71,14 +83,16 @@ function LockedCard({ email }: { email: string }) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         const msg  = body.error ?? `Failed (${res.status})`;
-        if (msg.toLowerCase().includes("rate limit") || res.status === 429) {
-          setErr("Rate limit reached — please wait 60 s before retrying.");
-          setCountdown(COOLDOWN_SECS);
+        if (msg.toLowerCase().includes("rate limit") || msg.toLowerCase().includes("after") || res.status === 429) {
+          // Benign per-address frequency limit — the email is already sent.
+          setSent(true);
+          setCountdown(parseRateLimitSeconds(msg));
         } else {
           setErr(msg);
         }
         return;
       }
+      markVerifyEmailSent();
       setSent(true);
       setCountdown(COOLDOWN_SECS);
     } catch (e) {
