@@ -506,6 +506,35 @@ Return ONLY valid JSON with no markdown:
         console.log("1. Script ✓ | style:", scriptData.videoStyle, "| scene:", scriptData.scene, "| hook:", scriptData.hook?.slice(0, 60));
         progress(1, 18);
 
+        /* ── 3b. Arabic voiceover — kicked off in PARALLEL ──
+         * Google TTS only needs the script, not the video, so synthesize + upload
+         * the Arabic audio concurrently with the compose + Seedance steps. By the
+         * time the video is ready the audio URL is already waiting, removing the
+         * TTS+upload time (~10-20s) from the critical path before lip-sync. */
+        const willOverlayArabicVoice = needsGoogleVoice(language, productDesc);
+        const arabicAudioPromise: Promise<string | null> | null = willOverlayArabicVoice
+          ? (async () => {
+              try {
+                const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
+                // Darija forces Moroccan; otherwise honor the dialect Claude
+                // detected from the product description, defaulting to Khaleeji.
+                const VALID_DIALECTS: ArabicAccent[] = ["khaleeji", "egyptian", "levantine", "darija", "msa"];
+                const detected = (scriptData.arabicDialect ?? "").trim().toLowerCase() as ArabicAccent;
+                const accent: ArabicAccent =
+                  language.trim().toLowerCase() === "darija"
+                    ? "darija"
+                    : VALID_DIALECTS.includes(detected) ? detected : "khaleeji";
+                console.log(`3b. Arabic detected → Google TTS voiceover (${accent}) [parallel]`);
+                const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender, accent);
+                if (!wav) { console.warn("[generate-avatar-ugc] Google TTS unavailable"); return null; }
+                return await uploadToFalStorage(wav, "audio/wav", `voice_${ts}.wav`);
+              } catch (e) {
+                console.warn("[generate-avatar-ugc] Arabic voice prep failed:", e instanceof Error ? e.message : e);
+                return null;
+              }
+            })()
+          : null;
+
         /* ── 4. Nano Banana — composite "person holding product" still ── */
         progress(2, 26);
         const startFrameUrl = await composeStartFrame({
@@ -521,7 +550,6 @@ Return ONLY valid JSON with no markdown:
          * On the Arabic path we overlay Google TTS + lip-sync afterwards, so we
          * skip Seedance's native audio synthesis (it would be discarded) — this
          * makes the heaviest step return noticeably faster. */
-        const willOverlayArabicVoice = needsGoogleVoice(language, productDesc);
         progress(3, 42);
         let videoUrl: string | undefined;
         try {
@@ -546,24 +574,14 @@ Return ONLY valid JSON with no markdown:
          * description) we generate the voiceover with Google TTS and lip-sync it
          * onto the video. Any failure falls back to the native Seedance video. */
         let usedGoogleVoice = false;
-        if (willOverlayArabicVoice) {
+        if (arabicAudioPromise) {
           try {
-            const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
-            // Darija selection forces Moroccan. Otherwise honor the dialect Claude
-            // detected from the product description (market-aware), defaulting to
-            // Gulf Khaleeji when nothing was specified.
-            const VALID_DIALECTS: ArabicAccent[] = ["khaleeji", "egyptian", "levantine", "darija", "msa"];
-            const detected = (scriptData.arabicDialect ?? "").trim().toLowerCase() as ArabicAccent;
-            const accent: ArabicAccent =
-              language.trim().toLowerCase() === "darija"
-                ? "darija"
-                : VALID_DIALECTS.includes(detected) ? detected : "khaleeji";
-            console.log(`3b. Arabic detected → Google TTS voiceover (${accent})`);
-            const wav = await synthesizeArabicSpeech(scriptData.script, voiceGender, accent);
-            if (wav) {
-              progress(3, 84);
-              const audioUrl = await uploadToFalStorage(wav, "audio/wav", `voice_${ts}.wav`);
-              const synced   = await lipSyncVideo({ videoUrl, audioUrl });
+            progress(3, 84);
+            // Audio was synthesized + uploaded in parallel during video gen, so
+            // this usually resolves instantly; only lip-sync remains on the path.
+            const audioUrl = await arabicAudioPromise;
+            if (audioUrl) {
+              const synced = await lipSyncVideo({ videoUrl, audioUrl });
               if (synced) {
                 videoUrl        = synced;
                 usedGoogleVoice = true;
