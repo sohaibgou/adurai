@@ -136,7 +136,7 @@ const ANGLE_COLORS = [
   { bg: "#fff7ed", text: "#ea580c", border: "#fed7aa" }, // orange — Pattern Interrupt
 ];
 
-const LANGUAGES = ["English", "French", "Arabic"];
+const LANGUAGES = ["English", "French", "Spanish", "Arabic"];
 
 const CREATIVE_LIMIT = 3;
 
@@ -1399,7 +1399,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
                     {openDD === "lang-dd-c" && (
                       <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
-                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                        {[["English","English"],["French","French"],["Spanish","Spanish"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
                           <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
                             {label} {activeLang === val && <Check className="w-3 h-3" />}
                           </div>
@@ -1550,7 +1550,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
                     {openDD === "lang-dd-copy" && (
                       <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
-                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                        {[["English","English"],["French","French"],["Spanish","Spanish"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
                           <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
                             {label} {activeLang === val && <Check className="w-3 h-3" />}
                           </div>
@@ -1649,7 +1649,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 <div style={{ height: "100%", background: S.grad, width: `${ugcProgress}%`, transition: "width 0.5s ease", borderRadius: 100 }} />
               </div>
               <div style={{ fontSize: 11, color: S.ink3 }}>
-                {ugcProgress > 0 ? `${Math.round(ugcProgress)}% · ` : ""}This can take {ugcLang === "English" ? "2–3" : "3–5"} minutes
+                {ugcProgress > 0 ? `${Math.round(ugcProgress)}% · ` : ""}This can take {ugcLang === "Arabic" || ugcLang === "Darija" ? "3–5" : "2–3"} minutes
               </div>
             </div>
           )}
@@ -1847,7 +1847,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                     <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 2 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.4, marginLeft: 1 }} />
                     {openDD === "lang-dd-ugc" && (
                       <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", zIndex: 300 }}>
-                        {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                        {[["English","English"],["French","French"],["Spanish","Spanish"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
                           <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
                             {label} {activeLang === val && <Check className="w-3 h-3" />}
                           </div>
@@ -2261,7 +2261,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
               <Globe className="w-3.5 h-3.5" style={{ flexShrink: 0 }} /> <span style={{ color: S.ink, fontWeight: 600, marginLeft: 3 }}>{activeLang}</span> <ChevronDown className="w-3 h-3" style={{ opacity: 0.5, marginLeft: 2 }} />
               {openDD === "lang-dd" && (
                 <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, background: S.bg2, border: `1px solid ${S.border2}`, borderRadius: 10, padding: 4, minWidth: 130, boxShadow: "0 8px 32px rgba(0,0,0,0.5)", zIndex: 200 }}>
-                  {[["English","English"],["French","French"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
+                  {[["English","English"],["French","French"],["Spanish","Spanish"],["Arabic","Arabic"],["Darija","Darija"]].map(([label,val]) => (
                     <div key={val} onClick={(e) => { e.stopPropagation(); setActiveLang(val); setOpenDD(null); }} style={{ padding: "7px 10px", borderRadius: 7, fontSize: 12, color: activeLang === val ? S.accent : S.ink2, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
                       {label} {activeLang === val && <Check className="w-3 h-3" />}
                     </div>
