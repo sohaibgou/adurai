@@ -2194,7 +2194,10 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
           display: (
             (activeTab === "creative" && (loading     || images.length === 0)) ||
             (activeTab === "adcopy"   && (copyLoading  || copyVariants.length === 0)) ||
-            (activeTab === "ugc"      && (ugcLoading   || !ugcVideoUrl))
+            // UGC never uses the bottom composer: the input composer lives in the
+            // main area, and the result view has its own "Generate New Video"
+            // button — so hide this bar for the UGC tab entirely.
+            (activeTab === "ugc")
           ) ? "none" : "flex",
           flexDirection: "column", gap: 10,
         }}
