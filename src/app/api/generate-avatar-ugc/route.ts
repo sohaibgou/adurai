@@ -517,17 +517,22 @@ Return ONLY valid JSON with no markdown:
         console.log("2. Start frame ✓ |", startFrameUrl.slice(0, 80));
         progress(2, 38);
 
-        /* ── 5. Seedance 2.0 — reference-to-video with native audio ── */
+        /* ── 5. Seedance 2.0 — reference-to-video ──
+         * On the Arabic path we overlay Google TTS + lip-sync afterwards, so we
+         * skip Seedance's native audio synthesis (it would be discarded) — this
+         * makes the heaviest step return noticeably faster. */
+        const willOverlayArabicVoice = needsGoogleVoice(language, productDesc);
         progress(3, 42);
         let videoUrl: string | undefined;
         try {
           videoUrl = await generateVideo({
-            model:       vidModel,
-            prompt:      scriptData.videoPrompt,
-            imageUrl:    startFrameUrl,
-            duration:    vidDur,
+            model:         vidModel,
+            prompt:        scriptData.videoPrompt,
+            imageUrl:      startFrameUrl,
+            duration:      vidDur,
             aspectRatio,
-            resolution:  vidRes,
+            resolution:    vidRes,
+            generateAudio: !willOverlayArabicVoice,
           });
         } catch (e) {
           console.error("[generate-avatar-ugc] Seedance failed:", e instanceof Error ? e.message.slice(0, 200) : e);
@@ -541,7 +546,7 @@ Return ONLY valid JSON with no markdown:
          * description) we generate the voiceover with Google TTS and lip-sync it
          * onto the video. Any failure falls back to the native Seedance video. */
         let usedGoogleVoice = false;
-        if (needsGoogleVoice(language, productDesc)) {
+        if (willOverlayArabicVoice) {
           try {
             const voiceGender: "female" | "male" = gender.includes("woman") ? "female" : "male";
             // Darija selection forces Moroccan. Otherwise honor the dialect Claude

@@ -1649,7 +1649,7 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
                 <div style={{ height: "100%", background: S.grad, width: `${ugcProgress}%`, transition: "width 0.5s ease", borderRadius: 100 }} />
               </div>
               <div style={{ fontSize: 11, color: S.ink3 }}>
-                {ugcProgress > 0 ? `${Math.round(ugcProgress)}% · ` : ""}This can take 2–3 minutes
+                {ugcProgress > 0 ? `${Math.round(ugcProgress)}% · ` : ""}This can take {ugcLang === "English" ? "2–3" : "3–5"} minutes
               </div>
             </div>
           )}

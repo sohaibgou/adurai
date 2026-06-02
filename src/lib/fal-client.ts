@@ -43,6 +43,7 @@ export const generateVideo = async ({
   duration,
   aspectRatio,
   resolution = "1080p",
+  generateAudio = true,
 }: {
   model:       string;
   prompt:      string;
@@ -50,6 +51,10 @@ export const generateVideo = async ({
   duration:    number;
   aspectRatio: string;
   resolution?: "480p" | "720p" | "1080p";
+  // When the final video's audio will be replaced (e.g. the Arabic path
+  // overlays Google TTS + lip-sync), skip native audio synthesis so Seedance
+  // returns faster and we don't pay to generate a track we immediately discard.
+  generateAudio?: boolean;
 }): Promise<string | undefined> => {
   const isSeedance = model === FAL_MODELS.SEEDANCE || model === FAL_MODELS.SEEDANCE_FAST;
 
@@ -59,7 +64,7 @@ export const generateVideo = async ({
     prompt,
     image_url:      imageUrl,
     aspect_ratio:   aspectRatio,
-    generate_audio: true,
+    generate_audio: generateAudio,
   };
   if (isSeedance) {
     input.duration   = duration;   // integer seconds, e.g. 5 or 10
