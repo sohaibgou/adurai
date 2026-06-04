@@ -5,15 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, Crown, Zap, Upload, Sparkles,
-  Calendar, TrendingUp, ChevronRight, FileText, LogOut,
+  Calendar, TrendingUp, ChevronRight, FileText, LogOut, Bell,
+  DollarSign, Target, Layers, Bot,
 } from "lucide-react";
-import Link from "next/link";
+import type { AnalysisResult, OnboardingData, CampaignSummary } from "@/lib/types";
 import AppSidebar from "@/components/app-sidebar";
 import EmailVerifyBanner from "@/components/email-verify-banner";
 import PaywallModal from "@/components/paywall-modal";
 import MetaPanel from "@/components/meta-panel";
 import PendingActions from "@/components/pending-actions";
-import AutopilotSettings from "@/components/autopilot-settings";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
@@ -47,9 +47,10 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+// Analysis score is on a 0–10 scale (matches the HealthGauge on the results page).
 function scoreColor(score: number) {
-  if (score >= 75) return { bg: "rgba(22,163,74,0.08)", text: "#16A34A", border: "rgba(22,163,74,0.20)", label: "Great" };
-  if (score >= 50) return { bg: "rgba(234,179,8,0.10)", text: "#A16207", border: "rgba(234,179,8,0.25)", label: "Good" };
+  if (score >= 7) return { bg: "rgba(22,163,74,0.08)", text: "#16A34A", border: "rgba(22,163,74,0.20)", label: "Great" };
+  if (score >= 4) return { bg: "rgba(234,179,8,0.10)", text: "#A16207", border: "rgba(234,179,8,0.25)", label: "Good" };
   return { bg: "rgba(225,112,85,0.10)", text: "#e17055", border: "rgba(225,112,85,0.22)", label: "Needs work" };
 }
 
@@ -81,6 +82,8 @@ function DashboardContent() {
   const [checkoutLoading,  setCheckoutLoading]  = useState<null | "starter" | "growth" | "pro">(null);
   const [checkoutError,    setCheckoutError]    = useState<string | null>(null);
   const [paywallOpen,      setPaywallOpen]      = useState(false);
+  const [latest,           setLatest]           = useState<AnalysisResult | null>(null);
+  const [latestForm,       setLatestForm]       = useState<OnboardingData | null>(null);
 
   async function handleCheckout(plan: "starter" | "growth" | "pro") {
     setCheckoutError(null);
@@ -131,6 +134,19 @@ function DashboardContent() {
         setRecentAnalyses(getRecentAnalyses());
         setAnalysisCount(getAnalysisCount());
       });
+
+    // Load the most recent analysis detail (result_json) to power the
+    // performance cards, campaigns table and Account Health breakdown.
+    // Read-only — no pipeline/business-logic changes.
+    fetch("/api/analyses/latest", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.ok ? r.json() : { analysis: null })
+      .then((data: { analysis: AnalysisResult | null; formData: OnboardingData | null }) => {
+        setLatest(data.analysis ?? null);
+        setLatestForm(data.formData ?? null);
+      })
+      .catch(() => { setLatest(null); setLatestForm(null); });
   }, [user, session]);
 
   if (authLoading || !user) {
@@ -160,6 +176,126 @@ function DashboardContent() {
   const avgScore     = recentAnalyses.length > 0
     ? Math.round(recentAnalyses.reduce((s, a) => s + a.score, 0) / recentAnalyses.length)
     : null;
+
+  // ── Topbar dynamic subtitle ──
+  const todayLabel = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  // ── Performance metrics derived from the latest real analysis ──
+  const hasAnalysis   = !!latest && (latest.summaries?.length ?? 0) > 0;
+  const summaries     = latest?.summaries ?? [];
+  // Prefer the stored aggregate, but fall back to summing per-campaign rows.
+  // Some stored result_json records have totalSpend/totalRevenue = 0/undefined
+  // even though the campaign summaries carry real spend/revenue, which would
+  // otherwise zero out every spend/ROAS-driven health bar.
+  const totalSpend    = latest?.totalSpend && latest.totalSpend > 0
+    ? latest.totalSpend
+    : summaries.reduce((s, c) => s + (c.spend || 0), 0);
+  const totalRevenue  = latest?.totalRevenue && latest.totalRevenue > 0
+    ? latest.totalRevenue
+    : summaries.reduce((s, c) => s + (c.revenue || 0), 0);
+  const avgRoas       = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+  const breakEven     = latestForm?.breakEvenRoas && latestForm.breakEvenRoas > 0 ? latestForm.breakEvenRoas : 1;
+  const healthScore   = latest?.score ?? 0;
+
+  // ── Objective-aware metrics ──────────────────────────────────────────────
+  // Traffic / awareness / lead campaigns carry no revenue or ROAS, so a
+  // purchase/ROAS lens would (wrongly) flag healthy campaigns as 100% wasted.
+  // Detect the mode and judge each campaign against the right outcome.
+  const isRevenueMode = latest?.analysisMode === "roas"
+    || totalRevenue > 0
+    || summaries.some(c => (c.revenue ?? 0) > 0 || (c.roas ?? 0) > 0);
+  const convOf = (c: CampaignSummary) => (c.conversions ?? 0) || (c.purchases ?? 0);
+  const totalConversions = summaries.reduce((s, c) => s + convOf(c), 0);
+  const costPerConv = totalConversions > 0 ? totalSpend / totalConversions : 0;
+
+  // A campaign is "unproductive" when it delivered no outcome for its objective.
+  const isUnproductive = (c: CampaignSummary) =>
+    isRevenueMode ? ((c.purchases ?? 0) === 0 || (c.roas ?? 0) <= 0.1)
+                  : convOf(c) === 0;
+
+  // Per-campaign status (Issue / Refresh / Scale / Active)
+  type CampTone = "red" | "amber" | "green";
+  const campStatus = (c: CampaignSummary): { label: string; tone: CampTone; mark: string } => {
+    if (isUnproductive(c)) return { label: "Issue", tone: "red", mark: "⚠" };
+    if (isRevenueMode) {
+      if (c.roas >= breakEven * 1.5) return { label: "Scale",   tone: "green", mark: "↑" };
+      if (c.roas < breakEven)        return { label: "Refresh", tone: "amber", mark: "↻" };
+    }
+    return { label: "Active", tone: "green", mark: "✓" };
+  };
+
+  const wastedBudget    = summaries.filter(isUnproductive).reduce((s, c) => s + (c.spend || 0), 0);
+  const productiveSpend = Math.max(0, totalSpend - wastedBudget);
+  const profitableSpend = isRevenueMode
+    ? summaries.filter(c => (c.roas ?? 0) >= breakEven).reduce((s, c) => s + (c.spend || 0), 0)
+    : productiveSpend;
+  const issuesCount     = summaries.filter(isUnproductive).length;
+  const deliveringCount = summaries.length - issuesCount;
+  const scaleCount      = isRevenueMode
+    ? summaries.filter(c => (c.roas ?? 0) >= breakEven * 1.5).length
+    : deliveringCount;
+  const healthLabel     = healthScore >= 7 ? "Great" : healthScore >= 4 ? "Good" : "Needs work";
+
+  // Account-health breakdown bars — every value computed from real data (0–100)
+  const clamp100 = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+  const healthBars = isRevenueMode
+    ? [
+        { label: "Budget efficiency", value: totalSpend > 0 ? clamp100((productiveSpend / totalSpend) * 100) : 0 },
+        { label: "ROAS vs target",    value: clamp100((avgRoas / (breakEven * 2)) * 100) },
+        { label: "Profitable spend",  value: totalSpend > 0 ? clamp100((profitableSpend / totalSpend) * 100) : 0 },
+        { label: "Overall score",     value: clamp100(healthScore * 10) },
+      ]
+    : [
+        { label: "Budget efficiency",    value: totalSpend > 0 ? clamp100((productiveSpend / totalSpend) * 100) : 0 },
+        { label: "Converting campaigns", value: summaries.length > 0 ? clamp100((deliveringCount / summaries.length) * 100) : 0 },
+        { label: "Overall score",        value: clamp100(healthScore * 10) },
+      ];
+  const barColor = (v: number) => (v >= 66 ? "#16A34A" : v >= 33 ? "#D97706" : "#DC2626");
+  const toneStyle: Record<CampTone, { bg: string; text: string; border: string }> = {
+    red:   { bg: "rgba(220,38,38,0.08)",  text: "#DC2626", border: "rgba(220,38,38,0.20)" },
+    amber: { bg: "rgba(217,119,6,0.10)",  text: "#B45309", border: "rgba(217,119,6,0.22)" },
+    green: { bg: "rgba(22,163,74,0.08)",  text: "#16A34A", border: "rgba(22,163,74,0.20)" },
+  };
+  const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+
+  // Performance stat cards (real data) — shown once an analysis exists
+  const perfCards = [
+    {
+      label: "Wasted Budget", value: money(wastedBudget),
+      sub: issuesCount > 0 ? `${issuesCount} campaign${issuesCount !== 1 ? "s" : ""} need attention` : "No leaks detected",
+      subOk: issuesCount === 0, subWarn: issuesCount > 0,
+      icon: DollarSign, iconBg: "rgba(255,60,172,0.10)", iconColor: "#FF3CAC", small: false,
+    },
+    isRevenueMode
+      ? {
+          label: "Avg. ROAS", value: `${avgRoas.toFixed(1)}×`,
+          sub: `Break-even ${breakEven}×`,
+          subOk: avgRoas >= breakEven, subWarn: avgRoas < breakEven && avgRoas > 0,
+          icon: TrendingUp, iconBg: "rgba(22,163,74,0.10)", iconColor: "#16A34A", small: false,
+        }
+      : {
+          label: "Conversions", value: totalConversions.toLocaleString("en-US"),
+          sub: costPerConv > 0 ? `${money(costPerConv)} / result` : "Tracked last run",
+          subOk: totalConversions > 0, subWarn: false,
+          icon: TrendingUp, iconBg: "rgba(22,163,74,0.10)", iconColor: "#16A34A", small: false,
+        },
+    {
+      label: "Campaigns", value: String(summaries.length),
+      sub: isRevenueMode
+        ? (scaleCount > 0 ? `${scaleCount} ready to scale` : "Analyzed last run")
+        : (deliveringCount > 0 ? `${deliveringCount} delivering results` : "Analyzed last run"),
+      subOk: scaleCount > 0, subWarn: false,
+      icon: Layers, iconBg: "rgba(255,107,53,0.10)", iconColor: "#FF6B35", small: false,
+    },
+    {
+      label: "Health Score", value: `${healthScore}/10`,
+      sub: healthLabel,
+      subOk: healthScore >= 7, subWarn: healthScore < 4,
+      icon: Target,
+      iconBg: healthScore >= 7 ? "rgba(22,163,74,0.10)" : healthScore >= 4 ? "rgba(217,119,6,0.10)" : "rgba(220,38,38,0.10)",
+      iconColor: healthScore >= 7 ? "#16A34A" : healthScore >= 4 ? "#D97706" : "#DC2626", small: false,
+    },
+  ];
 
   const fade = (delay: number) => ({
     initial:    { opacity: 0, y: 16 },
@@ -197,13 +333,30 @@ function DashboardContent() {
             <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 34, width: "auto" }} />
           </div>
 
-          {/* Desktop greeting */}
-          <p className="hidden lg:block font-heading" style={{ fontSize: 15, fontWeight: 700, color: "#0D0D12", letterSpacing: "-0.02em" }}>
-            {getGreeting()}, {firstName} 👋
-          </p>
+          {/* Desktop greeting + dynamic subtitle */}
+          <div className="hidden lg:flex flex-col" style={{ gap: 1 }}>
+            <p className="font-heading" style={{ fontSize: 16, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.03em" }}>
+              {getGreeting()}, {firstName} 👋
+            </p>
+            <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>
+              {todayLabel}
+            </p>
+          </div>
 
           {/* Right */}
           <div className="flex items-center gap-3">
+            {/* Alerts */}
+            <button
+              onClick={() => router.push("/dashboard/autopilot")}
+              className="hidden sm:inline-flex items-center gap-2 cursor-pointer transition-all"
+              title="Pending actions & alerts"
+              style={{ padding: "8px 14px", borderRadius: 9, fontSize: 12, fontWeight: 500, fontFamily: "var(--font-inter)", background: "#FFFFFF", border: "1px solid #E4E0DB", color: "#6B6B72" }}
+              onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#D4D0CA"; b.style.color = "#0D0D12"; }}
+              onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = "#E4E0DB"; b.style.color = "#6B6B72"; }}
+            >
+              <Bell className="w-3.5 h-3.5" />
+              Alerts
+            </button>
             <button
               onClick={() => router.push("/analyze")}
               className="hidden sm:inline-flex items-center gap-2 font-semibold text-white cursor-pointer transition-all"
@@ -269,14 +422,16 @@ function DashboardContent() {
                       </span>
                     </div>
                     <h2 className="font-heading" style={{ fontSize: 20, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.03em", lineHeight: 1.2, marginBottom: 7 }}>
-                      {recentAnalyses.length === 0
+                      {!hasAnalysis
                         ? "Upload your first Meta Ads CSV to get started"
-                        : `Last campaign scored ${recentAnalyses[0].score}/100 — ready for your next run`}
+                        : `Last campaign scored ${healthScore}/10 — ${healthScore >= 7 ? "your ads are performing" : healthScore >= 4 ? "solid, with room to scale" : "your ads need work"}`}
                     </h2>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.50)", fontFamily: "var(--font-inter)", lineHeight: 1.6 }}>
-                      {recentAnalyses.length === 0
+                      {!hasAnalysis
                         ? "Get a full AI-powered breakdown of your campaigns in 60 seconds — free."
-                        : "Upload a fresh export to track progress, spot new leaks, and scale winners."}
+                        : isRevenueMode
+                          ? `${issuesCount} critical issue${issuesCount !== 1 ? "s" : ""} detected · ${money(wastedBudget)} wasted budget identified · ${scaleCount} scale opportunit${scaleCount !== 1 ? "ies" : "y"}`
+                          : `${totalConversions.toLocaleString("en-US")} conversions · ${costPerConv > 0 ? `${money(costPerConv)} per result` : "tracked"} · ${deliveringCount}/${summaries.length} campaigns delivering`}
                     </p>
                   </div>
                   <button
@@ -296,7 +451,7 @@ function DashboardContent() {
             {/* ══ Stats grid ══ */}
             <motion.div {...fade(0.08)}>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
+                {(hasAnalysis ? perfCards : [
                   {
                     label:      "Analyses Run",
                     value:      String(analysisCount),
@@ -310,12 +465,12 @@ function DashboardContent() {
                   },
                   {
                     label:      "Avg. Score",
-                    value:      avgScore !== null ? `${avgScore}` : "—",
+                    value:      avgScore !== null ? `${avgScore}/10` : "—",
                     sub:        avgScore !== null
-                      ? avgScore >= 75 ? "Great performance" : avgScore >= 50 ? "Good progress" : "Room to grow"
+                      ? avgScore >= 7 ? "Great performance" : avgScore >= 4 ? "Good progress" : "Room to grow"
                       : "No analyses yet",
-                    subOk:      avgScore !== null && avgScore >= 75,
-                    subWarn:    avgScore !== null && avgScore < 50,
+                    subOk:      avgScore !== null && avgScore >= 7,
+                    subWarn:    avgScore !== null && avgScore < 4,
                     icon:       TrendingUp,
                     iconBg:     "rgba(22,163,74,0.10)",
                     iconColor:  "#16A34A",
@@ -343,7 +498,7 @@ function DashboardContent() {
                     iconColor:  isPaid ? "#16A34A" : "#A8A5A0",
                     small:      false,
                   },
-                ].map(({ label, value, sub, subOk, subWarn, icon: Icon, iconBg, iconColor, small }) => (
+                ]).map(({ label, value, sub, subOk, subWarn, icon: Icon, iconBg, iconColor, small }) => (
                   <div
                     key={label}
                     className="rounded-2xl p-5"
@@ -368,36 +523,137 @@ function DashboardContent() {
               </div>
             </motion.div>
 
-            {/* ══ Meta Integration ══ */}
-            <motion.div {...fade(0.12)}>
-              <MetaPanel flashParam={metaParam ?? actionParam} isPro={hasMeta} />
+            {/* ══ Meta Integration (above campaigns) ══ */}
+            <motion.div {...fade(0.09)}>
+              <MetaPanel flashParam={metaParam ?? actionParam} isPro={hasMeta} compact={!metaParam && !actionParam} />
             </motion.div>
 
-            {/* ══ Pending Actions ══ */}
+            {/* ══ Campaigns table + Account Health (real analysis) ══ */}
+            {hasAnalysis && (
+              <motion.div {...fade(0.10)}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                  {/* ── Campaigns from last analysis ── */}
+                  <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+                    <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: "1px solid #F0EDE8" }}>
+                      <h2 className="font-heading" style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12" }}>Campaigns from Last Analysis</h2>
+                      <button
+                        onClick={() => router.push("/results")}
+                        className="inline-flex items-center gap-1.5 cursor-pointer font-semibold transition-colors"
+                        style={{ fontSize: 13, color: "#FF3CAC", fontFamily: "var(--font-inter)", background: "none", border: "none" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF6B35"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#FF3CAC"; }}
+                      >
+                        View full report <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Column header */}
+                    <div className="hidden sm:grid px-6 py-2.5" style={{ gridTemplateColumns: "1fr 90px 80px 96px", gap: 12, borderBottom: "1px solid #F7F5F2" }}>
+                      {["Campaign", "Spend", isRevenueMode ? "ROAS" : "Results", "Status"].map((h, i) => (
+                        <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#A8A5A0", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-inter)", textAlign: i === 0 ? "left" : i === 3 ? "right" : "right" }}>{h}</span>
+                      ))}
+                    </div>
+
+                    {[...summaries].sort((a, b) => b.spend - a.spend).slice(0, 6).map((c, i, arr) => {
+                      const st = campStatus(c);
+                      const ts = toneStyle[st.tone];
+                      const roasColor = isUnproductive(c) ? "#DC2626"
+                        : isRevenueMode
+                          ? (c.roas >= breakEven * 1.5 ? "#16A34A" : c.roas < breakEven ? "#B45309" : "#0D0D12")
+                          : "#16A34A";
+                      return (
+                        <div key={`${c.campaignName}-${i}`} className="grid items-center px-6 py-3.5" style={{ gridTemplateColumns: "1fr 90px 80px 96px", gap: 12, borderBottom: i < arr.length - 1 ? "1px solid #F7F5F2" : "none" }}>
+                          <div className="min-w-0">
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#0D0D12", fontFamily: "var(--font-inter)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.campaignName}</p>
+                            <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {isRevenueMode
+                                ? `${money(c.spend)} spend · ${c.purchases} purchase${c.purchases !== 1 ? "s" : ""}`
+                                : `${money(c.spend)} spend · ${convOf(c).toLocaleString("en-US")} result${convOf(c) !== 1 ? "s" : ""}`}
+                            </p>
+                          </div>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: "#0D0D12", fontFamily: "var(--font-inter)", textAlign: "right" }}>{money(c.spend)}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: roasColor, fontFamily: "var(--font-inter)", textAlign: "right" }}>{isRevenueMode ? `${c.roas.toFixed(1)}×` : convOf(c).toLocaleString("en-US")}</span>
+                          <div style={{ textAlign: "right" }}>
+                            <span className="inline-flex items-center gap-1" style={{ fontSize: 11, fontWeight: 700, color: ts.text, background: ts.bg, border: `1px solid ${ts.border}`, padding: "3px 9px", borderRadius: 100, fontFamily: "var(--font-inter)" }}>
+                              {st.mark} {st.label}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── Right column: Account Health + Quick Actions ── */}
+                  <div className="flex flex-col gap-4">
+
+                  {/* Account Health */}
+                  <div className="rounded-2xl p-6" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-heading" style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12" }}>Account Health</h2>
+                      <span style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>From last analysis</span>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center mb-5">
+                      <p className="font-heading" style={{ fontSize: 56, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: barColor(healthScore * 10) }}>{healthScore}</p>
+                      <p style={{ fontSize: 12, color: "#A8A5A0", fontFamily: "var(--font-inter)", marginTop: 4 }}>out of 10 — {healthLabel}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {healthBars.map(({ label, value }) => (
+                        <div key={label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span style={{ fontSize: 12, color: "#6B6B72", fontFamily: "var(--font-inter)" }}>{label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)" }}>{value}</span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 100, background: "#F0EDE8", overflow: "hidden" }}>
+                            <div style={{ width: `${value}%`, height: "100%", borderRadius: 100, background: barColor(value) }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="rounded-2xl p-5" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+                    <h2 className="font-heading" style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12", marginBottom: 12 }}>Quick Actions</h2>
+                    <div className="flex flex-col gap-1.5">
+                      {[
+                        { icon: FileText, label: "View Full Report",      href: "/results",            color: "#FF3CAC" },
+                        { icon: Upload,   label: "Run New Analysis",      href: "/analyze",            color: "#FF6B35" },
+                        { icon: Sparkles, label: "Open Creative Studio",  href: "/creative-studio",    color: "#7C3AED" },
+                        { icon: Bot,      label: "AI Manager",            href: "/dashboard/autopilot", color: "#16A34A" },
+                      ].map(({ icon: Icon, label, href, color }) => (
+                        <button
+                          key={label}
+                          onClick={() => router.push(href)}
+                          className="flex items-center gap-3 cursor-pointer transition-all text-left"
+                          style={{ padding: "9px 10px", borderRadius: 10, background: "transparent", border: "1px solid transparent" }}
+                          onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "#F7F5F2"; b.style.borderColor = "#E8E5E0"; }}
+                          onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "transparent"; b.style.borderColor = "transparent"; }}
+                        >
+                          <span className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ width: 30, height: 30, background: `${color}14` }}>
+                            <Icon className="w-4 h-4" style={{ color }} />
+                          </span>
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#0D0D12", fontFamily: "var(--font-inter)" }}>{label}</span>
+                          <ChevronRight className="w-3.5 h-3.5" style={{ color: "#D4D0CA" }} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  </div>{/* /right column */}
+
+                </div>
+              </motion.div>
+            )}
+
+            {/* ══ Pending Actions (autopilot — Meta-enabled plans only) ══ */}
+            {hasMeta && (
             <motion.div {...fade(0.14)}>
               <PendingActions />
             </motion.div>
-
-            {/* ══ Autopilot Settings ══ */}
-            <motion.div {...fade(0.16)}>
-              <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: "1px solid #E8E5E0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-                <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #F0EDE8" }}>
-                  <h2 className="font-heading" style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.03em", color: "#0D0D12" }}>Autopilot</h2>
-                  <Link
-                    href="/dashboard/autopilot"
-                    className="inline-flex items-center gap-1.5 font-semibold no-underline transition-colors"
-                    style={{ fontSize: 13, color: "#7C3AED", fontFamily: "var(--font-inter)", textDecoration: "none" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#6D28D9"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#7C3AED"; }}
-                  >
-                    Autopilot Settings <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-                <div className="px-6 py-5">
-                  <AutopilotSettings />
-                </div>
-              </div>
-            </motion.div>
+            )}
 
             {/* ══ Recent Analyses ══ */}
             <motion.div {...fade(0.14)}>
@@ -615,8 +871,8 @@ function DashboardContent() {
               </motion.div>
             )}
 
-            {/* ══ Paid quick actions ══ */}
-            {!subLoading && isPaid && (
+            {/* ══ Paid quick actions (only when the analysis Quick Actions card isn't shown) ══ */}
+            {!subLoading && isPaid && !hasAnalysis && (
               <motion.div {...fade(0.20)}>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[

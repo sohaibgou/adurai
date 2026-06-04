@@ -34,6 +34,8 @@ interface AnalyzeForm {
 interface MetaPanelProps {
   flashParam?: string | null;
   isPro?:      boolean;
+  /** Render the slim single-row strip when not yet connected (dashboard). Visual only. */
+  compact?:    boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,7 +61,7 @@ const inputStyle: React.CSSProperties = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps) {
+export default function MetaPanel({ flashParam, isPro = false, compact = false }: MetaPanelProps) {
   const router = useRouter();
 
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
@@ -235,6 +237,64 @@ export default function MetaPanel({ flashParam, isPro = false }: MetaPanelProps)
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  // Compact single-row strip — disconnected state only (dashboard). Reuses the
+  // exact connect/upgrade logic; full card still renders when connected/loading.
+  if (compact && !loading && !status?.connected) {
+    return (
+      <>
+        <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} variant="meta" />
+        <div
+          style={{
+            background: "#ffffff", border: "1px solid #E4E0DB", borderRadius: 14,
+            padding: "16px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+          }}
+        >
+          {/* Meta mark */}
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #0866FF 0%, #1877F2 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 3px 10px rgba(8,102,255,0.24)" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
+            </svg>
+          </div>
+
+          {/* Copy */}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0D0D12", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
+              Connect your Meta Ads account
+            </p>
+            <p style={{ fontSize: 13, color: "#6B6B72", fontFamily: "var(--font-inter)", marginTop: 1 }}>
+              {isPro
+                ? "Live campaign data · 24/7 monitoring · Autopilot execution"
+                : "Live campaign data · 24/7 monitoring · Autopilot execution — upgrade to Growth"}
+            </p>
+          </div>
+
+          {/* CTA — same handlers as the full card */}
+          <button
+            onClick={isPro ? connectMeta : () => setUpgradeOpen(true)}
+            disabled={connecting}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0,
+              padding: "11px 22px", borderRadius: 100,
+              background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+              color: "#fff", fontSize: 13, fontWeight: 700, border: "none",
+              cursor: connecting ? "not-allowed" : "pointer",
+              boxShadow: "0 4px 16px rgba(255,60,172,0.28)", fontFamily: "var(--font-inter)",
+              letterSpacing: "-0.01em", opacity: connecting ? 0.8 : 1, transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => { if (!connecting) { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(-1px)"; b.style.boxShadow = "0 6px 22px rgba(255,60,172,0.42)"; } }}
+            onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.transform = "translateY(0)"; b.style.boxShadow = "0 4px 16px rgba(255,60,172,0.28)"; }}
+          >
+            {connecting
+              ? <Loader2 style={{ width: 15, height: 15, animation: "spin 1s linear infinite" }} />
+              : null}
+            {connecting ? "Connecting…" : "Connect Meta →"}
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

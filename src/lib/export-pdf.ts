@@ -207,14 +207,14 @@ export async function exportAnalysisPDF(
   // Health score line
   if (analysis.score > 0) {
     const scoreColor: readonly [number, number, number] =
-      analysis.score >= 70 ? C.green : analysis.score >= 40 ? C.orange : C.red;
+      analysis.score >= 7 ? C.green : analysis.score >= 4 ? C.orange : C.red;
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
     setColor(C.muted);
     doc.text("Account Health Score: ", ML, y);
     doc.setFont("helvetica", "bold");
     setColor(scoreColor);
-    doc.text(`${analysis.score}/100`, ML + doc.getTextWidth("Account Health Score: ") + 1, y);
+    doc.text(`${analysis.score}/10`, ML + doc.getTextWidth("Account Health Score: ") + 1, y);
     y += 6;
   }
 

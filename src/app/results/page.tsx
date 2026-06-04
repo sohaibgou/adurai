@@ -43,15 +43,16 @@ function isPaidPlan(): boolean {
   }
 }
 
+// Analysis score is on a 0–10 scale (matches the HealthGauge).
 function scoreGradient(score: number): string {
-  if (score >= 75) return "linear-gradient(135deg, #16A34A, #22c55e)";
-  if (score >= 50) return "linear-gradient(135deg, #A16207, #d97706)";
+  if (score >= 7) return "linear-gradient(135deg, #16A34A, #22c55e)";
+  if (score >= 4) return "linear-gradient(135deg, #A16207, #d97706)";
   return "linear-gradient(135deg, #e17055, #ef4444)";
 }
 
 function scoreColor(score: number): string {
-  if (score >= 75) return "#16A34A";
-  if (score >= 50) return "#A16207";
+  if (score >= 7) return "#16A34A";
+  if (score >= 4) return "#A16207";
   return "#e17055";
 }
 
@@ -585,15 +586,15 @@ function ResultsContent() {
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
                 padding: "3px 10px", borderRadius: 8, flexShrink: 0,
-                background: score >= 75 ? "rgba(22,163,74,0.10)" : score >= 50 ? "rgba(161,98,7,0.10)" : "rgba(225,112,85,0.10)",
-                border: `1px solid ${score >= 75 ? "rgba(22,163,74,0.22)" : score >= 50 ? "rgba(161,98,7,0.22)" : "rgba(225,112,85,0.22)"}`,
+                background: score >= 7 ? "rgba(22,163,74,0.10)" : score >= 4 ? "rgba(161,98,7,0.10)" : "rgba(225,112,85,0.10)",
+                border: `1px solid ${score >= 7 ? "rgba(22,163,74,0.22)" : score >= 4 ? "rgba(161,98,7,0.22)" : "rgba(225,112,85,0.22)"}`,
               }}>
                 <span style={{
                   width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                  background: score >= 75 ? "#16A34A" : score >= 50 ? "#A16207" : "#e17055",
+                  background: score >= 7 ? "#16A34A" : score >= 4 ? "#A16207" : "#e17055",
                 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: score >= 75 ? "#16A34A" : score >= 50 ? "#A16207" : "#e17055" }}>
-                  {score}/100
+                <span style={{ fontSize: 12, fontWeight: 700, color: score >= 7 ? "#16A34A" : score >= 4 ? "#A16207" : "#e17055" }}>
+                  {score}/10
                 </span>
               </div>
 

@@ -3,10 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  LayoutDashboard, Upload, FileText, Palette,
-  LogOut, Zap, Crown, Bot, Menu, X,
-} from "lucide-react";
+import { Menu, X, Crown, Sparkles } from "lucide-react";
 
 /* ── Props ──────────────────────────────────────────────── */
 
@@ -18,151 +15,179 @@ export interface AppSidebarProps {
   analysisCount?: number;
   onSignOut?: () => void;
   onUpgrade?: () => void;
+  /** Optional real data for nav badges — render only when provided. */
+  lastScore?: number;
+  pendingCount?: number;
   /** Color of the mobile hamburger icon. Use a light value on dark-header pages. */
   menuIconColor?: string;
 }
 
-/* ── Nav definition ─────────────────────────────────────── */
+/* ── Design tokens ──────────────────────────────────────── */
+const C = {
+  white: "#FFFFFF", bg: "#F4F2EF", ink: "#0D0D12", ink2: "#6B6B72",
+  ink3: "#A8A5A0", border: "#E4E0DB", border2: "#D4D0CA", accent: "#FF3CAC",
+  grad: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", danger: "#DC2626",
+};
+const FREE_LIMIT = 3;
 
-const NAV_ITEMS = [
-  { id: "dashboard",       label: "Dashboard",       href: "/dashboard",           icon: LayoutDashboard },
-  { id: "analyze",         label: "New Analysis",    href: "/analyze",             icon: Upload          },
-  { id: "results",         label: "Last Results",    href: "/results",             icon: FileText        },
-  { id: "creative-studio", label: "Creative Studio", href: "/creative-studio",     icon: Palette         },
-  { id: "autopilot",       label: "AI Manager",      href: "/dashboard/autopilot", icon: Bot             },
+/* ── Nav icons (match reference SVGs) ───────────────────── */
+const ICONS: Record<string, React.ReactNode> = {
+  dashboard: (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  ),
+  analyze: (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  ),
+  results: (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  ),
+  "creative-studio": (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+  ),
+  autopilot: (
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+  ),
+};
+
+/* ── Nav definition (grouped by section) ────────────────── */
+const NAV_GROUPS = [
+  { label: "Overview",   items: [{ id: "dashboard", label: "Dashboard", href: "/dashboard" }] },
+  { label: "Analysis",   items: [
+    { id: "analyze", label: "New Analysis", href: "/analyze" },
+    { id: "results", label: "Last Results", href: "/results" },
+  ] },
+  { label: "Create",     items: [{ id: "creative-studio", label: "Creative Studio", href: "/creative-studio" }] },
+  { label: "Automation", items: [{ id: "autopilot", label: "AI Manager", href: "/dashboard/autopilot" }] },
 ] as const;
 
-const FREE_LIMIT = 3;
+/* ── Logout SVG (reference) ─────────────────────────────── */
+const LogoutIcon = () => (
+  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+);
 
 /* ── Shared inner content ───────────────────────────────── */
 
 function SidebarInner({
   activePage, isPaid, subLoading, user, analysisCount,
-  onSignOut, onUpgrade, onLinkClick,
+  onSignOut, onUpgrade, onLinkClick, lastScore, pendingCount,
 }: AppSidebarProps & { onLinkClick?: () => void }) {
+  const username  = (user?.email?.split("@")[0]) || "User";
   const initial   = (user?.email?.[0] ?? "U").toUpperCase();
   const remaining = Math.max(0, FREE_LIMIT - (analysisCount || 0));
 
   return (
-    <>
-      {/* ── Logo ── */}
-      <div className="flex items-center px-5 py-5">
+    <div className="flex flex-col h-full" style={{ fontFamily: "var(--font-inter)" }}>
+      {/* ── Logo (our real brand mark) ── */}
+      <div className="flex items-center" style={{ padding: "20px 18px 18px", borderBottom: `1px solid ${C.border}` }}>
         <Link href="/" onClick={onLinkClick} style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 36, width: "auto" }} />
+          <img src="/logos/logo-black.svg" alt="Adur.ai" style={{ height: 32, width: "auto" }} />
         </Link>
       </div>
 
-      {/* ── Thin divider ── */}
-      <div style={{ height: 1, background: "#F0EDE8", margin: "0 16px 8px" }} />
-
       {/* ── Nav ── */}
-      <nav className="flex-1 px-3 py-2 flex flex-col gap-0.5">
-        {NAV_ITEMS.map(({ id, label, href, icon: Icon }) => {
-          const active = activePage === id;
-          return (
-            <Link
-              key={id}
-              href={href}
-              onClick={onLinkClick}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left no-underline group"
-              style={{
-                background:    active ? "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)" : "transparent",
-                boxShadow:     active ? "0 4px 16px rgba(255,60,172,0.26)" : "none",
-                textDecoration: "none",
-              }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "#F7F5F2"; }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: active ? "#fff" : "#6B6B72" }} />
-              <span style={{
-                fontSize: 14, fontWeight: active ? 600 : 500,
-                color: active ? "#fff" : "#4B4B55",
-                fontFamily: "var(--font-inter)",
-              }}>
-                {label}
-              </span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto" style={{ padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {NAV_GROUPS.map(group => (
+          <div key={group.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: C.ink3, padding: "10px 8px 4px" }}>{group.label}</div>
+            {group.items.map(({ id, label, href }) => {
+              const active = activePage === id;
+              const badge =
+                id === "creative-studio" ? { text: "NEW", kind: "new" as const } :
+                id === "results" && typeof lastScore === "number" ? { text: `Score ${lastScore}`, kind: "default" as const } :
+                id === "autopilot" && typeof pendingCount === "number" && pendingCount > 0 ? { text: `${pendingCount} pending`, kind: "alert" as const } :
+                null;
+              return (
+                <Link
+                  key={id}
+                  href={href}
+                  onClick={onLinkClick}
+                  className="group no-underline"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 9,
+                    padding: "9px 10px", borderRadius: 9, transition: "all 0.15s",
+                    textDecoration: "none", fontSize: 13, fontWeight: 500,
+                    color: active ? C.ink : C.ink2,
+                    background: active ? C.bg : "transparent",
+                    border: `1px solid ${active ? C.border : "transparent"}`,
+                  }}
+                  onMouseEnter={e => { if (!active) { const a = e.currentTarget as HTMLElement; a.style.background = C.bg; a.style.color = C.ink; } }}
+                  onMouseLeave={e => { if (!active) { const a = e.currentTarget as HTMLElement; a.style.background = "transparent"; a.style.color = C.ink2; } }}
+                >
+                  <span style={{ width: 16, height: 16, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: active ? C.accent : C.ink3 }}>
+                    {ICONS[id]}
+                  </span>
+                  <span>{label}</span>
+                  {badge && (
+                    <span style={{
+                      marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 100,
+                      ...(badge.kind === "new"
+                        ? { background: C.grad, color: "#fff" }
+                        : badge.kind === "alert"
+                        ? { background: "#FEE2E2", color: C.danger }
+                        : { background: "rgba(255,60,172,0.1)", color: C.accent }),
+                    }}>
+                      {badge.text}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
-      {/* ── Bottom section ── */}
-      <div className="px-3 pb-5 space-y-3">
-        {/* Upgrade / Plan pill */}
-        {!subLoading && !isPaid && (
-          <button
-            onClick={onUpgrade}
-            className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl cursor-pointer transition-all text-left"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,60,172,0.08), rgba(255,107,53,0.06))",
-              border: "1px solid rgba(255,60,172,0.20)",
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, rgba(255,60,172,0.14), rgba(255,107,53,0.10))"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, rgba(255,60,172,0.08), rgba(255,107,53,0.06))"; }}
-          >
-            <Zap className="w-4 h-4 flex-shrink-0" style={{ color: "#FF3CAC" }} />
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#FF3CAC", fontFamily: "var(--font-inter)", lineHeight: 1.3 }}>Upgrade to Starter</p>
-              <p style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>$19/mo · Unlimited</p>
+      {/* ── Footer ── */}
+      <div style={{ padding: "12px 10px", borderTop: `1px solid ${C.border}` }}>
+        {/* Plan pill */}
+        {!subLoading && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+            {isPaid
+              ? <Crown size={15} strokeWidth={2.2} style={{ color: "#D97706", flexShrink: 0 }} />
+              : <Sparkles size={15} strokeWidth={2.2} style={{ color: C.accent, flexShrink: 0 }} />}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.ink }}>{isPaid ? "Starter Plan" : "Free Plan"}</div>
+              <div style={{ fontSize: 10, color: C.ink3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{remaining} of {FREE_LIMIT} analyses left</div>
             </div>
-          </button>
-        )}
-
-        {!subLoading && isPaid && (
-          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl" style={{ background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.18)" }}>
-            <Crown className="w-4 h-4 flex-shrink-0" style={{ color: "#16A34A" }} />
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#16A34A", fontFamily: "var(--font-inter)" }}>Starter Plan</p>
-              <p style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>{remaining} of {FREE_LIMIT} analyses left</p>
-            </div>
+            {!isPaid && onUpgrade && (
+              <button
+                onClick={onUpgrade}
+                style={{ fontSize: 9, fontWeight: 700, color: C.accent, background: "rgba(255,60,172,0.08)", border: "1px solid rgba(255,60,172,0.2)", borderRadius: 5, padding: "2px 6px", cursor: "pointer", whiteSpace: "nowrap", transition: "background 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,60,172,0.14)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,60,172,0.08)"; }}
+              >
+                Upgrade
+              </button>
+            )}
           </div>
         )}
 
-        {/* Thin divider */}
-        <div style={{ height: 1, background: "#F0EDE8" }} />
-
         {/* User row */}
         {user ? (
-          <div className="flex items-center gap-3 px-1">
-            <div className="flex-shrink-0 flex items-center justify-center rounded-xl" style={{ width: 34, height: 34, background: "linear-gradient(135deg, #FF3CAC, #FF6B35)", boxShadow: "0 3px 10px rgba(255,60,172,0.26)" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "var(--font-inter)" }}>{initial}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#0D0D12", fontFamily: "var(--font-inter)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {user.email}
-              </p>
-              <p style={{ fontSize: 11, color: "#A8A5A0", fontFamily: "var(--font-inter)" }}>{isPaid ? "Starter" : "Free Plan"}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", borderRadius: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.grad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initial}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div title={user.email} style={{ fontSize: 11, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{username}</div>
+              <div style={{ fontSize: 10, color: C.ink3 }}>{isPaid ? "Starter" : "Free"}</div>
             </div>
             <button
               onClick={onSignOut}
-              className="flex-shrink-0 flex items-center justify-center cursor-pointer rounded-lg transition-all"
-              style={{ width: 30, height: 30, background: "none", border: "none", color: "#A8A5A0" }}
-              onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "#e17055"; b.style.background = "rgba(225,112,85,0.08)"; }}
-              onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.color = "#A8A5A0"; b.style.background = "none"; }}
               title="Sign out"
+              style={{ color: C.ink3, cursor: "pointer", padding: 4, borderRadius: 5, transition: "color 0.15s", flexShrink: 0, background: "none", border: "none", display: "flex" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = C.ink; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = C.ink3; }}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogoutIcon />
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-2 px-1">
-            <Link href="/login" onClick={onLinkClick}
-              className="w-full text-center py-2 rounded-xl text-sm font-semibold transition-all no-underline"
-              style={{ border: "1px solid #E8E5E0", color: "#0D0D12", fontFamily: "var(--font-inter)", background: "transparent" }}
-            >
-              Sign In
-            </Link>
-            <Link href="/signup" onClick={onLinkClick}
-              className="w-full text-center py-2 rounded-xl text-sm font-bold transition-all no-underline"
-              style={{ background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)", color: "#fff", fontFamily: "var(--font-inter)", boxShadow: "0 4px 12px rgba(255,60,172,0.28)" }}
-            >
-              Get Started Free
-            </Link>
+            <Link href="/login" onClick={onLinkClick} className="w-full text-center py-2 rounded-xl text-sm font-semibold no-underline" style={{ border: `1px solid ${C.border}`, color: C.ink, background: "transparent" }}>Sign In</Link>
+            <Link href="/signup" onClick={onLinkClick} className="w-full text-center py-2 rounded-xl text-sm font-bold no-underline" style={{ background: C.grad, color: "#fff", boxShadow: "0 4px 12px rgba(255,60,172,0.28)" }}>Get Started Free</Link>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -173,71 +198,51 @@ export default function AppSidebar(props: AppSidebarProps) {
 
   return (
     <>
-      {/* ══════════════════════════════════════
-          DESKTOP SIDEBAR  (lg+)
-      ══════════════════════════════════════ */}
+      {/* DESKTOP SIDEBAR (lg+) */}
       <aside
         className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30"
-        style={{ width: 240, background: "#FFFFFF", borderRight: "1px solid #E8E5E0" }}
+        style={{ width: 240, background: C.white, borderRight: `1px solid ${C.border}` }}
       >
         <SidebarInner {...props} />
       </aside>
 
-      {/* ══════════════════════════════════════
-          MOBILE HAMBURGER BUTTON
-      ══════════════════════════════════════ */}
+      {/* MOBILE HAMBURGER */}
       <button
         className="lg:hidden fixed z-40 flex items-center justify-center"
-        style={{
-          top: 0, left: 0, width: 56, height: 64,
-          background: "none", border: "none", cursor: "pointer",
-        }}
+        style={{ top: 0, left: 0, width: 56, height: 64, background: "none", border: "none", cursor: "pointer" }}
         onClick={() => setMobileOpen(true)}
         aria-label="Open menu"
       >
-        <Menu className="w-5 h-5" style={{ color: props.menuIconColor ?? "#0D0D12" }} />
+        <Menu className="w-5 h-5" style={{ color: props.menuIconColor ?? C.ink }} />
       </button>
 
-      {/* ══════════════════════════════════════
-          MOBILE DRAWER  (AnimatePresence)
-      ══════════════════════════════════════ */}
+      {/* MOBILE DRAWER */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="sidebar-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-40 lg:hidden"
               style={{ background: "rgba(13,13,18,0.52)", backdropFilter: "blur(4px)" }}
               onClick={() => setMobileOpen(false)}
             />
-
-            {/* Slide-in drawer */}
             <motion.aside
               key="sidebar-drawer"
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
+              initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="fixed inset-y-0 left-0 z-50 flex flex-col lg:hidden"
-              style={{ width: 272, background: "#FFFFFF", borderRight: "1px solid #E8E5E0", boxShadow: "6px 0 32px rgba(0,0,0,0.10)" }}
+              style={{ width: 272, background: C.white, borderRight: `1px solid ${C.border}`, boxShadow: "6px 0 32px rgba(0,0,0,0.10)" }}
             >
-              {/* Close button */}
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute flex items-center justify-center rounded-xl transition-all"
-                style={{ top: 16, right: 14, width: 32, height: 32, background: "#F7F5F2", border: "1px solid #E8E5E0", color: "#A8A5A0", cursor: "pointer" }}
-                onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "#F0EDE8"; b.style.color = "#0D0D12"; }}
-                onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = "#F7F5F2"; b.style.color = "#A8A5A0"; }}
+                style={{ top: 16, right: 14, width: 32, height: 32, background: C.bg, border: `1px solid ${C.border}`, color: C.ink3, cursor: "pointer", zIndex: 10 }}
                 aria-label="Close menu"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
-
               <SidebarInner {...props} onLinkClick={() => setMobileOpen(false)} />
             </motion.aside>
           </>
