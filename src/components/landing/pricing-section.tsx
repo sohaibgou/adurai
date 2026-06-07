@@ -13,7 +13,7 @@ interface PricingSectionProps {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Badge = "NEW" | "READ" | "WRITE";
-interface Feat  { label: string; ok: boolean; badge?: Badge }
+interface Feat  { label: string; ok: boolean; badge?: Badge; soon?: boolean }
 interface Group { label: string; items: Feat[] }
 
 // ── Plan feature data ─────────────────────────────────────────────────────────
@@ -66,21 +66,21 @@ const GROWTH_GROUPS: Group[] = [
     { label: "10 UGC videos / month", ok: true, badge: "NEW" },
   ]},
   { label: "Meta Integration", items: [
-    { label: "Connect Meta Account", ok: true, badge: "READ" },
-    { label: "Live campaign data", ok: true },
-    { label: "Creative fatigue alerts", ok: true },
+    { label: "Connect Meta Account", ok: true, badge: "READ", soon: true },
+    { label: "Live campaign data", ok: true, soon: true },
+    { label: "Creative fatigue alerts", ok: true, soon: true },
     { label: "AI auto-execution", ok: false },
   ]},
 ];
 
 const AUTOPILOT_GROUPS: Group[] = [
   { label: "Everything in Growth, plus:", items: [
-    { label: "Connect Meta Account", ok: true, badge: "WRITE" },
+    { label: "Connect Meta Account", ok: true, badge: "WRITE", soon: true },
     { label: "AI Manager & full Autopilot", ok: true },
-    { label: "Auto pause / scale / budget", ok: true },
+    { label: "Auto pause / scale / budget", ok: true, soon: true },
     { label: "Approve / reject AI actions", ok: true },
-    { label: "24/7 campaign monitoring", ok: true },
-    { label: "Daily AI briefing emails", ok: true },
+    { label: "24/7 campaign monitoring", ok: true, soon: true },
+    { label: "Daily AI briefing emails", ok: true, soon: true },
     { label: "30 UGC videos / month", ok: true },
     { label: "Unlimited image generations", ok: true },
     { label: "Priority support", ok: true },
@@ -167,6 +167,15 @@ function FeatureRow({ feat, dark }: { feat: Feat; dark?: boolean }) {
         )}
         {feat.badge === "WRITE" && (
           <span className="ml-1.5 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(74,222,128,0.14)", color: "#4ade80" }}>WRITE</span>
+        )}
+        {feat.soon && (
+          <span
+            className="ml-1.5 align-middle"
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, background: "#fef3c7", color: "#92400e", borderRadius: 100, padding: "2px 8px" }}
+          >
+            <Clock size={11} strokeWidth={2.4} style={{ flexShrink: 0 }} />
+            Soon
+          </span>
         )}
       </span>
     </li>
@@ -361,6 +370,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
                 <span className="text-[11px]" style={{ color: "#6b7280" }}>Live campaigns · Real-time monitoring</span>
               </div>
               <FeatureGroups groups={GROWTH_GROUPS} />
+              <p
+                className="text-[11px] leading-relaxed mb-4 rounded-lg px-3 py-2 text-left md:text-center"
+                style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e" }}
+              >
+                Unlimited analysis, Creative Studio and ad copy available now. Meta account connection launching soon.
+              </p>
               <button
                 onClick={() => onGet("growth")}
                 disabled={loadingPlan === "growth"}
@@ -388,6 +403,12 @@ export default function PricingSection({ onCtaClick }: PricingSectionProps) {
               <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>Full autonomous media buying — let Adur manage your account.</p>
               <div className="h-px mb-5" style={{ background: "rgba(255,255,255,0.08)" }} />
               <FeatureGroups groups={AUTOPILOT_GROUPS} dark />
+              <p
+                className="text-[11px] leading-relaxed mb-4 rounded-lg px-3 py-2 text-left md:text-center"
+                style={{ background: "rgba(254,243,199,0.1)", border: "1px solid rgba(254,243,199,0.2)", color: "#fcd34d" }}
+              >
+                Analysis, Creative Studio and Ad Copy available now. Autonomous management launching soon.
+              </p>
               <button
                 onClick={() => onGet("pro")}
                 disabled={loadingPlan === "pro"}

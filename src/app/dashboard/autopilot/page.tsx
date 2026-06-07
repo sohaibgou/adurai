@@ -50,6 +50,10 @@ interface HistoryAction {
   created_at:    string;
 }
 
+// Autonomous management is not live yet — controls are visible but inert and
+// surface a "coming soon" toast. Flip to true once Meta approval lands.
+const LAUNCHED: boolean = false;
+
 const DEFAULT_RULES: AutomationRules = {
   pauseHighCpa:        { enabled: true,  targetCpa: 50,          thresholdPercent: 20 },
   scaleWinners:        { enabled: true,  scaleBudgetPercent: 20, roasMultiplier: 2,    maxIncreasePercent: 50 },
@@ -198,6 +202,13 @@ export default function AutopilotPage() {
   const [processing,       setProcessing]       = useState<string | null>(null);
   const [justExecuted,     setJustExecuted]     = useState<Set<string>>(new Set());
 
+  // Coming-soon toast
+  const [toast,            setToast]            = useState<string | null>(null);
+  function comingSoon() {
+    setToast("Coming soon — you'll be notified when this launches");
+    setTimeout(() => setToast(null), 3000);
+  }
+
   // History state
   const [history,          setHistory]          = useState<HistoryAction[]>([]);
   const [historyLoading,   setHistoryLoading]   = useState(true);
@@ -287,6 +298,7 @@ export default function AutopilotPage() {
 
   // ── Save mode ────────────────────────────────────────────────────────────────
   async function saveMode(newMode: AutopilotMode) {
+    if (!LAUNCHED) { comingSoon(); return; }
     setSettingsSaving(true);
     await fetch("/api/autopilot/settings", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -300,6 +312,7 @@ export default function AutopilotPage() {
 
   // ── Save rules ───────────────────────────────────────────────────────────────
   async function saveRules() {
+    if (!LAUNCHED) { comingSoon(); return; }
     setRulesSaving(true);
     await fetch("/api/autopilot/settings", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -312,6 +325,7 @@ export default function AutopilotPage() {
 
   // ── Approve / Reject ─────────────────────────────────────────────────────────
   async function handleApprove(id: string) {
+    if (!LAUNCHED) { comingSoon(); return; }
     setProcessing(id);
     const res = await fetch("/api/meta/approve", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -329,6 +343,7 @@ export default function AutopilotPage() {
   }
 
   async function handleReject(id: string) {
+    if (!LAUNCHED) { comingSoon(); return; }
     setProcessing(id);
     const res = await fetch("/api/meta/reject", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -444,6 +459,26 @@ export default function AutopilotPage() {
         <main className="flex-1 px-6 lg:px-8 py-8">
           <div className="max-w-4xl space-y-6">
 
+            {/* ── Coming-soon banner (autonomous management pre-launch) ── */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #6c5ce7 0%, #8b5cf6 100%)",
+                color: "#fff", borderRadius: 16, padding: "16px 22px",
+                display: "flex", alignItems: "flex-start", gap: 12,
+                boxShadow: "0 8px 28px rgba(108,92,231,0.28)",
+              }}
+            >
+              <Clock size={18} strokeWidth={2.2} style={{ color: "#fff", flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.01em", fontFamily: "var(--font-inter)", marginBottom: 2, color: "#fff" }}>
+                  Coming Soon
+                </p>
+                <p style={{ fontSize: 13, lineHeight: 1.55, color: "rgba(255,255,255,0.92)", fontFamily: "var(--font-inter)" }}>
+                  Autonomous management is launching soon. Your settings are saved and will activate automatically when we go live.
+                </p>
+              </div>
+            </div>
+
             {/* ── Pro lock overlay ── */}
             {!subLoading && !isPro && (
               <motion.div {...fade(0)}>
@@ -537,7 +572,7 @@ export default function AutopilotPage() {
                   subtitle="Choose how Adur handles issues detected in your campaigns"
                   accent="#7C3AED"
                 />
-                <div style={{ padding: "0 24px 24px" }}>
+                <div style={{ padding: "0 24px 24px", opacity: LAUNCHED ? 1 : 0.6 }}>
                   <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12, marginBottom: 20 }}>
                     {MODES.map((m) => {
                       const active = mode === m.id;
@@ -621,7 +656,7 @@ export default function AutopilotPage() {
                   subtitle="Adur uses these thresholds to make decisions about your account"
                   accent="#FF3CAC"
                 />
-                <div style={{ padding: "0 24px 24px" }}>
+                <div style={{ padding: "0 24px 24px", opacity: LAUNCHED ? 1 : 0.6 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
                     {/* Rule 1 — Pause high CPA */}
@@ -1100,6 +1135,23 @@ export default function AutopilotPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Coming-soon toast ── */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
+            zIndex: 60, background: "#0D0D12", color: "#fff",
+            padding: "13px 22px", borderRadius: 100,
+            fontSize: 13, fontWeight: 600, fontFamily: "var(--font-inter)",
+            boxShadow: "0 12px 36px rgba(0,0,0,0.28)",
+            display: "flex", alignItems: "center", gap: 9, maxWidth: "90vw",
+          }}
+        >
+          <Clock style={{ width: 15, height: 15, color: "#8b5cf6", flexShrink: 0 }} />
+          {toast}
         </div>
       )}
     </div>

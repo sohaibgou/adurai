@@ -8,6 +8,7 @@
  * Returns: { title, description, image, logo, publisher, url }
  */
 import { NextRequest, NextResponse } from "next/server";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const dynamic    = "force-dynamic";
 export const maxDuration = 15;
@@ -27,6 +28,9 @@ interface MicrolinkResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireEmailVerified(req);
+  if (auth instanceof NextResponse) return auth;
+
   let body: { url?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }

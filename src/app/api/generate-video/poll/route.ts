@@ -9,6 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
+import { requireEmailVerified } from "@/lib/require-email-verified";
 
 export const dynamic    = "force-dynamic";
 export const maxDuration = 20;
@@ -16,6 +17,9 @@ export const maxDuration = 20;
 const ENDPOINT = "fal-ai/kling-video/v3/pro/image-to-video";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireEmailVerified(req);
+  if (auth instanceof NextResponse) return auth;
+
   const key = process.env.FAL_KEY;
   if (!key) {
     return NextResponse.json({ error: "FAL_KEY not configured" }, { status: 500 });

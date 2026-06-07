@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Mail, Bot, Sparkles, BarChart3, Wand2, Rocket } from "lucide-react";
+import { ArrowRight, Mail, Bot, Sparkles, BarChart3, Wand2, Rocket, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -345,6 +345,30 @@ function SuccessContent() {
                 </motion.div>
               ))}
             </motion.div>
+
+            {/* Meta plans: autonomous-feature coming-soon notice */}
+            {(plan === "growth" || plan === "pro") && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.72, duration: 0.4 }}
+                className="w-full mb-6 flex items-start gap-3 px-4 py-3.5 rounded-xl"
+                style={{ background: "#fffbeb", border: "1px solid #fde68a", textAlign: "left" }}
+              >
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#b45309" }} />
+                <p style={{ fontSize: 13, color: "#92400e", fontFamily: "var(--font-inter)", lineHeight: 1.55 }}>
+                  {isPro ? (
+                    <>
+                      <span style={{ fontWeight: 700 }}>You&apos;re on Autopilot</span> — Creative Studio and unlimited analysis are active now. Autonomous management will activate automatically when we launch — you&apos;ll be the first to know.
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontWeight: 700 }}>You&apos;re on Growth</span> — unlimited analysis and Creative Studio are active now. Meta account connection will activate automatically when we launch — you&apos;ll be the first to know.
+                    </>
+                  )}
+                </p>
+              </motion.div>
+            )}
 
             {/* CTA */}
             <motion.button

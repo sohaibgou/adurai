@@ -231,7 +231,7 @@ const TAB_CONFIG: { id: Flow; label: string; badge?: string; accent: string; acc
   {
     id: "meta",
     label: "Connect Meta Account",
-    badge: "Pro",
+    badge: "Soon",
     accent: "#6c5ce7",
     accentBg: "rgba(108,92,231,0.08)",
     accentBorder: "rgba(108,92,231,0.28)",
@@ -345,8 +345,8 @@ export default function HowItWorks() {
                           borderRadius: 100,
                           letterSpacing: "0.06em",
                           textTransform: "uppercase",
-                          background: isActive ? "rgba(108,92,231,0.12)" : "rgba(108,92,231,0.07)",
-                          color: "#6c5ce7",
+                          background: "#fef3c7",
+                          color: "#92400e",
                         }}
                       >
                         {tab.badge}

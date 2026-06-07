@@ -106,7 +106,7 @@ function LoginContent() {
         await fetch("/api/auth/auto-confirm", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ email: email.trim() }),
+          body:    JSON.stringify({ email: email.trim(), password }),
         });
         // Give Supabase a moment to propagate the update
         await new Promise(r => setTimeout(r, 400));

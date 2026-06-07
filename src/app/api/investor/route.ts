@@ -13,6 +13,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name, email and message are required" }, { status: 400 });
   }
 
+  // Length caps — reject oversized payloads before they hit the database.
+  if (
+    name.trim().length > 200 ||
+    email.trim().length > 254 ||
+    (fund && fund.length > 200) ||
+    message.trim().length > 5000
+  ) {
+    return NextResponse.json({ error: "One or more fields are too long" }, { status: 400 });
+  }
+
   const { error } = await supabaseAdmin.from("investor_enquiries").insert({
     name:    name.trim(),
     email:   email.trim().toLowerCase(),

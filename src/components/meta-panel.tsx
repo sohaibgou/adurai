@@ -59,12 +59,151 @@ const inputStyle: React.CSSProperties = {
   outline: "none", boxSizing: "border-box",
 };
 
+// ── Waitlist modal ────────────────────────────────────────────────────────────
+// Shown instead of connecting while autonomous management is pre-launch.
+
+function WaitlistModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [email,     setEmail]     = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done,      setDone]      = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+
+  if (!open) return null;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const clean = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setError("Please enter a valid email.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email: clean, source: "dashboard-meta" }),
+      });
+      if (!res.ok) throw new Error();
+      setDone(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(10,10,15,0.55)", backdropFilter: "blur(3px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 420, background: "#fff", borderRadius: 18,
+          padding: 30, boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
+          fontFamily: "var(--font-inter)", position: "relative",
+        }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: "absolute", top: 16, right: 16, width: 30, height: 30,
+            borderRadius: 8, border: "none", background: "#f3f4f6",
+            color: "#6b7280", cursor: "pointer", fontSize: 16, lineHeight: 1,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          ×
+        </button>
+
+        {done ? (
+          <div style={{ textAlign: "center", paddingTop: 8 }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(22,163,74,0.10)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <CheckCircle2 style={{ width: 30, height: 30, color: "#16A34A" }} />
+            </div>
+            <h3 className="font-heading" style={{ fontSize: 20, fontWeight: 700, color: "#0a0a0f", letterSpacing: "-0.02em", marginBottom: 8 }}>
+              You&apos;re on the list!
+            </h3>
+            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, marginBottom: 22 }}>
+              We&apos;ll email you the moment autonomous management goes live. You&apos;ll be among the first.
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%", padding: "12px", borderRadius: 100, border: "none",
+                background: "#0a0a0f", color: "#fff", fontSize: 14, fontWeight: 700,
+                cursor: "pointer", fontFamily: "var(--font-inter)",
+              }}
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 100, background: "#f3f0ff", marginBottom: 12 }}>
+              <Clock style={{ width: 13, height: 13, color: "#6c5ce7" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#6c5ce7", letterSpacing: "0.02em" }}>EARLY ACCESS</span>
+            </div>
+            <h3 className="font-heading" style={{ fontSize: 21, fontWeight: 700, color: "#0a0a0f", letterSpacing: "-0.02em", marginBottom: 8 }}>
+              You&apos;re Early
+            </h3>
+            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, marginBottom: 20 }}>
+              Meta autonomous management is launching very soon. You&apos;ll be among the first to get access.
+            </p>
+
+            <form onSubmit={submit}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 7 }}>
+                Notify me when it launches
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                placeholder="you@company.com"
+                autoFocus
+                style={{ ...inputStyle, padding: "11px 14px", fontSize: 14 }}
+              />
+              {error && (
+                <p style={{ fontSize: 12, color: "#dc2626", marginTop: 7 }}>{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  width: "100%", marginTop: 16, padding: "12px", borderRadius: 100, border: "none",
+                  background: "linear-gradient(135deg, #6c5ce7 0%, #8b5cf6 100%)",
+                  color: "#fff", fontSize: 14, fontWeight: 700,
+                  cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.8 : 1,
+                  fontFamily: "var(--font-inter)", display: "inline-flex",
+                  alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                {submitting && <Loader2 style={{ width: 15, height: 15, animation: "spin 1s linear infinite" }} />}
+                {submitting ? "Joining…" : "Join the waitlist"}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function MetaPanel({ flashParam, isPro = false, compact = false }: MetaPanelProps) {
   const router = useRouter();
 
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
+  const [waitlistOpen,  setWaitlistOpen]  = useState(false);
   const [status,        setStatus]        = useState<MetaStatus | null>(null);
   const [loading,       setLoading]       = useState(true);
   const [connecting,    setConnecting]    = useState(false);
@@ -183,6 +322,9 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
   }
 
   // ── Popup OAuth ───────────────────────────────────────────────────────────
+  // Preserved for re-enable once autonomous management launches. Connect buttons
+  // currently open the waitlist modal instead of invoking this directly.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function connectMeta() {
     const width  = 600;
     const height = 700;
@@ -244,6 +386,7 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
     return (
       <>
         <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} variant="meta" />
+        <WaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
         <div
           style={{
             background: "#ffffff", border: "1px solid #E4E0DB", borderRadius: 14,
@@ -270,9 +413,9 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
             </p>
           </div>
 
-          {/* CTA — same handlers as the full card */}
+          {/* CTA — waitlist (autonomous management pre-launch) */}
           <button
-            onClick={isPro ? connectMeta : () => setUpgradeOpen(true)}
+            onClick={() => setWaitlistOpen(true)}
             disabled={connecting}
             style={{
               display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0,
@@ -299,6 +442,7 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
   return (
     <>
     <ProUpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} variant="meta" />
+    <WaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
     <div
       style={{
         background:   "#ffffff",
@@ -628,10 +772,10 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
             ))}
           </div>
 
-          {/* CTA — Facebook OAuth popup (Pro) or upgrade prompt (free) */}
+          {/* CTA — waitlist (autonomous management pre-launch) */}
           {isPro ? (
             <button
-              onClick={connectMeta}
+              onClick={() => setWaitlistOpen(true)}
               disabled={connecting}
               style={{
                 display:       "inline-flex",
@@ -668,7 +812,7 @@ export default function MetaPanel({ flashParam, isPro = false, compact = false }
             </button>
           ) : (
             <button
-              onClick={() => setUpgradeOpen(true)}
+              onClick={() => setWaitlistOpen(true)}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "13px 28px", borderRadius: 100,

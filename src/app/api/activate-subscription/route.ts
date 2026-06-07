@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment not completed" }, { status: 400 });
     }
 
+    // Ownership check — the session must belong to the authenticated user.
+    // Without this, anyone holding a (leaked/shared) session_id could activate
+    // a paid plan on their OWN account using someone else's payment.
+    if (session.metadata?.user_id !== user.id) {
+      return NextResponse.json({ error: "Session does not belong to this user" }, { status: 403 });
+    }
+
     const subscriptionId =
       typeof session.subscription === "string"
         ? session.subscription

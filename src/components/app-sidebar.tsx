@@ -96,6 +96,7 @@ function SidebarInner({
                 id === "creative-studio" ? { text: "NEW", kind: "new" as const } :
                 id === "results" && typeof lastScore === "number" ? { text: `Score ${lastScore}`, kind: "default" as const } :
                 id === "autopilot" && typeof pendingCount === "number" && pendingCount > 0 ? { text: `${pendingCount} pending`, kind: "alert" as const } :
+                id === "autopilot" ? { text: "Soon", kind: "soon" as const } :
                 null;
               return (
                 <Link
@@ -125,6 +126,8 @@ function SidebarInner({
                         ? { background: C.grad, color: "#fff" }
                         : badge.kind === "alert"
                         ? { background: "#FEE2E2", color: C.danger }
+                        : badge.kind === "soon"
+                        ? { background: "#fef3c7", color: "#92400e" }
                         : { background: "rgba(255,60,172,0.1)", color: C.accent }),
                     }}>
                       {badge.text}

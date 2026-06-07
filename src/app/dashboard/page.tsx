@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, BarChart3, Crown, Zap, Upload, Sparkles,
   Calendar, TrendingUp, ChevronRight, FileText, LogOut, Bell,
-  DollarSign, Target, Layers, Bot,
+  DollarSign, Target, Layers, Bot, Clock,
 } from "lucide-react";
 import type { AnalysisResult, OnboardingData, CampaignSummary } from "@/lib/types";
 import AppSidebar from "@/components/app-sidebar";
@@ -525,6 +525,19 @@ function DashboardContent() {
 
             {/* ══ Meta Integration (above campaigns) ══ */}
             <motion.div {...fade(0.09)}>
+              {/* Coming-soon banner — autonomous management pre-launch */}
+              <div
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  background: "#fffbeb", border: "1px solid #fde68a",
+                  borderRadius: 12, padding: "12px 16px", marginBottom: 12,
+                }}
+              >
+                <Clock size={16} strokeWidth={2.2} style={{ color: "#b45309", flexShrink: 0, marginTop: 1 }} />
+                <p style={{ fontSize: 13, lineHeight: 1.55, color: "#92400e", fontFamily: "var(--font-inter)" }}>
+                  <strong style={{ fontWeight: 700 }}>Autonomous management is coming soon</strong> — we&apos;re finalizing our Meta approval. Connect your account now to be first when we launch.
+                </p>
+              </div>
               <MetaPanel flashParam={metaParam ?? actionParam} isPro={hasMeta} compact={!metaParam && !actionParam} />
             </motion.div>
 

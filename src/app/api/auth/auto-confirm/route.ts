@@ -2,22 +2,54 @@
  * POST /api/auth/auto-confirm
  *
  * Called when signInWithPassword returns "Email not confirmed".
- * Because Supabase only returns that specific error when the password is
- * correct (wrong credentials give "Invalid login credentials"), the password
- * has already been verified — we're safe to admin-confirm the email so the
- * user can log in immediately.
+ *
+ * SECURITY: This endpoint admin-confirms an email, so it must NOT trust the
+ * caller. We re-verify the password server-side first by attempting a sign-in
+ * with a throwaway anon client. Supabase returns the specific error
+ * "Email not confirmed" ONLY when the password is correct on an unconfirmed
+ * account (a wrong password yields "Invalid login credentials"). So:
+ *   - "Email not confirmed"        -> password correct  -> proceed to confirm
+ *   - "Invalid login credentials"  -> wrong password    -> reject (401)
+ *   - sign-in succeeds              -> already confirmed -> nothing to do
+ *   - any other error               -> reject (400)
  *
  * Sets app_metadata.email_link_verified = false so generation features
  * remain gated until the user actually clicks the verification email.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json() as { email?: string };
-  if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
+  const { email, password } = await req.json() as { email?: string; password?: string };
+  if (!email || !password) {
+    return NextResponse.json({ error: "email and password required" }, { status: 400 });
+  }
+
+  // ── Re-verify the password server-side before confirming anything ───────
+  // Use a fresh anon client that never persists a session.
+  const anon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+  const { error: signInErr } = await anon.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  if (!signInErr) {
+    // Already confirmed and credentials valid — nothing to do.
+    return NextResponse.json({ ok: true, alreadyConfirmed: true });
+  }
+  const msg = (signInErr.message || "").toLowerCase();
+  if (!msg.includes("not confirmed")) {
+    // Wrong password ("invalid login credentials") or any other failure.
+    return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
+  }
+  // Password is correct (account merely unconfirmed) — safe to proceed.
 
   // Find the user by email (paginate until found or exhausted)
   let user: { id: string; email?: string; app_metadata?: Record<string, unknown> } | undefined;
