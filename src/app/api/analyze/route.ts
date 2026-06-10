@@ -8,7 +8,6 @@ import type { CampaignSummary } from "@/lib/types";
 export const maxDuration = 120;
 
 const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
-const FREE_LIMIT   = 3; // guest fallback (no session)
 
 const INDUSTRY_BENCHMARKS = `
 META ADS INDUSTRY BENCHMARKS — use these as hard reference points. Compare EVERY campaign metric against these benchmarks and cite them explicitly in your recommendations. Never guess without context.
@@ -172,10 +171,8 @@ export async function POST(request: NextRequest) {
       summaries: CampaignSummary[];
       onboarding?: OnboardingData | null;
       sessionToken?: string;
-      plan?: string;
-      analysisCount?: number;
     };
-    const { summaries, onboarding, sessionToken, plan, analysisCount: clientCount } = body;
+    const { summaries, onboarding, sessionToken } = body;
 
     // ── Server-side limit enforcement ─────────────────────────────────────────
     let serverPlan    : PlanTier = "free";
@@ -206,39 +203,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Analysis runs a paid Claude call — never serve it unauthenticated. The
+    // /analyze page is login-gated, so every legitimate request carries a
+    // session token; anything without one is a direct API call we must reject.
+    if (!authedUserId) {
+      return NextResponse.json(
+        { error: "Please sign in to run an analysis.", code: "AUTH_REQUIRED" },
+        { status: 401 }
+      );
+    }
+
     // Analysis caps reset monthly. Free 3/mo, Starter 10/mo, Growth+/Autopilot
-    // unlimited (null). Admins are always unlimited.
+    // unlimited (null). Admins are always unlimited. Enforced via the DB count
+    // only — never a client-reported number.
     const analysisLimit = serverAdmin ? null : ANALYSIS_LIMITS[serverPlan];
     if (analysisLimit !== null) {
       const month = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-      const overMessage =
-        serverPlan === "free"
-          ? "You've used all 3 free analyses for this month. Upgrade to continue."
-          : `You've used all ${analysisLimit} analyses for this month. Resets on the 1st.`;
-
-      if (authedUserId) {
-        // Authenticated user — enforce via DB count (authoritative, monthly reset)
-        const { data: usageRow } = await supabaseAdmin
-          .from("user_usage")
-          .select("analysis_count, analysis_month")
-          .eq("user_id", authedUserId)
-          .maybeSingle();
-        const dbCount = usageRow?.analysis_month === month ? (usageRow?.analysis_count ?? 0) : 0;
-        if (dbCount >= analysisLimit) {
-          return NextResponse.json(
-            { error: overMessage, code: "FREE_LIMIT_EXCEEDED" },
-            { status: 403 }
-          );
-        }
-      } else {
-        // Guest user — fall back to client-reported count (free tier only)
-        const count = typeof clientCount === "number" ? clientCount : 0;
-        if (count >= FREE_LIMIT) {
-          return NextResponse.json(
-            { error: "You've used all 3 free analyses. Upgrade to continue.", code: "FREE_LIMIT_EXCEEDED" },
-            { status: 403 }
-          );
-        }
+      const { data: usageRow } = await supabaseAdmin
+        .from("user_usage")
+        .select("analysis_count, analysis_month")
+        .eq("user_id", authedUserId)
+        .maybeSingle();
+      const dbCount = usageRow?.analysis_month === month ? (usageRow?.analysis_count ?? 0) : 0;
+      if (dbCount >= analysisLimit) {
+        const overMessage =
+          serverPlan === "free"
+            ? "You've used all 3 free analyses for this month. Upgrade to continue."
+            : `You've used all ${analysisLimit} analyses for this month. Resets on the 1st.`;
+        return NextResponse.json(
+          { error: overMessage, code: "FREE_LIMIT_EXCEEDED" },
+          { status: 403 }
+        );
       }
     }
     // ─────────────────────────────────────────────────────────────────────────

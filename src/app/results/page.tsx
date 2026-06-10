@@ -173,6 +173,7 @@ function ResultsContent() {
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy">("analysis");
   const [paidPlan, setPaidPlan] = useState(false);
+  const [planTier, setPlanTier] = useState<"free" | "starter" | "growth" | "pro">("free");
   const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [needsDbFetch, setNeedsDbFetch] = useState(false);
@@ -303,6 +304,11 @@ function ResultsContent() {
       .then(({ data }) => {
         if (data) {
           setPaidPlan(true);
+          setPlanTier(
+            data.plan === "pro" || data.plan === "growth" || data.plan === "starter"
+              ? data.plan
+              : "starter"
+          );
           try {
             localStorage.setItem("adur_plan", data.plan ?? "starter");
           } catch {
@@ -366,7 +372,12 @@ function ResultsContent() {
     const isPaidEmpty = paidPlan || !!(user?.email && ADMIN_EMAILS.includes(user.email));
     return (
       <>
-      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        reason={paywallReason}
+        currentPlan={user?.email && ADMIN_EMAILS.includes(user.email) ? "pro" : planTier}
+      />
       <div style={{ display: "flex", minHeight: "100vh", background: "#F7F5F2" }}>
         <AppSidebar
           activePage="results"
@@ -510,6 +521,7 @@ function ResultsContent() {
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
         reason={paywallReason}
+        currentPlan={user?.email && ADMIN_EMAILS.includes(user.email) ? "pro" : planTier}
       />
 
       <div

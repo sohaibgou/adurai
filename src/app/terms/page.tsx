@@ -95,8 +95,9 @@ export default function TermsPage() {
         <p style={P}>Adur offers the following subscription plans:</p>
         <ul style={{ margin: "0 0 14px 20px", padding: 0 }}>
           <li style={LI}>• <strong>Free</strong> — up to 3 analyses per month at no charge</li>
-          <li style={LI}>• <strong>Starter — $19/month</strong> — unlimited analyses, full 7-Day Battle Plan, creative tools, PDF exports</li>
-          <li style={LI}>• <strong>Pro — $99/month</strong> — everything in Starter, plus Meta account connection, AI Manager, 24/7 monitoring, and automated actions</li>
+          <li style={LI}>• <strong>Starter — $19/month</strong> — 10 analyses per month, full 7-Day Battle Plan, creative tools, PDF exports</li>
+          <li style={LI}>• <strong>Growth — $49/month</strong> — unlimited analyses, expanded Creative Studio limits, and Meta account connection (when available)</li>
+          <li style={LI}>• <strong>Autopilot (Pro) — $99/month</strong> — everything in Growth, plus AI Manager, 24/7 monitoring, and automated actions (when available)</li>
         </ul>
         <p style={P}>Subscriptions are billed monthly in advance via Stripe. By subscribing you authorise us to charge your payment method on a recurring basis. All fees are non-refundable except where required by applicable law or at our sole discretion.</p>
         <p style={P}>You may cancel your subscription at any time from your account settings. Cancellation takes effect at the end of the current billing period. We do not prorate unused portions of a billing period.</p>

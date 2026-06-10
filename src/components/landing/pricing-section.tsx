@@ -119,11 +119,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I upgrade or downgrade at any time?",
-    a: "Yes. You can upgrade instantly and your new features activate immediately. Downgrades take effect at the end of your billing cycle. No cancellation fees.",
+    a: "Yes. Plan changes apply immediately — billing is prorated automatically and your new limits activate right away. No cancellation fees.",
   },
   {
     q: "Is there a free plan?",
-    a: "Yes — the Free plan is available forever with no credit card required. It includes 3 analyses, 3 image generations and 3 ad copy generations per month so you can experience the full quality of Adur's analysis before upgrading.",
+    a: "Yes — the Free plan is available forever with no credit card required. It includes 3 analyses and 3 image generations per month, plus 3 ad copy generations to try, so you can experience the full quality of Adur's analysis before upgrading.",
   },
 ];
 

@@ -34,7 +34,7 @@ const PLAN_META: Record<PlanKey, PlanMeta> = {
     headline: "Welcome to Adur 🎉",
     sub:      "Your Starter plan is live. Everything you need to turn ad data into profit — unlocked.",
     features: [
-      "Unlimited campaign analyses",
+      "10 campaign analyses / month",
       "Full 7-Day Battle Plan",
       "AI Creative Studio (images + copy)",
       "3 UGC AI videos every month",

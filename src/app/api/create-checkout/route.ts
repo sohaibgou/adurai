@@ -117,6 +117,77 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Price not configured for plan: ${plan}` }, { status: 500 });
   }
 
+  // ── 3.5 Never create a second subscription for an already-subscribed user ──
+  // Without this guard, a paying user who clicks a plan in the paywall gets a
+  // brand-new Stripe subscription on top of their existing one — double-billed,
+  // while the DB upsert silently overwrites their plan row. Same plan → reject;
+  // different plan → change the price on the EXISTING subscription (prorated).
+  const { data: existingSub } = await supabaseAdmin
+    .from("subscriptions")
+    .select("plan, stripe_subscription_id")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existingSub) {
+    if (existingSub.plan === plan) {
+      return NextResponse.json(
+        { error: "You're already on this plan." },
+        { status: 409 }
+      );
+    }
+    if (!existingSub.stripe_subscription_id) {
+      // Active plan but no Stripe subscription on record — can't safely modify,
+      // and creating a new subscription risks double-billing. Manual path only.
+      return NextResponse.json(
+        { error: "You already have an active plan. Contact support to change it." },
+        { status: 409 }
+      );
+    }
+    try {
+      const sub = await stripe.subscriptions.retrieve(existingSub.stripe_subscription_id);
+      if (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due") {
+        const itemId = sub.items.data[0]?.id;
+        if (!itemId) {
+          return NextResponse.json(
+            { error: "Could not update your plan — please contact support." },
+            { status: 500 }
+          );
+        }
+        await stripe.subscriptions.update(sub.id, {
+          items: [{ id: itemId, price: priceId }],
+          proration_behavior: "always_invoice",
+          metadata: { user_id: userId, plan, interval },
+        });
+        await supabaseAdmin.from("subscriptions").upsert(
+          {
+            user_id:                userId,
+            plan,
+            status:                 "active",
+            stripe_subscription_id: sub.id,
+            stripe_customer_id:     typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? null),
+            updated_at:             new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+        console.log(`[create-checkout] in-place plan change → ${plan} for user ${userId}`);
+        return NextResponse.json({ updated: true, plan });
+      }
+      // Stripe subscription no longer alive (cancelled there) — the DB row is
+      // stale, so a fresh checkout below is the correct path.
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      if (code !== "resource_missing") {
+        console.error("[create-checkout] plan change failed:", e);
+        return NextResponse.json(
+          { error: "Could not update your plan — please try again." },
+          { status: 500 }
+        );
+      }
+      // resource_missing → subscription gone in Stripe; fall through to checkout.
+    }
+  }
+
   // ── 4. Create Stripe session ──────────────────────────────────────────────
   // Resolve an absolute, scheme-qualified base URL. Stripe rejects relative or
   // scheme-less success/cancel URLs with "Not a valid URL", which previously

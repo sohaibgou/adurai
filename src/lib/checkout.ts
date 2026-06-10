@@ -30,7 +30,7 @@ export async function redirectToCheckout(
     throw new Error("Network error — please check your connection and try again.");
   }
 
-  let data: { url?: string; error?: string; requiresAuth?: boolean };
+  let data: { url?: string; error?: string; requiresAuth?: boolean; updated?: boolean; plan?: string };
   try {
     data = await res.json();
   } catch {
@@ -38,6 +38,13 @@ export async function redirectToCheckout(
   }
 
   if (data.requiresAuth) return false;
+
+  // Existing subscription was changed in place (prorated) — no Stripe checkout
+  // page involved. Land on the dashboard, which reads the fresh plan from DB.
+  if (data.updated) {
+    window.location.href = "/dashboard?plan_updated=1";
+    return true;
+  }
 
   if (data.url) {
     window.location.href = data.url;

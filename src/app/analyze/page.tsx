@@ -46,6 +46,7 @@ export default function AnalyzePage() {
   const [paywallReason, setPaywallReason] = useState<"analysis" | "image" | "copy" | "ugc" | undefined>(undefined);
   const [analysisCount, setAnalysisCount] = useState(0);
   const [paidPlan,      setPaidPlan]      = useState(false);
+  const [planTier,      setPlanTier]      = useState<"free" | "starter" | "growth" | "pro">("free");
   const [showLoader,    setShowLoader]    = useState(false);
   const [subLoading,    setSubLoading]    = useState(true);
 
@@ -67,9 +68,15 @@ export default function AnalyzePage() {
       .then(({ data }) => {
         if (data) {
           setPaidPlan(true);
+          setPlanTier(
+            data.plan === "pro" || data.plan === "growth" || data.plan === "starter"
+              ? data.plan
+              : "starter"
+          );
           try { localStorage.setItem("adur_plan", data.plan ?? "starter"); } catch {}
         } else {
           setPaidPlan(false);
+          setPlanTier("free");
           try { localStorage.removeItem("adur_plan"); } catch {}
         }
         setSubLoading(false);
@@ -100,8 +107,6 @@ export default function AnalyzePage() {
         body:    JSON.stringify({
           summaries: campaignSummaries, onboarding,
           sessionToken: session?.access_token,
-          plan: localStorage.getItem("adur_plan") ?? "free",
-          analysisCount: currentCount,
         }),
         signal: controller.signal,
       });
@@ -160,7 +165,12 @@ export default function AnalyzePage() {
 
   return (
     <>
-      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} reason={paywallReason} />
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        reason={paywallReason}
+        currentPlan={user?.email && ADMIN_EMAILS.includes(user.email) ? "pro" : planTier}
+      />
       <AnalysisLoadingScreen
         visible={showLoader}
         active={isLoading}
@@ -274,7 +284,7 @@ export default function AnalyzePage() {
                         <span style={{ fontWeight: 700, color: "#FFFFFF" }}>
                           {Math.max(0, FREE_LIMIT - analysisCount)} free {FREE_LIMIT - analysisCount === 1 ? "analysis" : "analyses"} remaining.
                         </span>{" "}
-                        Upgrade to Starter for unlimited analyses, 7-Day Battle Plan &amp; Creative Studio.
+                        Upgrade to Starter for 10 analyses / month, 7-Day Battle Plan &amp; Creative Studio.
                       </p>
                     </div>
                     <button

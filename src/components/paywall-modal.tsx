@@ -77,8 +77,11 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
   }, [open]);
 
   // Which upgrade tiers to offer, depending on what the user is already on.
+  // Never offer a tier at or below the current one — clicking it would be a
+  // downgrade (now billed immediately), not an upgrade.
   const upgradePlans: PlanId[] =
-    currentPlan === "growth" ? ["pro"]
+    currentPlan === "pro" ? ["pro"]
+    : currentPlan === "growth" ? ["pro"]
     : currentPlan === "starter" ? ["growth", "pro"]
     : ["starter", "growth", "pro"]; // free / unknown
 
