@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Analytics } from "@vercel/analytics/next";
 import ConditionalFooter from "@/components/conditional-footer";
+import MetaPixelTracker from "@/components/meta-pixel-tracker";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,6 +40,7 @@ export default function RootLayout({
         <Script id="supabase-hash-capture" strategy="beforeInteractive">
           {`(function(){var h=window.location.hash;if(h&&(h.indexOf('access_token=')!==-1||h.indexOf('error=')!==-1)){window.location.replace('/auth/confirm'+h);}})();`}
         </Script>
+        <MetaPixelTracker />
         <AuthProvider>
           {children}
           <ConditionalFooter />

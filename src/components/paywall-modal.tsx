@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, Lock, Zap, Crown } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout, type CheckoutPlan } from "@/lib/checkout";
 import { useAuth } from "@/context/auth-context";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 interface PaywallModalProps {
   open:          boolean;
@@ -63,6 +64,17 @@ export default function PaywallModal({ open, onClose, reason, currentPlan = "fre
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState<CheckoutPlan | null>(null);
   const [error,    setError]    = useState<string | null>(null);
+
+  // Conversion: upgrade prompt surfaced. Fire once each time the modal opens.
+  useEffect(() => {
+    if (open) {
+      MetaPixel.track("AddToCart", {
+        content_name: "Upgrade Prompt Shown",
+        currency: "USD",
+        value: 19,
+      });
+    }
+  }, [open]);
 
   // Which upgrade tiers to offer, depending on what the user is already on.
   const upgradePlans: PlanId[] =

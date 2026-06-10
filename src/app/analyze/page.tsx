@@ -18,6 +18,7 @@ import type { OnboardingData } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { redirectToCheckout } from "@/lib/checkout";
 import { supabase } from "@/lib/supabase";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 const FREE_LIMIT   = 3;
 const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
@@ -83,6 +84,8 @@ export default function AnalyzePage() {
       setPaywallReason("analysis"); setPaywallOpen(true); return;
     }
 
+    MetaPixel.track("InitiateCheckout", { content_name: "CSV Analysis Started" });
+
     setShowLoader(true); setIsLoading(true); setError(null);
     const controller = new AbortController();
     const timeout    = setTimeout(() => controller.abort(), 90_000);
@@ -142,6 +145,8 @@ export default function AnalyzePage() {
         sessionStorage.setItem("adur_results",   JSON.stringify(analysisResult));
         sessionStorage.setItem("adur_form_data", JSON.stringify(onboarding));
       } catch {}
+
+      MetaPixel.track("CompleteRegistration", { content_name: "Analysis Completed" });
 
     } catch (err) {
       const msg = err instanceof Error

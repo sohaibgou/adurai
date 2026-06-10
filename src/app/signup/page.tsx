@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { redirectToCheckout } from "@/lib/checkout";
 import { markVerifyEmailSent } from "@/lib/verify-cooldown";
+import { MetaPixel } from "@/lib/meta-pixel";
 import AuthPanel from "@/components/auth-panel";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,13 @@ function SignupContent() {
     // the next screen pre-arms its 60s cooldown instead of letting the user
     // click "Resend" straight into GoTrue's per-address rate limit.
     markVerifyEmailSent();
+
+    // Conversion: account created.
+    MetaPixel.track("Lead", {
+      content_name: "Adur.ai Signup",
+      currency: "USD",
+      value: 0,
+    });
 
     // Sign in — user is already confirmed so this will succeed
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({

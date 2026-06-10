@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Mail, Bot, Sparkles, BarChart3, Wand2, Rocket, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,9 @@ const PHASES = [
   "Setting up your workspace…",
 ];
 
+// Monthly USD price per tier — used as the Meta Pixel Purchase conversion value.
+const PLAN_PRICE: Record<PlanKey, number> = { starter: 19, growth: 49, pro: 99 };
+
 export default function SuccessPage() {
   return (
     <Suspense>
@@ -182,6 +186,13 @@ function SuccessContent() {
           localStorage.setItem("adur_image_count",    "0");
           localStorage.setItem("adur_copy_count",     "0");
         } catch { /* private mode — ignore */ }
+
+        // Conversion: payment confirmed. Value reflects the real monthly price.
+        MetaPixel.track("Purchase", {
+          currency: "USD",
+          value: PLAN_PRICE[resolved],
+          content_name: `Adur ${resolved} Plan`,
+        });
 
         setState("success");
         fireConfetti(resolved);

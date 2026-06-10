@@ -14,6 +14,7 @@ import HowItWorks from "@/components/landing/how-it-works";
 import PricingSection from "@/components/landing/pricing-section";
 import CtaSection from "@/components/landing/cta-section";
 import { useAuth } from "@/context/auth-context";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 export default function Home() {
   const router = useRouter();
@@ -21,6 +22,10 @@ export default function Home() {
 
   useEffect(() => {
     document.title = "Adur.ai — AI Meta Ads Analysis for E-commerce";
+    MetaPixel.track("ViewContent", {
+      content_name: "Adur.ai Homepage",
+      content_category: "SaaS",
+    });
   }, []);
 
   // Logged-in users go straight to the dashboard; everyone else signs up.
