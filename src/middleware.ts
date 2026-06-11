@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/creative-studio",
   "/analyze",
   "/results",
+  "/admin",
 ];
 
 // Auth pages — redirect authenticated users away to prevent multi-account sessions
@@ -68,6 +69,7 @@ export const config = {
     "/creative-studio/:path*",
     "/analyze/:path*",
     "/results/:path*",
+    "/admin/:path*",
     "/login",
     "/signup",
   ],

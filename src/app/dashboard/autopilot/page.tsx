@@ -231,7 +231,7 @@ export default function AutopilotPage() {
   // Subscription
   useEffect(() => {
     if (!user) return;
-    const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+    const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
     if (user.email && ADMIN_EMAILS.includes(user.email)) {
       setIsPaid(true);
       setIsPro(true);

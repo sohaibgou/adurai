@@ -10,7 +10,7 @@ import {
   IMAGE_LIMITS, COPY_LIMITS, UGC_LIMITS, ANALYSIS_LIMITS, resolvePlan,
 } from "@/lib/check-usage";
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "").trim();

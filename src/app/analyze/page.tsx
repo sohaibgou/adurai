@@ -21,7 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { MetaPixel } from "@/lib/meta-pixel";
 
 const FREE_LIMIT   = 3;
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 function getCount(): number {
   try { return parseInt(localStorage.getItem("adur_analysis_count") ?? "0", 10) || 0; } catch { return 0; }

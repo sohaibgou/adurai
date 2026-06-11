@@ -7,7 +7,7 @@ import type { CampaignSummary } from "@/lib/types";
 // Allow up to 120 seconds for the Claude API call
 export const maxDuration = 120;
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 const INDUSTRY_BENCHMARKS = `
 META ADS INDUSTRY BENCHMARKS — use these as hard reference points. Compare EVERY campaign metric against these benchmarks and cite them explicitly in your recommendations. Never guess without context.

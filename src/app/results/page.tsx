@@ -32,7 +32,7 @@ import { supabase } from "@/lib/supabase";
 
 /* ── Constants ───────────────────────────────────────────── */
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 function isPaidPlan(): boolean {
   try {

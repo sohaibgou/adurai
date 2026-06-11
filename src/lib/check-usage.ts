@@ -21,7 +21,7 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 export type FeatureKey = "image" | "copy" | "ugc";
 export type PlanTier   = "free" | "starter" | "growth" | "pro";
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 // null = unlimited
 export const IMAGE_LIMITS: Record<PlanTier, number | null> = {

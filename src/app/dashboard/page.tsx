@@ -20,7 +20,7 @@ import { redirectToCheckout } from "@/lib/checkout";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 
 interface Subscription {
   plan:               "starter" | "pro" | string;

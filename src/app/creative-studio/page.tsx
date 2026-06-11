@@ -15,7 +15,7 @@ import type { AnalysisResult } from "@/lib/types";
 
 /* ── Constants ──────────────────────────────────────────── */
 
-const ADMIN_EMAILS = ["sohaibitotv@gmail.com"];
+const ADMIN_EMAILS = ["sohaibitotv@gmail.com", "sohaibtrepreneur@gmail.com"];
 type PaywallReason = "analysis" | "image" | "copy" | "ugc";
 
 /* ── Page ───────────────────────────────────────────────── */
