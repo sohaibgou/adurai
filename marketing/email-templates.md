@@ -131,12 +131,19 @@ Rules:
 
 ---
 
-## Sending options
+## Sending — AUTOMATED ✅
 
-1. **Manual (today):** Resend dashboard → Broadcasts. Export the segment from
-   /admin or Supabase (`user_usage` empty / counts at 0), paste the HTML files.
-2. **Automated (like email 1):** extend the existing cron pattern — one route
-   checks signup age + usage and sends the right step, marking
-   `app_metadata.activation_step`. Ask Claude to wire it when ready.
-3. Footer of every template includes the legally-required unsubscribe line —
-   replace `{{unsubscribe_url}}` with Resend's variable when sending.
+The whole sequence runs from `src/app/api/cron/activation-email/route.ts`
+(daily Vercel cron, 10:00 UTC — vercel.json):
+
+- One email max per user per day; the highest qualifying step is sent and
+  recorded in `app_metadata.activation_step` (monotonic, never re-sent).
+- Paying users are marked terminal and exit the sequence permanently.
+- Unsubscribes: every email footer links `/api/email/unsubscribe` (HMAC-signed);
+  it sets `app_metadata.email_optout` which the cron respects.
+- Only accounts 1–21 days old enter; max 100 sends per run.
+- Requires `RESEND_API_KEY` + `CRON_SECRET` in the deploy env, and the adur.ai
+  domain verified in Resend (sender: contact@adur.ai).
+
+The HTML files in `emails/` mirror the in-code templates for manual
+Resend Broadcasts (their `{{unsubscribe_url}}` is Resend's broadcast variable).
