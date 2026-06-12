@@ -113,8 +113,9 @@ function SignupContent() {
 
     // Full-page navigation (not router.push) so the freshly-set auth cookies
     // ride along with the request the middleware inspects — guarantees the
-    // dashboard load is seen as authenticated.
-    window.location.href = "/dashboard";
+    // page load is seen as authenticated. New users land in Creative Studio
+    // with the welcome banner (activation flow), not the empty dashboard.
+    window.location.href = "/creative-studio?welcome=true";
   }
 
   return (

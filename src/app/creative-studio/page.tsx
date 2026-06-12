@@ -33,8 +33,23 @@ export default function CreativeStudioPage() {
   const [paywallReason, setPaywallReason] = useState<PaywallReason | undefined>(undefined);
   const [creatives,     setCreatives]     = useState<SavedSession[]>([]);
   const [libLoaded,     setLibLoaded]     = useState(false);
+  const [welcomeOpen,   setWelcomeOpen]   = useState(false);
 
   const analysisFetchedRef = useRef(false);
+
+  // Activation flow: ?welcome=true (set by signup) shows a 5s welcome banner.
+  // Read from window.location, not useSearchParams — this page is statically
+  // prerendered and useSearchParams would require a Suspense bailout.
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("welcome") !== "true") return;
+    } catch { return; }
+    setWelcomeOpen(true);
+    // Strip the param so a refresh doesn't re-trigger the banner.
+    window.history.replaceState({}, "", "/creative-studio");
+    const t = setTimeout(() => setWelcomeOpen(false), 5000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     try { const raw = sessionStorage.getItem("adur_results"); if (raw) setAnalysis(JSON.parse(raw) as AnalysisResult); } catch { /**/ }
@@ -112,6 +127,31 @@ export default function CreativeStudioPage() {
   return (
     /* Full-viewport dark shell — sidebar + main column */
     <div style={{ height: "100vh", overflow: "hidden", display: "flex", background: "#0F0F18" }}>
+
+      {/* ── Welcome banner (activation flow, auto-dismisses after 5s) ── */}
+      {welcomeOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 22px",
+            borderRadius: 100,
+            background: "linear-gradient(135deg, #FF3CAC 0%, #FF6B35 100%)",
+            boxShadow: "0 8px 32px rgba(255,60,172,0.45)",
+            maxWidth: "calc(100vw - 32px)",
+          }}
+        >
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF", fontFamily: "var(--font-inter)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Welcome to Adur! 🎉 Generate your first ad creative in 30 seconds — free.
+          </p>
+        </div>
+      )}
 
       {/* ── Sidebar ── */}
       <AppSidebar
