@@ -6,6 +6,7 @@ import SiteFooter from "@/components/landing/site-footer";
 // App routes that use the sidebar layout — no footer there
 const NO_FOOTER_PREFIXES = [
   "/dashboard",
+  "/insights",
   "/creative-studio",
   "/analyze",
   "/results",

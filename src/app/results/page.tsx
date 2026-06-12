@@ -414,13 +414,13 @@ function ResultsContent() {
             {/* Desktop left */}
             <div className="hidden lg:flex items-center gap-2" style={{ fontFamily: "var(--font-inter)" }}>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/insights")}
                 style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8, color: "#A8A5A0", fontSize: 13, fontWeight: 500, transition: "all 0.15s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EDE8"; (e.currentTarget as HTMLButtonElement).style.color = "#0D0D12"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "#A8A5A0"; }}
               >
                 <ArrowLeft style={{ width: 13, height: 13 }} />
-                Dashboard
+                Insights
               </button>
               <span style={{ color: "#D4D0CA", fontSize: 14 }}>›</span>
               <span className="font-heading" style={{ fontSize: 15, fontWeight: 800, color: "#0D0D12", letterSpacing: "-0.02em" }}>Results</span>
@@ -578,13 +578,13 @@ function ResultsContent() {
             <div className="hidden lg:flex items-center gap-2 min-w-0" style={{ fontFamily: "var(--font-inter)" }}>
               {/* Back */}
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/insights")}
                 style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8, color: "#A8A5A0", fontSize: 13, fontWeight: 500, flexShrink: 0, transition: "all 0.15s" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EDE8"; (e.currentTarget as HTMLButtonElement).style.color = "#0D0D12"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "#A8A5A0"; }}
               >
                 <ArrowLeft style={{ width: 13, height: 13 }} />
-                Dashboard
+                Insights
               </button>
 
               <span style={{ color: "#D4D0CA", fontSize: 14, flexShrink: 0 }}>›</span>

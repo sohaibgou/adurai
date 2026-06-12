@@ -156,7 +156,7 @@ export default function ConfirmContent() {
 
         } else {
           // No token at all — already verified or stale link
-          window.location.href = "/dashboard";
+          window.location.href = "/creative-studio";
           return;
         }
 
@@ -166,7 +166,7 @@ export default function ConfirmContent() {
         setStatus("success");
         setMsg("Email verified! Redirecting…");
         try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
-        setTimeout(() => { window.location.href = "/dashboard"; }, 600);
+        setTimeout(() => { window.location.href = "/creative-studio"; }, 600);
 
       } catch (err) {
         const message = err instanceof Error ? err.message : "Verification failed.";
@@ -178,7 +178,7 @@ export default function ConfirmContent() {
           setStatus("success");
           setMsg("Email already verified! Redirecting…");
           try { sessionStorage.setItem("adur_just_verified", "1"); } catch { /* noop */ }
-          setTimeout(() => { window.location.href = "/dashboard"; }, 600);
+          setTimeout(() => { window.location.href = "/creative-studio"; }, 600);
 
         } else if (
           message.toLowerCase().includes("expired") ||
@@ -364,7 +364,7 @@ export default function ConfirmContent() {
         {/* ── Generic error action ── */}
         {status === "error" && (
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/creative-studio")}
             style={{
               marginTop: 20, padding: "12px 28px", borderRadius: 100,
               background: "linear-gradient(135deg, #FF3CAC, #FF6B35)",

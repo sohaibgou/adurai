@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //
   // Guard key stored in sessionStorage to survive full page reloads.
   // Prevents an infinite redirect loop when the magic link lands on the root page:
-  //   load → runMarkVerified → window.location.href="/dashboard" → reload →
+  //   load → runMarkVerified → window.location.href="/creative-studio" → reload →
   //   same stale JWT (email_link_verified: false) → runMarkVerified again → loop
   //
   // Flow:
@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // window.location.href is more reliable than router.replace() when called
       // from inside a layout provider. The guard above prevents the reload loop.
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      window.location.href = "/dashboard";
+      window.location.href = "/creative-studio";
     })();
   }
 
@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.href = "/login";
         } else {
           // Different account signed in → reload dashboard for the new user
-          window.location.href = "/dashboard";
+          window.location.href = "/creative-studio";
         }
       }).catch(() => { /* non-critical */ });
     }

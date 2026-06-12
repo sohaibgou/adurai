@@ -11,7 +11,7 @@ const NAV_COLUMNS = [
       { label: "How it works",    scrollTo: "how-it-works" },
       { label: "Features",        scrollTo: "features" },
       { label: "Pricing",         scrollTo: "pricing" },
-      { label: "Dashboard",       href: "/dashboard" },
+      { label: "Insights",        href: "/insights" },
       { label: "Creative Studio", href: "/creative-studio" },
     ],
   },

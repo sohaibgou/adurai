@@ -208,10 +208,10 @@ export default function AnalyzePage() {
 
             {/* Desktop breadcrumb */}
             <div className="hidden lg:flex items-center gap-2" style={{ fontSize: 13, fontFamily: "var(--font-inter)" }}>
-              <Link href="/dashboard" style={{ color: "#A8A5A0", textDecoration: "none", fontWeight: 500 }}
+              <Link href="/insights" style={{ color: "#A8A5A0", textDecoration: "none", fontWeight: 500 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#0D0D12"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "#A8A5A0"; }}>
-                Dashboard
+                Insights
               </Link>
               <span style={{ color: "#D4D0CA" }}>›</span>
               <span style={{ color: "#0D0D12", fontWeight: 600 }}>New Analysis</span>

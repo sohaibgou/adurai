@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 // Routes that require an authenticated session
 const PROTECTED_PREFIXES = [
   "/dashboard",
+  "/insights",
   "/creative-studio",
   "/analyze",
   "/results",
@@ -51,13 +52,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Already authenticated → auth route: redirect to dashboard
-  // This prevents signing into a second account in a new tab
+  // Already authenticated → auth route: redirect to the app home
+  // (Creative Studio). This prevents signing into a second account in a new tab.
   if (isAuthRoute && session) {
-    const dashUrl = req.nextUrl.clone();
-    dashUrl.pathname = "/dashboard";
-    dashUrl.search = "";
-    return NextResponse.redirect(dashUrl);
+    const homeUrl = req.nextUrl.clone();
+    homeUrl.pathname = "/creative-studio";
+    homeUrl.search = "";
+    return NextResponse.redirect(homeUrl);
   }
 
   return res;
@@ -66,6 +67,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/insights/:path*",
     "/creative-studio/:path*",
     "/analyze/:path*",
     "/results/:path*",

@@ -51,12 +51,12 @@ const ICONS: Record<string, React.ReactNode> = {
 
 /* ── Nav definition (grouped by section) ────────────────── */
 const NAV_GROUPS = [
-  { label: "Overview",   items: [{ id: "dashboard", label: "Dashboard", href: "/dashboard" }] },
+  { label: "Create",     items: [{ id: "creative-studio", label: "Creative Studio", href: "/creative-studio" }] },
   { label: "Analysis",   items: [
     { id: "analyze", label: "New Analysis", href: "/analyze" },
     { id: "results", label: "Last Results", href: "/results" },
   ] },
-  { label: "Create",     items: [{ id: "creative-studio", label: "Creative Studio", href: "/creative-studio" }] },
+  { label: "Overview",   items: [{ id: "dashboard", label: "Insights", href: "/insights" }] },
   { label: "Automation", items: [{ id: "autopilot", label: "AI Manager", href: "/dashboard/autopilot" }] },
 ] as const;
 

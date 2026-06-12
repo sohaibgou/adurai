@@ -70,7 +70,7 @@ function LoginContent() {
         const dest =
           redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login"
             ? redirectTo
-            : "/dashboard";
+            : "/creative-studio";
         router.replace(dest);
       }
     });
@@ -135,11 +135,11 @@ function LoginContent() {
     const dest =
       redirectTo && redirectTo.startsWith("/") && redirectTo !== "/login"
         ? redirectTo
-        : "/dashboard";
+        : "/creative-studio";
 
     if (redirectTo === "checkout") {
       try { await redirectToCheckout(undefined, planParam, intervalParam); return; }
-      catch { window.location.href = "/dashboard"; return; }
+      catch { window.location.href = "/creative-studio"; return; }
     }
 
     // Full-page navigation (not router.push) so the freshly-set auth cookies

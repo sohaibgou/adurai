@@ -69,7 +69,7 @@ const PLAN_META: Record<PlanKey, PlanMeta> = {
     colorSoft: "rgba(255,60,172,0.08)",
     shadow:    "rgba(255,60,172,0.38)",
     ctaLabel:  "Connect Meta Account",
-    ctaHref:   "/dashboard",
+    ctaHref:   "/insights",
   },
   pro: {
     badge:    "AUTOPILOT PLAN",
@@ -90,7 +90,7 @@ const PLAN_META: Record<PlanKey, PlanMeta> = {
     colorSoft: "rgba(108,92,231,0.08)",
     shadow:    "rgba(108,92,231,0.38)",
     ctaLabel:  "Connect Meta Account",
-    ctaHref:   "/dashboard",
+    ctaHref:   "/insights",
   },
 };
 
@@ -261,7 +261,7 @@ function SuccessContent() {
               If you were charged, your plan will activate automatically within a minute. You can head to your dashboard and refresh.
             </p>
             <button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/creative-studio")}
               className="inline-flex items-center gap-2 text-white font-semibold cursor-pointer"
               style={{ padding: "13px 28px", borderRadius: 100, background: "linear-gradient(135deg,#FF3CAC,#FF6B35)", fontSize: 14, fontFamily: "var(--font-inter)", border: "none", boxShadow: "0 6px 24px rgba(255,60,172,0.32)" }}
             >
@@ -401,7 +401,7 @@ function SuccessContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/creative-studio")}
               className="cursor-pointer"
               style={{ marginTop: 12, fontSize: 13, color: "#9ca3af", background: "none", border: "none", fontFamily: "var(--font-inter)", fontWeight: 500 }}
             >

@@ -50,7 +50,7 @@ function SignupContent() {
   // Guard: if already authenticated, redirect to dashboard immediately.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/dashboard");
+      if (session) router.replace("/creative-studio");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
