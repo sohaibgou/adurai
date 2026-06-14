@@ -22,6 +22,7 @@ interface AdminStats {
   proCount:       number;
   mrr:            number;
   totalAnalyses:  number;
+  totalAdImages:  number;
   totalUgcVideos: number;
   latestSignups:  { email: string; date: string }[];
   latestPayments: { email: string; plan: string; date: string }[];
@@ -106,6 +107,7 @@ export default function AdminPage() {
         { label: "Autopilot (Pro)", value: String(stats.proCount) },
         { label: "MRR",             value: `$${stats.mrr.toLocaleString()}` },
         { label: "Analyses run",    value: String(stats.totalAnalyses) },
+        { label: "Ad images",       value: String(stats.totalAdImages) },
         { label: "UGC videos",      value: String(stats.totalUgcVideos) },
       ]
     : [];

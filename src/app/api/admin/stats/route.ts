@@ -74,6 +74,13 @@ export async function GET(req: NextRequest) {
       .select("*", { count: "exact", head: true })
       .eq("media_type", "video");
 
+    // media_type defaults to 'image' for everything saved from the studio that
+    // isn't a video, so this is the lifetime count of ad-image creatives.
+    const { count: totalAdImages } = await supabaseAdmin
+      .from("creatives")
+      .select("*", { count: "exact", head: true })
+      .eq("media_type", "image");
+
     return NextResponse.json({
       totalSignups,
       payingUsers: active.length,
@@ -82,6 +89,7 @@ export async function GET(req: NextRequest) {
       proCount,
       mrr,
       totalAnalyses:  totalAnalyses  ?? 0,
+      totalAdImages:  totalAdImages  ?? 0,
       totalUgcVideos: totalUgcVideos ?? 0,
       latestSignups,
       latestPayments,
