@@ -362,18 +362,29 @@ async function applyArabicOverlay(
 
   ctx.direction = "rtl";
 
-  // 4 — Headline (top, right-aligned)
-  const hlSize = Math.round(size * 0.075);
-  ctx.font         = `900 ${hlSize}px Cairo, Arial`;
+  // Max text width = canvas minus a margin on both sides, so nothing clips.
+  const maxTextW = size - pad * 2;
+
+  // 4 — Headline (top, right-aligned, auto-fit so long Arabic never runs off-edge)
+  let hlSize = Math.round(size * 0.075);
+  ctx.font = `900 ${hlSize}px Cairo, Arial`;
+  while (hlSize > size * 0.040 && ctx.measureText(arabicText.headline).width > maxTextW) {
+    hlSize -= 2;
+    ctx.font = `900 ${hlSize}px Cairo, Arial`;
+  }
   ctx.fillStyle    = "#ffffff";
   ctx.textAlign    = "right";
   ctx.shadowColor  = "rgba(0,0,0,0.55)";
   ctx.shadowBlur   = Math.round(size * 0.018);
   ctx.fillText(arabicText.headline, size - pad, Math.round(size * 0.150));
 
-  // 5 — Subheadline (below headline)
-  const shSize = Math.round(size * 0.043);
-  ctx.font      = `400 ${shSize}px Cairo, Arial`;
+  // 5 — Subheadline (below headline, auto-fit)
+  let shSize = Math.round(size * 0.043);
+  ctx.font = `400 ${shSize}px Cairo, Arial`;
+  while (shSize > size * 0.026 && ctx.measureText(arabicText.subheadline).width > maxTextW) {
+    shSize -= 1;
+    ctx.font = `400 ${shSize}px Cairo, Arial`;
+  }
   ctx.fillStyle = "rgba(255,255,255,0.88)";
   ctx.shadowBlur = Math.round(size * 0.010);
   ctx.fillText(arabicText.subheadline, size - pad, Math.round(size * 0.252));
@@ -778,7 +789,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
         setArabicTexts(newArabicTexts);
         finalImages = await Promise.all(
           newImages.map(async (img, i) => {
-            const txt = newArabicTexts[i];
+            // If the copy model returned fewer than 4 sets, reuse one (cycle)
+            // so no ad is ever left with the bare, text-less image.
+            const txt = newArabicTexts[i] ?? newArabicTexts[i % newArabicTexts.length];
             if (!txt) return img;
             try {
               const composited = await applyArabicOverlay(img.url, txt);
