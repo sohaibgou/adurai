@@ -59,23 +59,27 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
           <h1
             className="font-heading"
             style={{
-              fontSize: "clamp(40px, 5.6vw, 80px)",
+              // Lower floor (34px) so small phones don't force an ugly 3rd line;
+              // mid/large screens (≥~714px) are unchanged at 5.6vw → 80px ceiling.
+              fontSize: "clamp(34px, 5.6vw, 80px)",
               fontWeight: 900,
-              lineHeight: 0.98,
+              lineHeight: 1.0,
               letterSpacing: "-0.045em",
               color: "#0D0D12",
-              marginTop: 28,
+              marginTop: 26,
             }}
           >
             Generate winning<br />
-            <span style={GRAD_TEXT}>ad creatives in 30 seconds.</span>
+            {/* Mobile breaks "ad creatives" / "in 30 seconds." cleanly; the
+                break collapses on sm+ so desktop keeps the single gradient line. */}
+            <span style={GRAD_TEXT}>ad creatives<br className="sm:hidden" /> in 30 seconds.</span>
           </h1>
         </FadeIn>
 
         {/* Subhead */}
         <FadeIn delay={0.16}>
           <p style={{
-            marginTop: 24, fontSize: 19, lineHeight: 1.55, color: "#6B6B72",
+            marginTop: 22, fontSize: "clamp(16px, 4.3vw, 19px)", lineHeight: 1.55, color: "#6B6B72",
             maxWidth: 560, fontFamily: "var(--font-inter)",
           }}>
             UGC videos. Static ads. Ad copy.{" "}
