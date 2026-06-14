@@ -11,6 +11,32 @@ const IMAGE_MODELS = [
   "gemini-2.5-flash-image",
 ];
 
+/* ── Storage: return URLs, never inline base64 ──
+ * Four high-quality images as base64 in one JSON response (~5MB) exceeds the
+ * serverless response cap (~4.5MB) → "failed to fetch". Upload to Storage and
+ * return URLs so the response stays tiny regardless of image size. */
+const BUCKET = "creatives";
+
+async function uploadToStorage(
+  userId: string, setId: string, angle: string, data: string, mimeType: string,
+): Promise<string | null> {
+  try {
+    const buffer = Buffer.from(data, "base64");
+    const ext    = (mimeType.split("/")[1] ?? "png").split("+")[0];
+    const slug   = (angle || "image").replace(/\s+/g, "-").toLowerCase();
+    const path   = `${userId}/${setId}/${slug}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(path, buffer, { contentType: mimeType, upsert: true });
+    if (error) { console.error("[cwi] storage upload error:", error.message); return null; }
+    const { data: { publicUrl } } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+    return publicUrl;
+  } catch (e) {
+    console.error("[cwi] storage upload threw:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 /* ── Shared format spec injected into every prompt ── */
 const FORMAT_SPEC = `
 OUTPUT FORMAT — CRITICAL:
@@ -239,6 +265,12 @@ export async function POST(req: NextRequest) {
 
   const t0 = Date.now();
 
+  // Ensure the storage bucket exists once (no-op if already created).
+  const setId = crypto.randomUUID();
+  await supabaseAdmin.storage
+    .createBucket(BUCKET, { public: true, fileSizeLimit: 5 * 1024 * 1024 })
+    .catch(() => { /* already exists — ignore */ });
+
   const [results, arabicTexts] = await Promise.all([
     Promise.all(
       ANGLES.map(async (a, i) => {
@@ -250,8 +282,10 @@ export async function POST(req: NextRequest) {
           return null;
         }
         console.log(`[cwi][${i}] ✓ ${a.angle} — ${Date.now() - t}ms`);
+        // Upload to Storage; fall back to a data URL only if the upload fails.
+        const hostedUrl = await uploadToStorage(user.id, setId, a.angle, result.data, result.mimeType);
         return {
-          url:       `data:${result.mimeType};base64,${result.data}`,
+          url:       hostedUrl ?? `data:${result.mimeType};base64,${result.data}`,
           angle:     a.angle,
           headline:  a.headline,
           rationale: a.rationale,
