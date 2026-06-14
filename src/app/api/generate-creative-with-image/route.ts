@@ -16,7 +16,8 @@ const FORMAT_SPEC = `
 OUTPUT FORMAT — CRITICAL:
 - SQUARE 1:1 composition exactly — equal width and height, like a 1080×1080 pixel canvas
 - This is a Meta Feed static ad — square format is mandatory
-- Keep all critical content (product, text, CTA) within the safe zone: centered 80% of the canvas, away from edges
+- TEXT SAFE ZONE — CRITICAL: keep the product, ALL text, headline, subheadline and the CTA button fully inside the centered 80% of the canvas, with a clear empty margin of at least 10% on every side (top, bottom, left, right).
+- NEVER let any word, letter, or the CTA touch, cross, or get cropped by an edge — every character must be 100% visible inside the frame with breathing room. If text would not fit, make the font smaller — do not run it off the canvas.
 - Mobile-first: text must be large enough to read on a 6-inch phone screen
 - Text coverage: ad copy should cover no more than 20% of the image area
 - No letterboxing, no widescreen cropping, no portrait/vertical format — SQUARE ONLY`;
