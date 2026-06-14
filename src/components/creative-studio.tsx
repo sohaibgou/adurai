@@ -418,6 +418,41 @@ async function applyArabicOverlay(
   return canvas.toDataURL("image/png");
 }
 
+/* ── Downscale an uploaded product image before sending ──
+ * Serverless functions cap the request body at ~4.5MB, so a large phone photo
+ * uploaded raw is rejected with "Request Entity Too Large". We resize to a
+ * sensible max dimension and re-encode as JPEG — the model doesn't need a
+ * multi-megapixel source, and this keeps every upload comfortably under the
+ * limit. Returns the original file unchanged if it's already small or if
+ * anything goes wrong. */
+async function downscaleForUpload(file: File, maxDim = 1536, quality = 0.85): Promise<File> {
+  if (file.size < 1_500_000) return file; // already small enough
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new window.Image();
+      i.onload  = () => resolve(i);
+      i.onerror = () => reject(new Error("load failed"));
+      i.src = url;
+    });
+    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth  * scale));
+    const h = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { URL.revokeObjectURL(url); return file; }
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) return file;
+    const name = (file.name.replace(/\.[^.]+$/, "") || "product") + ".jpg";
+    return new File([blob], name, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 /* ── Main component ──────────────────────────────────────── */
 
 export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = false, isAdmin = false, isProPlan = false, planTier, onPaywall, onSaved, onLibraryOpen, savedSessions = [] }: CreativeStudioProps) {
@@ -724,8 +759,9 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     language: string,
   ): Promise<{ images: CreativeImage[]; briefs: CreativeBrief[]; arabicTexts?: ArabicTextData[] }> {
     if (refImage) {
+      const uploadFile = await downscaleForUpload(refImage.file);
       const fd = new FormData();
-      fd.append("image",    refImage.file, refImage.file.name || "product.jpg");
+      fd.append("image",    uploadFile, uploadFile.name || "product.jpg");
       fd.append("prompt",   p.trim());
       fd.append("isArabic", String(arabicMode));
       fd.append("language", language);
@@ -979,7 +1015,8 @@ export default function CreativeStudio({ summaries: _s, winners: _w, isPaid = fa
     try {
       const fd = new FormData();
       if (ugcInputMode === "image" && ugcImage) {
-        fd.append("image", ugcImage.file, ugcImage.file.name || "product.jpg");
+        const ugcUploadFile = await downscaleForUpload(ugcImage.file);
+        fd.append("image", ugcUploadFile, ugcUploadFile.name || "product.jpg");
       } else {
         fd.append("productUrl", ugcProductUrl.trim());
         // Real product image from the pasted link — backend uses it directly
