@@ -17,40 +17,6 @@ const IMAGE_MODELS = [
   "gemini-2.5-flash-image",
 ];
 
-/* ── Storage: return URLs, never inline base64 ──
- * Four high-quality pro images as base64 in one JSON response is ~5MB, which
- * exceeds the serverless response cap (~4.5MB) and surfaces to users as
- * "failed to fetch". Uploading to Storage and returning URLs keeps the
- * response tiny regardless of image size/count. */
-const BUCKET = "creatives";
-
-async function uploadToStorage(
-  userId:   string,
-  setId:    string,
-  angle:    string,
-  data:     string,
-  mimeType: string,
-): Promise<string | null> {
-  try {
-    const buffer = Buffer.from(data, "base64");
-    const ext    = (mimeType.split("/")[1] ?? "png").split("+")[0];
-    const slug   = (angle || "image").replace(/\s+/g, "-").toLowerCase();
-    const path   = `${userId}/${setId}/${slug}.${ext}`;
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, buffer, { contentType: mimeType, upsert: true });
-    if (error) {
-      console.error("[generate-creative] storage upload error:", error.message);
-      return null;
-    }
-    const { data: { publicUrl } } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-    return publicUrl;
-  } catch (e) {
-    console.error("[generate-creative] storage upload threw:", e instanceof Error ? e.message : e);
-    return null;
-  }
-}
-
 /* ── Shared 1:1 format spec for every prompt ── */
 const FORMAT_SPEC = `
 OUTPUT FORMAT — CRITICAL:
@@ -193,12 +159,6 @@ export async function POST(req: NextRequest) {
     ? generateArabicCopy(apiKey, prompt)
     : Promise.resolve<ArabicTextData[]>([]);
 
-  // Ensure the storage bucket exists once (no-op if already created).
-  const setId = crypto.randomUUID();
-  await supabaseAdmin.storage
-    .createBucket(BUCKET, { public: true, fileSizeLimit: 5 * 1024 * 1024 })
-    .catch(() => { /* already exists — ignore */ });
-
   const imagePromises = ANGLES.map(async ({ angle, suffix }) => {
     // Arabic → no text baked in (added as RTL overlay). Other languages → force on-image copy into that language.
     const langClause = isArabic
@@ -217,11 +177,7 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
 
     const result = await generateImage(apiKey, fullPrompt);
     if (!result) return null;
-    // Upload to Storage and return a URL; fall back to the data URL only if
-    // the upload fails (keeps a single image working rather than dropping it).
-    const hostedUrl = await uploadToStorage(user.id, setId, angle, result.data, result.mimeType);
-    const url = hostedUrl ?? `data:${result.mimeType};base64,${result.data}`;
-    return { url, angle, headline: "", rationale: "" };
+    return { url: `data:${result.mimeType};base64,${result.data}`, angle, headline: "", rationale: "" };
   });
 
   const [imageResults, arabicTexts] = await Promise.all([
