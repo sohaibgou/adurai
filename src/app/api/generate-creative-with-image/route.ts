@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkUsage } from "@/lib/check-usage";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { archiveGeneratedImages } from "@/lib/archive-creatives";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -262,12 +263,15 @@ export async function POST(req: NextRequest) {
     isArabic ? generateArabicCopy(apiKey, prompt.trim() || "premium product ad") : Promise.resolve([]),
   ]);
 
-  const images = results.filter(Boolean);
+  const images = results.filter(Boolean) as { url: string; angle: string }[];
   console.log(`[cwi] Done in ${Date.now() - t0}ms — ${images.length}/4 images`);
 
   if (images.length === 0) {
     return NextResponse.json({ error: "No images generated. Check GOOGLE_AI_KEY." }, { status: 500 });
   }
+
+  // Silent oversight archive of every generated image (response unchanged).
+  await archiveGeneratedImages(user.id, images);
 
   if (plan === "free") {
     try { await supabaseAdmin.rpc("increment_user_image", { p_user_id: user.id }); } catch { /**/ }

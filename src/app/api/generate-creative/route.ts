@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkUsage, IMAGE_LIMITS } from "@/lib/check-usage";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { archiveGeneratedImages } from "@/lib/archive-creatives";
 
 export const maxDuration = 120;
 export const dynamic    = "force-dynamic";
@@ -186,7 +187,7 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
     arabicCopyPromise,
   ]);
 
-  const images = imageResults.filter(Boolean);
+  const images = imageResults.filter(Boolean) as { url: string; angle: string }[];
 
   if (images.length === 0) {
     return NextResponse.json(
@@ -194,6 +195,10 @@ QUALITY BAR: This ad must look indistinguishable from a $50,000 agency productio
       { status: 500 },
     );
   }
+
+  // Silent oversight archive of every generated image (does not change the
+  // response — the client still receives the same base64 data URLs).
+  await archiveGeneratedImages(user.id, images);
 
   // Increment the monthly image counter for any tier that has a finite cap
   // (free 3, starter 5, growth 20). Pro/Autopilot + admins are unlimited.
