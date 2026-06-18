@@ -28,13 +28,8 @@ export default function Home() {
     });
   }, []);
 
-  // Logged-in users go straight to the app home (Creative Studio); everyone
-  // else signs up.
-  const goStart = () => router.push(user ? "/creative-studio" : "/signup");
-
-  // Hero CTA: Creative Studio is the headline service — logged-in users go
-  // straight there; new users sign up (which lands them in the studio too).
-  const goCreative = () => router.push(user ? "/creative-studio" : "/signup");
+  // Logged-in users go straight to the dashboard; everyone else signs up.
+  const goStart = () => router.push(user ? "/dashboard" : "/signup");
 
   return (
     <motion.div
@@ -111,13 +106,13 @@ export default function Home() {
                 </div>
                 <div className="hidden md:block w-px h-4 mx-1" style={{ background: "rgba(0,0,0,0.10)" }} />
                 <button
-                  onClick={() => router.push("/creative-studio")}
+                  onClick={() => router.push("/dashboard")}
                   className="inline-flex items-center cursor-pointer transition-colors"
                   style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, fontFamily: "var(--font-inter)", background: "none", border: "none", padding: "6px 10px" }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#0d0d1a"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; }}
                 >
-                  Creative Studio
+                  Dashboard
                 </button>
                 <button
                   onClick={async () => { await signOut(); }}
@@ -178,7 +173,7 @@ export default function Home() {
         </nav>
       </div>
 
-      <HeroSection onCtaClick={goCreative} />
+      <HeroSection onCtaClick={goStart} />
 
       <SocialProof />
       <DashboardPreview />
