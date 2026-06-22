@@ -95,18 +95,16 @@ export default function CheckoutModal({ open, onClose, plan = "starter", interva
 
     setLoading(true);
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email:   email.trim(),
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/success` },
+      // Register through the validated endpoint (same fake-email / disposable /
+      // MX-record checks as the main signup page) instead of calling Supabase
+      // Auth directly — otherwise junk emails slip through.
+      const signupRes = await fetch("/api/auth/signup", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email: email.trim(), password }),
       });
-
-      if (signUpError) throw signUpError;
-
-      if (data.session?.access_token) {
-        await redirectToCheckout(data.session.access_token, plan, interval);
-        return;
-      }
+      const signupJson = await signupRes.json() as { ok?: boolean; error?: string };
+      if (!signupRes.ok && signupJson.error) throw new Error(signupJson.error);
 
       const { data: signInData, error: signInError } =
         await supabase.auth.signInWithPassword({ email: email.trim(), password });
